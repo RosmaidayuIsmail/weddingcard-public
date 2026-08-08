@@ -12,7 +12,13 @@
     </div>
   </div>
 
-  <div v-else class="theme-surface text-white relative" :style="styleVars">
+  <div v-else class="theme-surface text-white relative overflow-hidden" :style="styleVars">
+    <!-- Decorative background layers live at the page level (not inside the
+         hero canvas below) specifically so they visually continue across
+         the footer too, instead of stopping abruptly at the hero's edge. -->
+    <PetalsBackground v-if="wedding.content.enablePetals !== false" />
+    <CardOrnament v-if="opened" :style="wedding.content.ornamentStyle" color="var(--theme-accent)" />
+
     <!-- HERO CANVAS: every 0-100% position below is relative to THIS box only,
          same as the editor's preview mockup. Nothing else on the page shares
          this coordinate space, so nothing can ever collide with it. -->
@@ -23,9 +29,6 @@
       </div>
 
       <EnvelopeIntro v-model:opened="opened" :guest-name="guestName" :content="wedding.content" />
-
-      <PetalsBackground v-if="wedding.content.enablePetals !== false" />
-      <CardOrnament v-if="opened" :style="wedding.content.ornamentStyle" color="var(--theme-accent)" />
 
       <div v-if="opened" class="absolute top-6 right-6 z-30">
         <MusicToggle v-if="wedding.content.audioSrc" :src="wedding.content.audioSrc" />
