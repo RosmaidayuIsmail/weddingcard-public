@@ -71,9 +71,9 @@
         class="absolute w-full max-w-3xl text-center px-4 flex flex-col items-center transition-all duration-700 animate-in fade-in zoom-in delay-300"
         :style="{ left: `${wedding.content.namesX ?? 50}%`, top: `${wedding.content.namesY ?? 50}%`, transform: 'translate(-50%, -50%)' }"
       >
-        <div v-if="wedding.content.namesLayout === 'vertical'" class="flex flex-col items-center gap-1 font-heading drop-shadow-2xl leading-tight" :style="{ color: 'var(--theme-ink)', fontFamily: 'var(--theme-heading-font)', fontSize: 'clamp(3rem,7vw,5rem)' }">
+        <div v-if="wedding.content.namesLayout === 'vertical'" class="flex flex-col items-center gap-0 font-heading drop-shadow-2xl" :style="{ color: 'var(--theme-ink)', fontFamily: 'var(--theme-heading-font)', fontSize: 'clamp(2rem,4.2vw,3rem)', lineHeight: '1.15' }">
           <span>{{ wedding.content.brideName }}</span>
-          <span class="text-[0.5em] opacity-80" style="color: #e3b04a;">&amp;</span>
+          <span class="text-[0.4em] opacity-80 leading-none" style="color: #e3b04a;">&amp;</span>
           <span>{{ wedding.content.groomName }}</span>
         </div>
         <h2 v-else class="drop-shadow-2xl leading-tight" :style="{ color: 'var(--theme-ink)', fontFamily: 'var(--theme-heading-font)', fontSize: 'clamp(3.5rem,8vw,6rem)' }">
@@ -81,7 +81,7 @@
         </h2>
       </div>
 
-      <!-- 5. Date (+ countdown right underneath it) -->
+      <!-- 5. Date -->
       <div
         class="absolute w-full max-w-3xl text-center px-4 flex flex-col items-center transition-all duration-700 animate-in fade-in zoom-in delay-500"
         :style="{ left: `${wedding.content.dateX ?? 50}%`, top: `${wedding.content.dateY ?? 70}%`, transform: 'translate(-50%, -50%)' }"
@@ -89,9 +89,6 @@
         <p class="text-sm sm:text-base font-medium text-white/90 drop-shadow-md whitespace-nowrap">
           {{ wedding.content.dateLabel }}
         </p>
-        <div v-if="wedding.content.dateISO" class="pt-3 scale-90 sm:scale-100">
-          <CountdownTimer :target="wedding.content.dateISO" />
-        </div>
       </div>
 
       <!-- 6. Venue -->
@@ -107,6 +104,9 @@
 
     <!-- Static Footer Navigation Layer (always pinned to the bottom, height matches FOOTER_RESERVED_PX above) -->
     <div v-if="opened" class="absolute bottom-0 w-full left-0 z-20 flex flex-col items-center pb-12 pt-16 bg-gradient-to-t from-black/80 to-transparent animate-in slide-in-from-bottom duration-1000">
+      <div v-if="wedding.content.dateISO" class="mb-6 scale-90 sm:scale-100">
+        <CountdownTimer :target="wedding.content.dateISO" />
+      </div>
       <div class="flex flex-col sm:flex-row items-center justify-center gap-4 w-full px-6 max-w-lg mx-auto">
         <UButton :to="`/w/${slug}/details`" size="xl" color="neutral" variant="soft" class="w-full sm:w-auto font-medium rounded-full px-8 bg-white/5 hover:bg-white/10 border border-white/10 transition-colors">
           {{ wedding.content.btnDetails || 'View Details' }}
@@ -132,8 +132,9 @@ const { themeStyleVars } = useThemes()
 // Must match (or exceed) the footer's real rendered height - see the
 // "Static Footer Navigation Layer" below. Generous on purpose: it's better
 // to leave a little empty space above the buttons than to risk another
-// overlap on a short/mobile viewport.
-const FOOTER_RESERVED_PX = 210
+// overlap on a short/mobile viewport. Includes room for the countdown
+// timer, which now lives in this same reserved zone.
+const FOOTER_RESERVED_PX = 320
 
 const styleVars = computed(() =>
   themeStyleVars(
@@ -168,7 +169,7 @@ watch(
   (value) => {
     if (!value) return
     useSeoMeta({
-      title: `${value.content.openingTitle || "You're Invited"} \u2014 ${value.content.brideName} & ${value.content.groomName}'s Wedding`,
+      title: `${value.content.openingTitle || "You're Invited"} — ${value.content.brideName} & ${value.content.groomName}'s Wedding`,
       description: value.content.dateLabel
         ? `Join us on ${value.content.dateLabel} as we celebrate our wedding. View the details and RSVP online.`
         : 'View the wedding details and RSVP online.'
