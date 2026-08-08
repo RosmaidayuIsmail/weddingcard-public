@@ -158,11 +158,11 @@ export function createDefaultContent(brideName = '', groomName = ''): WeddingCon
     customIconUrl: '',
     hideSystemText: false,
     namesLayout: 'horizontal',
-    iconX: 50, iconY: 15,
-    greetingX: 50, greetingY: 25,
-    introX: 50, introY: 32,
+    iconX: 50, iconY: 10,
+    greetingX: 50, greetingY: 20,
+    introX: 50, introY: 30,
     namesX: 50, namesY: 50,
-    dateX: 50, dateY: 70,
+    dateX: 50, dateY: 68,
     venueX: 50, venueY: 78
   }
 }

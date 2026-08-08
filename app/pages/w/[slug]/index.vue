@@ -12,7 +12,7 @@
     </div>
   </div>
 
-  <div v-else class="min-h-screen theme-surface text-white relative overflow-hidden" :style="styleVars">
+  <div v-else class="min-h-screen theme-surface text-white relative overflow-hidden" :style="[styleVars, { minHeight: 'max(100vh, 760px)' }]">
     <div v-if="wedding.content.coverPhotoUrl && opened" class="absolute inset-0 z-0 opacity-40 transition-opacity duration-1000 animate-in fade-in">
       <img :src="wedding.content.coverPhotoUrl" alt="Background" class="w-full h-full object-cover scale-105 animate-[pulse_20s_ease-in-out_infinite_alternate]">
       <div class="absolute inset-0" :style="{ background: `linear-gradient(to bottom, transparent, var(--theme-bg-to))` }" />

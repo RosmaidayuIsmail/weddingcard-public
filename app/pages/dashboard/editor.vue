@@ -841,18 +841,17 @@ watch(
     if (!form.btnRsvp) form.btnRsvp = 'RSVP Now'
 
     if (form.greetingX === undefined) form.greetingX = 50
-    if (form.greetingY === undefined) form.greetingY = 25
+    if (form.greetingY === undefined) form.greetingY = 20
     if (form.introX === undefined) form.introX = 50
-    if (form.introY === undefined) form.introY = 32
+    if (form.introY === undefined) form.introY = 30
     if (form.namesX === undefined) form.namesX = 50
     if (form.namesY === undefined) form.namesY = 50
     if (form.dateX === undefined) form.dateX = 50
-    if (form.dateY === undefined) form.dateY = 70
+    if (form.dateY === undefined) form.dateY = 68
     if (form.venueX === undefined) form.venueX = 50
     if (form.venueY === undefined) form.venueY = 78
     if (form.iconX === undefined) form.iconX = 50
-    if (form.iconY === undefined) form.iconY = 15
-    if (!form.namesLayout) form.namesLayout = 'horizontal'
+    if (form.iconY === undefined) form.iconY = 10
 
     if (!form.bank) form.bank = { name: '', accountName: '', accountNumber: '', qrCodeUrl: '' }
     if (form.dateISO) {
