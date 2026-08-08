@@ -1,0 +1,31 @@
+{
+  "name": "weddingcard",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "nuxt build",
+    "build:firebase": "nuxt build --preset=firebase && node -e \"const fs=require('fs'); if (fs.existsSync('.env') && fs.existsSync('.output/server')) fs.copyFileSync('.env', '.output/server/.env')\"",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "deploy:firebase": "npm run build:firebase && cd .output/server && npm install && cd ../.. && firebase deploy",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "@nuxt/ui": "^4.10.0",
+    "@vueuse/nuxt": "^14.3.0",
+    "canvas-confetti": "^1.9.4",
+    "firebase": "^12.16.0",
+    "firebase-functions": "^7.3.2",
+    "nuxt": "^4.4.8",
+    "vue": "^3.5.40",
+    "vue-router": "^5.2.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@iconify-json/heroicons": "^1.2.3",
+    "@iconify-json/lucide": "^1.2.117",
+    "@types/canvas-confetti": "^1.9.0",
+    "typescript": "^5.9.3"
+  }
+}

@@ -1,0 +1,20 @@
+# Nuxt dev/build output
+.nuxt
+.output
+.data
+dist
+
+# Env
+.env
+.env.*
+!.env.example
+
+# Dependencies
+node_modules
+
+# Editor / OS
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+*.log
+.firebase/

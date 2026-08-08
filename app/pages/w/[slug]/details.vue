@@ -1,0 +1,308 @@
+<template>
+  <div v-if="loading" class="min-h-screen invite-backdrop flex flex-col items-center justify-center text-white/60 space-y-4">
+    <UIcon name="i-heroicons-arrow-path" class="w-8 h-8 animate-spin text-gold-400" />
+  </div>
+
+  <div v-else-if="notFound || !wedding" class="min-h-screen invite-backdrop flex items-center justify-center text-white text-center px-6">
+    <div class="p-8 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 shadow-2xl">
+      <p class="text-xl font-display mb-4">We couldn't find that invitation.</p>
+      <UButton to="/" variant="soft" color="neutral" class="rounded-full">Go home</UButton>
+    </div>
+  </div>
+
+  <div v-else class="min-h-screen theme-surface text-white px-4 py-8 sm:p-10 flex items-center justify-center relative overflow-hidden bg-ink-950" :style="styleVars">
+    <div class="absolute inset-0 z-0 bg-gradient-to-b" :style="{ background: `linear-gradient(160deg, var(--theme-bg-from), var(--theme-bg-via), var(--theme-bg-to))` }"></div>
+    
+    <div v-if="wedding.content.coverPhotoUrl" class="absolute inset-0 z-0 opacity-40 transition-opacity duration-1000 animate-in fade-in">
+      <img :src="wedding.content.coverPhotoUrl" alt="Background" class="w-full h-full object-cover" />
+      <div class="absolute inset-0" :style="{ background: `linear-gradient(to bottom, transparent, var(--theme-bg-to))` }"></div>
+    </div>
+
+    <PetalsBackground v-if="wedding.content.enablePetals !== false" class="z-0" />
+    <CardOrnament :style="wedding.content.ornamentStyle" color="var(--theme-accent)" class="z-0" />
+
+    <div class="max-w-lg w-full relative z-10 animate-fade-up">
+      <div class="flex items-center justify-between mb-6 px-2">
+        <UButton :to="`/w/${slug}`" variant="ghost" color="neutral" size="md" icon="i-heroicons-arrow-left" aria-label="Back to Cover" class="text-white/70 hover:text-white rounded-full bg-white/5 border border-white/10 backdrop-blur-sm" />
+        <UButton :to="`/w/${slug}/rsvp`" color="primary" size="sm" class="rounded-full shadow-lg font-semibold px-5">RSVP</UButton>
+      </div>
+
+      <div class="flex gap-1.5 w-full mb-4 px-2">
+        <div v-for="(_, index) in slideKeys.length" :key="index" class="h-1.5 flex-1 rounded-full bg-white/20 overflow-hidden cursor-pointer" @click="goTo(index)">
+          <div 
+            class="h-full transition-all duration-300"
+            :class="{ 'progress-bar': currentSlide === index, 'progress-paused': paused, 'w-full': index < currentSlide, 'w-0': index > currentSlide }" 
+            :style="{ background: index <= currentSlide ? 'var(--theme-accent)' : '' }" 
+          />
+        </div>
+      </div>
+
+      <div
+        ref="cardRef"
+        class="relative bg-ink-900/40 backdrop-blur-xl border rounded-[2rem] shadow-2xl p-8 sm:p-10 min-h-[420px] flex flex-col justify-center touch-pan-y transition-all duration-500 hover:shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
+        :style="{ borderColor: 'var(--theme-accent-soft)' }"
+        @mouseenter="paused = true"
+        @mouseleave="paused = false"
+      >
+        <Transition :name="direction" mode="out-in">
+          <div :key="currentSlide" class="space-y-6 text-center w-full absolute left-0 px-8 sm:px-10">
+            
+            <template v-if="currentKey === 'story'">
+              <div v-if="wedding.content.innerTopIcon && wedding.content.innerTopIcon !== 'none'" class="flex justify-center mb-4">
+                <span v-if="wedding.content.innerTopIcon === 'bismillah'" class="text-5xl" :style="{ color: 'var(--theme-accent)', fontFamily: `'Amiri', 'Traditional Arabic', serif` }">﷽</span>
+                <UIcon v-else-if="wedding.content.innerTopIcon === 'rings'" name="i-heroicons-lifebuoy" class="w-10 h-10" :style="{ color: 'var(--theme-accent)' }" />
+                <UIcon v-else-if="wedding.content.innerTopIcon === 'heart'" name="i-heroicons-heart" class="w-10 h-10" :style="{ color: 'var(--theme-accent)' }" />
+              </div>
+              <p v-if="!wedding.content.hideSystemText" class="text-white/90 text-lg leading-relaxed whitespace-pre-line font-light">{{ wedding.content.story }}</p>
+            </template>
+
+            <template v-else-if="currentKey === 'couple'">
+              <div v-if="!wedding.content.hideSystemText">
+                <h2 class="text-5xl leading-tight drop-shadow-lg" :style="{ color: 'var(--theme-ink)', fontFamily: 'var(--theme-heading-font)' }">
+                  {{ wedding.content.brideName }} <br/>
+                  <span class="text-[0.6em] opacity-80" :style="{ color: 'var(--theme-accent)' }">&amp;</span> <br/>
+                  {{ wedding.content.groomName }}
+                </h2>
+                <div class="h-px w-16 mx-auto my-4" :style="{ background: 'var(--theme-accent)' }"></div>
+                <p class="text-sm uppercase tracking-widest text-white/60">Bride &amp; Groom</p>
+              </div>
+            </template>
+
+            <template v-else-if="currentKey === 'family'">
+              <div v-if="!wedding.content.hideSystemText">
+                <UIcon name="i-heroicons-users" class="w-8 h-8 mx-auto mb-4 opacity-50" :style="{ color: 'var(--theme-accent)' }" />
+                <div v-if="wedding.content.brideFullName || wedding.content.brideParents" class="space-y-1">
+                  <p class="text-xs uppercase tracking-widest font-semibold mb-2" :style="{ color: 'var(--theme-accent)' }">Bride</p>
+                  <p class="font-bold text-lg text-white/90">{{ wedding.content.brideFullName }}</p>
+                  <p class="text-sm text-white/60 font-light">Child of <br/>{{ wedding.content.brideParents }}</p>
+                </div>
+                <div class="h-px bg-white/10 w-24 mx-auto my-6" />
+                <div v-if="wedding.content.groomFullName || wedding.content.groomParents" class="space-y-1">
+                  <p class="text-xs uppercase tracking-widest font-semibold mb-2" :style="{ color: 'var(--theme-accent)' }">Groom</p>
+                  <p class="font-bold text-lg text-white/90">{{ wedding.content.groomFullName }}</p>
+                  <p class="text-sm text-white/60 font-light">Child of <br/>{{ wedding.content.groomParents }}</p>
+                </div>
+              </div>
+            </template>
+
+            <template v-else-if="currentKey === 'event'">
+              <div v-if="!wedding.content.hideSystemText">
+                <h2 class="font-display font-semibold text-2xl mb-6" :style="{ color: 'var(--theme-accent)' }">The Details</h2>
+                <div class="space-y-4 text-white/90">
+                  <div v-if="wedding.content.dateLabel" class="flex flex-col items-center">
+                    <UIcon name="i-heroicons-calendar" class="w-5 h-5 mb-1 opacity-70" />
+                    <p class="font-medium text-lg">{{ wedding.content.dateLabel }}</p>
+                  </div>
+                  <div v-if="wedding.content.timeLabel" class="flex flex-col items-center">
+                    <UIcon name="i-heroicons-clock" class="w-5 h-5 mb-1 opacity-70" />
+                    <p class="font-medium text-lg">{{ wedding.content.timeLabel }}</p>
+                  </div>
+                  <div v-if="wedding.content.venueName" class="flex flex-col items-center pt-2">
+                    <UIcon name="i-heroicons-building-office-2" class="w-5 h-5 mb-1 opacity-70" />
+                    <p class="font-semibold text-lg">{{ wedding.content.venueName }}</p>
+                    <p class="text-sm text-white/60 mt-1 max-w-[250px] mx-auto">{{ wedding.content.venueAddress }}</p>
+                  </div>
+                </div>
+              </div>
+              <div class="flex justify-center pt-6" :class="{ 'pt-12': wedding.content.hideSystemText }">
+                <AddToCalendarButton
+                  :bride-name="wedding.content.brideName"
+                  :groom-name="wedding.content.groomName"
+                  :date-iso="wedding.content.dateISO"
+                  :venue-name="wedding.content.venueName"
+                  :venue-address="wedding.content.venueAddress"
+                  :rsvp-deadline-label="wedding.content.rsvpDeadlineLabel"
+                  class="rounded-full shadow-lg"
+                />
+              </div>
+            </template>
+
+            <template v-else-if="currentKey === 'location'">
+              <h2 class="font-display font-semibold text-2xl mb-2" :style="{ color: 'var(--theme-accent)' }">Location</h2>
+              <p class="text-sm text-white/60 mb-6">Scan or tap to open in Maps</p>
+              <div class="flex flex-col items-center gap-6">
+                <div class="p-3 bg-white rounded-2xl shadow-xl">
+                  <img :src="qrCodeUrl" alt="QR code linking to the venue on Google Maps" class="w-36 h-36" loading="lazy">
+                </div>
+                <UButton :to="wedding.content.mapUrl" target="_blank" external icon="i-heroicons-map-pin" color="primary" class="font-semibold rounded-full px-6 shadow-md">
+                  Open Google Maps
+                </UButton>
+              </div>
+            </template>
+
+            <template v-else-if="currentKey === 'gift'">
+              <h2 class="font-display font-semibold text-2xl mb-4" :style="{ color: 'var(--theme-accent)' }">A Gift of Love</h2>
+              <GiftCard :bank="wedding.content.bank" />
+            </template>
+
+            <template v-else-if="currentKey === 'flow'">
+              <h2 class="font-display font-semibold text-2xl mb-6" :style="{ color: 'var(--theme-accent)' }">Event Flow</h2>
+              <FlowTimeline :items="wedding.flow" />
+            </template>
+          </div>
+        </Transition>
+
+        <div class="absolute inset-y-0 left-0 w-1/4 z-10 cursor-pointer" @click="prev"></div>
+        <div class="absolute inset-y-0 right-0 w-1/4 z-10 cursor-pointer" @click="next"></div>
+      </div>
+
+      <div class="flex justify-center gap-12 mt-6 text-white/40">
+        <button type="button" aria-label="Previous slide" class="hover:text-white transition-colors p-2 rounded-full hover:bg-white/10" @click="prev">
+          <UIcon name="i-heroicons-chevron-left" class="w-8 h-8" />
+        </button>
+        <button type="button" aria-label="Next slide" class="hover:text-white transition-colors p-2 rounded-full hover:bg-white/10" @click="next">
+          <UIcon name="i-heroicons-chevron-right" class="w-8 h-8" />
+        </button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+const route = useRoute()
+const slug = route.params.slug as string
+
+const { wedding, loading, notFound } = useWeddingBySlug(slug)
+const { themeStyleVars } = useThemes()
+
+const styleVars = computed(() =>
+  themeStyleVars(
+    wedding.value?.themeId,
+    {
+      bgFrom: wedding.value?.content.customBgFrom,
+      bgTo: wedding.value?.content.customBgTo,
+      accent: wedding.value?.content.customAccent
+    },
+    wedding.value?.content.customFontFamily || wedding.value?.content.fontFamily
+  )
+)
+
+useHead({
+  link: computed(() => {
+    if (wedding.value?.content.customFontUrl && !wedding.value.content.customFontUrl.includes('fonts.google.com/specimen/')) {
+      return [{ rel: 'stylesheet', href: wedding.value.content.customFontUrl }]
+    }
+    return []
+  })
+})
+
+const slideKeys = computed(() => {
+  if (!wedding.value) return ['story']
+  const keys = ['story', 'couple']
+  if (wedding.value.content.brideFullName || wedding.value.content.groomFullName) keys.push('family')
+  keys.push('event')
+  if (wedding.value.content.mapUrl) keys.push('location')
+  if (wedding.value.content.enableGift && (wedding.value.content.bank?.accountNumber || wedding.value.content.bank?.qrCodeUrl)) {
+    keys.push('gift')
+  }
+  if (wedding.value.flow?.length) keys.push('flow')
+  return keys
+})
+
+const currentSlide = ref(0)
+const currentKey = computed(() => slideKeys.value[currentSlide.value] ?? 'story')
+const direction = ref<'slide-next' | 'slide-prev'>('slide-next')
+const paused = ref(false)
+const cardRef = ref<HTMLElement | null>(null)
+
+const qrCodeUrl = computed(
+  () => `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(wedding.value?.content.mapUrl ?? '')}&size=200x200`
+)
+
+function goTo(index: number) {
+  if (index === currentSlide.value) return
+  direction.value = index > currentSlide.value ? 'slide-next' : 'slide-prev'
+  currentSlide.value = index
+}
+
+function next() {
+  direction.value = 'slide-next'
+  currentSlide.value = (currentSlide.value + 1) % slideKeys.value.length
+}
+
+function prev() {
+  direction.value = 'slide-prev'
+  currentSlide.value = (currentSlide.value - 1 + slideKeys.value.length) % slideKeys.value.length
+}
+
+let autoSlideInterval: ReturnType<typeof setInterval> | null = null
+
+onMounted(() => {
+  autoSlideInterval = setInterval(() => {
+    if (!paused.value) next()
+  }, 7000)
+})
+
+onBeforeUnmount(() => {
+  if (autoSlideInterval) clearInterval(autoSlideInterval)
+})
+
+const { direction: swipeDirection, isSwiping } = useSwipe(cardRef, {
+  threshold: 40,
+  onSwipeEnd() {
+    if (swipeDirection.value === 'left') next()
+    else if (swipeDirection.value === 'right') prev()
+  }
+})
+
+watch(isSwiping, (value) => {
+  paused.value = value || paused.value
+})
+
+onKeyStroke('ArrowRight', () => next())
+onKeyStroke('ArrowLeft', () => prev())
+
+watch(
+  wedding,
+  (value) => {
+    if (!value) return
+    useSeoMeta({ title: `Wedding Details — ${value.content.brideName} & ${value.content.groomName}` })
+  },
+  { immediate: true }
+)
+</script>
+
+<style scoped>
+.progress-bar {
+  animation: progress 7s linear forwards;
+  width: 0%;
+}
+
+.progress-paused {
+  animation-play-state: paused;
+}
+
+@keyframes progress {
+  from { width: 0%; }
+  to { width: 100%; }
+}
+
+.slide-next-enter-active,
+.slide-next-leave-active,
+.slide-prev-enter-active,
+.slide-prev-leave-active {
+  transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.slide-next-enter-from { opacity: 0; transform: scale(0.95) translateX(30px); }
+.slide-next-leave-to { opacity: 0; transform: scale(0.95) translateX(-30px); }
+.slide-prev-enter-from { opacity: 0; transform: scale(0.95) translateX(-30px); }
+.slide-prev-leave-to { opacity: 0; transform: scale(0.95) translateX(30px); }
+
+@media (prefers-reduced-motion: reduce) {
+  .progress-bar {
+    animation: none;
+    width: 100%;
+  }
+  .slide-next-enter-active,
+  .slide-next-leave-active,
+  .slide-prev-enter-active,
+  .slide-prev-leave-active {
+    transition: opacity 0.3s ease;
+  }
+  .slide-next-enter-from, .slide-next-leave-to,
+  .slide-prev-enter-from, .slide-prev-leave-to {
+    transform: none;
+  }
+}
+</style>

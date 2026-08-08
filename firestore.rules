@@ -1,0 +1,68 @@
+rules_version = '2';
+
+// Paste this into Firebase Console > Firestore Database > Rules, or deploy
+// with the Firebase CLI (`firebase deploy --only firestore:rules`).
+//
+// Data model:
+//   users/{uid}                        - profile + role ('couple' | 'superadmin')
+//   slugs/{slug}                       - { weddingId } reservation, public read
+//   weddings/{weddingId}               - one per couple, owned by ownerUid
+//   weddings/{weddingId}/guests/{id}   - full RSVP data (dietary, phone, etc.)
+//                                         PRIVATE: only the owner or a superadmin can read
+//   weddings/{weddingId}/wishes/{id}   - public-safe subset (name + message only)
+//                                         used by the live Wishes Wall
+//
+// The guests/wishes split exists specifically so the full guest list (phone
+// numbers, dietary needs, guest counts) never has to be publicly readable -
+// unlike a flatter model, nobody can query someone else's guest list just by
+// opening dev tools.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isSuperAdmin() {
+      return isSignedIn() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'superadmin';
+    }
+
+    function isOwner(weddingData) {
+      return isSignedIn() && request.auth.uid == weddingData.ownerUid;
+    }
+
+    match /users/{uid} {
+      allow read: if isSignedIn() && (request.auth.uid == uid || isSuperAdmin());
+      allow create: if isSignedIn() && request.auth.uid == uid;
+      // Users can update their own profile but can't grant themselves the
+      // superadmin role - that has to be set manually in the console/CLI.
+      allow update: if isSignedIn() && request.auth.uid == uid &&
+        request.resource.data.role == resource.data.role;
+    }
+
+    match /slugs/{slug} {
+      allow read: if true; // needed to resolve /w/{slug} public pages
+      allow create: if isSignedIn();
+      allow update, delete: if false;
+    }
+
+    match /weddings/{weddingId} {
+      allow read: if resource.data.status == 'published' || isOwner(resource.data) || isSuperAdmin();
+      allow create: if isSignedIn() && request.resource.data.ownerUid == request.auth.uid;
+      allow update, delete: if isOwner(resource.data) || isSuperAdmin();
+
+      match /guests/{guestId} {
+        allow create: if true; // public RSVP submission
+        allow read: if isOwner(get(/databases/$(database)/documents/weddings/$(weddingId)).data) || isSuperAdmin();
+        allow update, delete: if isOwner(get(/databases/$(database)/documents/weddings/$(weddingId)).data);
+      }
+
+      match /wishes/{wishId} {
+        allow read: if true; // powers the public live Wishes Wall
+        allow create: if true;
+        allow update, delete: if false;
+      }
+    }
+  }
+}
