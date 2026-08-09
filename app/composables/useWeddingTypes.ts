@@ -12,6 +12,9 @@ export interface WeddingContent {
   brideParents: string
   groomFullName: string
   groomParents: string
+  /** Individual portrait photos shown on the Family slide */
+  bridePhotoUrl: string
+  groomPhotoUrl: string
   story: string
   dateISO: string
   dateLabel: string
@@ -132,6 +135,8 @@ export function createDefaultContent(brideName = '', groomName = ''): WeddingCon
     brideParents: '',
     groomFullName: '',
     groomParents: '',
+    bridePhotoUrl: '',
+    groomPhotoUrl: '',
     story: 'With humble hearts, we joyfully invite you to celebrate our wedding with us.',
     dateISO: '',
     dateLabel: '',

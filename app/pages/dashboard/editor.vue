@@ -153,6 +153,45 @@
               </UFormField>
             </div>
 
+            <div class="grid sm:grid-cols-2 gap-5 mt-2">
+              <div>
+                <p class="text-xs text-white/50 mb-2">Bride's Photo (optional)</p>
+                <div class="flex items-center gap-3">
+                  <div v-if="form.bridePhotoUrl" class="w-14 h-14 rounded-full overflow-hidden border border-gray-700 shrink-0">
+                    <img :src="form.bridePhotoUrl" alt="" class="w-full h-full object-cover">
+                  </div>
+                  <div v-else class="w-14 h-14 rounded-full bg-gray-800 border border-dashed border-gray-600 flex items-center justify-center shrink-0">
+                    <UIcon name="i-heroicons-user" class="w-6 h-6 text-gray-500" />
+                  </div>
+                  <input ref="bridePhotoInput" type="file" accept="image/*" class="hidden" @change="handleBridePhotoSelect">
+                  <div class="flex flex-col gap-1.5">
+                    <UButton size="xs" variant="soft" color="neutral" :loading="bridePhotoUploading" :disabled="!cloudinaryConfigured" @click="bridePhotoInput?.click()">
+                      {{ form.bridePhotoUrl ? 'Change' : 'Upload' }}
+                    </UButton>
+                    <UButton v-if="form.bridePhotoUrl" size="xs" variant="ghost" color="error" @click="form.bridePhotoUrl = ''">Remove</UButton>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <p class="text-xs text-white/50 mb-2">Groom's Photo (optional)</p>
+                <div class="flex items-center gap-3">
+                  <div v-if="form.groomPhotoUrl" class="w-14 h-14 rounded-full overflow-hidden border border-gray-700 shrink-0">
+                    <img :src="form.groomPhotoUrl" alt="" class="w-full h-full object-cover">
+                  </div>
+                  <div v-else class="w-14 h-14 rounded-full bg-gray-800 border border-dashed border-gray-600 flex items-center justify-center shrink-0">
+                    <UIcon name="i-heroicons-user" class="w-6 h-6 text-gray-500" />
+                  </div>
+                  <input ref="groomPhotoInput" type="file" accept="image/*" class="hidden" @change="handleGroomPhotoSelect">
+                  <div class="flex flex-col gap-1.5">
+                    <UButton size="xs" variant="soft" color="neutral" :loading="groomPhotoUploading" :disabled="!cloudinaryConfigured" @click="groomPhotoInput?.click()">
+                      {{ form.groomPhotoUrl ? 'Change' : 'Upload' }}
+                    </UButton>
+                    <UButton v-if="form.groomPhotoUrl" size="xs" variant="ghost" color="error" @click="form.groomPhotoUrl = ''">Remove</UButton>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div class="h-px w-full bg-white/5 my-2"></div>
 
             <UFormField label="Inner Greeting (e.g. You're Invited)">
@@ -744,6 +783,11 @@ const qrUploading = ref(false)
 const iconInput = ref<HTMLInputElement | null>(null)
 const iconUploading = ref(false)
 
+const bridePhotoInput = ref<HTMLInputElement | null>(null)
+const bridePhotoUploading = ref(false)
+const groomPhotoInput = ref<HTMLInputElement | null>(null)
+const groomPhotoUploading = ref(false)
+
 const adminCanvaTemplate = ref('')
 
 // FIXED: Defined options array here as a standard ref for the Dropdown
@@ -1031,6 +1075,38 @@ async function handleIconSelect(event: Event) {
     iconUploading.value = false
   }
   if (iconInput.value) iconInput.value.value = ''
+}
+
+async function handleBridePhotoSelect(event: Event) {
+  const file = (event.target as HTMLInputElement).files?.[0]
+  if (!file || !wedding.value) return
+  bridePhotoUploading.value = true
+  try {
+    const url = await uploadImage(file, `weddings/${wedding.value.id}/bride`)
+    form.bridePhotoUrl = url
+    toast.add({ title: "Bride's photo uploaded — remember to save", color: 'success' })
+  } catch (error) {
+    toast.add({ title: 'Upload failed', color: 'error' })
+  } finally {
+    bridePhotoUploading.value = false
+  }
+  if (bridePhotoInput.value) bridePhotoInput.value.value = ''
+}
+
+async function handleGroomPhotoSelect(event: Event) {
+  const file = (event.target as HTMLInputElement).files?.[0]
+  if (!file || !wedding.value) return
+  groomPhotoUploading.value = true
+  try {
+    const url = await uploadImage(file, `weddings/${wedding.value.id}/groom`)
+    form.groomPhotoUrl = url
+    toast.add({ title: "Groom's photo uploaded — remember to save", color: 'success' })
+  } catch (error) {
+    toast.add({ title: 'Upload failed', color: 'error' })
+  } finally {
+    groomPhotoUploading.value = false
+  }
+  if (groomPhotoInput.value) groomPhotoInput.value.value = ''
 }
 
 function removePhoto() {

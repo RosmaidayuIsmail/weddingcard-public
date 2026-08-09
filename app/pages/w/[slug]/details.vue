@@ -81,14 +81,16 @@
 
             <template v-else-if="currentKey === 'family'">
               <div v-if="!wedding.content.hideSystemText">
-                <UIcon name="i-heroicons-users" class="w-8 h-8 mx-auto mb-4 opacity-50" :style="{ color: 'var(--theme-accent)' }" />
+                <UIcon v-if="!wedding.content.bridePhotoUrl && !wedding.content.groomPhotoUrl" name="i-heroicons-users" class="w-8 h-8 mx-auto mb-4 opacity-50" :style="{ color: 'var(--theme-accent)' }" />
                 <div v-if="wedding.content.brideFullName || wedding.content.brideParents" class="space-y-1">
+                  <img v-if="wedding.content.bridePhotoUrl" :src="wedding.content.bridePhotoUrl" alt="" class="w-20 h-20 rounded-full object-cover mx-auto mb-3 border-2" :style="{ borderColor: 'var(--theme-accent)' }">
                   <p class="text-xs uppercase tracking-widest font-semibold mb-2" :style="{ color: 'var(--theme-accent)' }">Bride</p>
                   <p class="font-bold text-lg text-white/90">{{ wedding.content.brideFullName }}</p>
                   <p class="text-sm text-white/60 font-light">Child of <br/>{{ wedding.content.brideParents }}</p>
                 </div>
                 <div class="h-px bg-white/10 w-24 mx-auto my-6" />
                 <div v-if="wedding.content.groomFullName || wedding.content.groomParents" class="space-y-1">
+                  <img v-if="wedding.content.groomPhotoUrl" :src="wedding.content.groomPhotoUrl" alt="" class="w-20 h-20 rounded-full object-cover mx-auto mb-3 border-2" :style="{ borderColor: 'var(--theme-accent)' }">
                   <p class="text-xs uppercase tracking-widest font-semibold mb-2" :style="{ color: 'var(--theme-accent)' }">Groom</p>
                   <p class="font-bold text-lg text-white/90">{{ wedding.content.groomFullName }}</p>
                   <p class="text-sm text-white/60 font-light">Child of <br/>{{ wedding.content.groomParents }}</p>
