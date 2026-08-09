@@ -37,13 +37,22 @@
         <!-- 1. Icon -->
         <div
           v-if="wedding.content.innerTopIcon && wedding.content.innerTopIcon !== 'none'"
-          class="absolute flex flex-col items-center justify-center text-center w-full px-4 animate-in fade-in zoom-in delay-100"
+          class="absolute flex flex-col items-center justify-center text-center w-full max-w-[92vw] px-4 animate-in fade-in zoom-in delay-100"
           :style="{ left: `${wedding.content.iconX ?? 50}%`, top: `${wedding.content.iconY ?? 15}%`, transform: 'translate(-50%, -50%)' }"
         >
-          <span v-if="wedding.content.innerTopIcon === 'bismillah'" class="text-4xl" :style="{ color: 'var(--theme-accent)', fontFamily: `'Amiri', 'Traditional Arabic', serif` }">﷽</span>
-          <UIcon v-else-if="wedding.content.innerTopIcon === 'rings'" name="i-heroicons-lifebuoy" class="w-8 h-8" :style="{ color: 'var(--theme-accent)' }" />
-          <UIcon v-else-if="wedding.content.innerTopIcon === 'heart'" name="i-heroicons-heart" class="w-8 h-8" :style="{ color: 'var(--theme-accent)' }" />
-          <img v-else-if="wedding.content.innerTopIcon === 'custom' && wedding.content.customIconUrl" :src="wedding.content.customIconUrl" alt="" class="w-14 h-14 object-contain drop-shadow">
+          <span
+            v-if="wedding.content.innerTopIcon === 'bismillah'"
+            :style="{
+              color: 'var(--theme-accent)',
+              fontFamily: `'Amiri', 'Traditional Arabic', serif`,
+              fontSize: `clamp(1.1rem, ${6 * ((wedding.content.iconSize ?? 100) / 100)}vw, ${3 * ((wedding.content.iconSize ?? 100) / 100)}rem)`,
+              lineHeight: 1,
+              whiteSpace: 'nowrap'
+            }"
+          >﷽</span>
+          <UIcon v-else-if="wedding.content.innerTopIcon === 'rings'" name="i-heroicons-lifebuoy" :style="{ color: 'var(--theme-accent)', width: `${2 * ((wedding.content.iconSize ?? 100) / 100)}rem`, height: `${2 * ((wedding.content.iconSize ?? 100) / 100)}rem` }" />
+          <UIcon v-else-if="wedding.content.innerTopIcon === 'heart'" name="i-heroicons-heart" :style="{ color: 'var(--theme-accent)', width: `${2 * ((wedding.content.iconSize ?? 100) / 100)}rem`, height: `${2 * ((wedding.content.iconSize ?? 100) / 100)}rem` }" />
+          <img v-else-if="wedding.content.innerTopIcon === 'custom' && wedding.content.customIconUrl" :src="wedding.content.customIconUrl" alt="" class="object-contain drop-shadow" :style="{ width: `${3.5 * ((wedding.content.iconSize ?? 100) / 100)}rem`, height: `${3.5 * ((wedding.content.iconSize ?? 100) / 100)}rem` }">
         </div>
 
         <!-- 2. Greeting -->
@@ -119,10 +128,17 @@
         <CountdownTimer :target="wedding.content.dateISO" />
       </div>
       <div class="flex flex-col sm:flex-row items-center justify-center gap-4 w-full max-w-lg mx-auto">
-        <UButton :to="`/w/${slug}/details`" size="xl" color="neutral" variant="soft" class="w-full sm:w-auto font-medium rounded-full px-8 bg-white/5 hover:bg-white/10 border border-white/10 transition-colors">
+        <UButton
+          :to="`/w/${slug}/details`"
+          size="xl"
+          :color="wedding.content.rsvpEnabled === false ? 'primary' : 'neutral'"
+          :variant="wedding.content.rsvpEnabled === false ? 'solid' : 'soft'"
+          class="w-full sm:w-auto font-medium rounded-full px-8 transition-colors"
+          :class="wedding.content.rsvpEnabled === false ? 'shadow-[0_0_30px_-5px_var(--theme-accent)] animate-glow' : 'bg-white/5 hover:bg-white/10 border border-white/10'"
+        >
           {{ wedding.content.btnDetails || 'View Details' }}
         </UButton>
-        <UButton :to="`/w/${slug}/rsvp`" size="xl" color="primary" class="w-full sm:w-auto font-semibold rounded-full px-10 shadow-[0_0_30px_-5px_var(--theme-accent)] hover:scale-105 transition-transform animate-glow">
+        <UButton v-if="wedding.content.rsvpEnabled !== false" :to="`/w/${slug}/rsvp`" size="xl" color="primary" class="w-full sm:w-auto font-semibold rounded-full px-10 shadow-[0_0_30px_-5px_var(--theme-accent)] hover:scale-105 transition-transform animate-glow">
           {{ wedding.content.btnRsvp || 'RSVP Now' }}
         </UButton>
       </div>
@@ -173,7 +189,7 @@ watch(
   (value) => {
     if (!value) return
     useSeoMeta({
-      title: `${value.content.openingTitle || "You're Invited"} — ${value.content.brideName} & ${value.content.groomName}'s Wedding`,
+      title: `${value.content.openingTitle || "You're Invited"} \u2014 ${value.content.brideName} & ${value.content.groomName}'s Wedding`,
       description: value.content.dateLabel
         ? `Join us on ${value.content.dateLabel} as we celebrate our wedding. View the details and RSVP online.`
         : 'View the wedding details and RSVP online.'

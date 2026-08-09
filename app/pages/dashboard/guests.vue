@@ -91,9 +91,15 @@
         <div v-for="guest in filteredGuests" :key="guest.id" class="guest-row group">
           
           <div class="flex items-center gap-4 min-w-[200px]">
-            <UBadge :color="guest.tier === 'vip' ? 'primary' : 'neutral'" variant="subtle" class="w-16 justify-center">
+            <button
+              type="button"
+              class="tier-toggle"
+              :class="guest.tier === 'vip' ? 'tier-toggle-vip' : 'tier-toggle-general'"
+              :title="guest.tier === 'vip' ? 'Click to change to General' : 'Click to mark as VIP'"
+              @click="updateGuestTier(guest.id, guest.tier === 'vip' ? 'general' : 'vip')"
+            >
               {{ guest.tier === 'vip' ? 'VIP' : 'Gen' }}
-            </UBadge>
+            </button>
             <div>
               <p class="font-medium text-white/90 group-hover:text-gold-200 transition-colors">{{ guest.name }}</p>
               <p class="text-xs text-white/50 flex items-center gap-1 mt-0.5">
@@ -125,6 +131,15 @@
             
             <div class="flex items-center border-l border-white/10 pl-3 ml-1 gap-2 print:hidden">
               <UButton
+                size="xs"
+                color="neutral"
+                variant="ghost"
+                :icon="copiedId === guest.id ? 'i-heroicons-check' : 'i-heroicons-link'"
+                title="Copy personalized RSVP link"
+                class="hover:bg-white/10"
+                @click="copyGuestLink(guest)"
+              />
+              <UButton
                 v-if="guest.phone"
                 size="xs"
                 color="success"
@@ -154,6 +169,8 @@
 </template>
 
 <script setup lang="ts">
+import type { GuestDoc } from '~/composables/useWeddingTypes'
+
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
 const { wedding, loading: weddingLoading } = useMyWedding()
@@ -166,12 +183,32 @@ const {
   totalGuestCount,
   addGuest,
   removeGuest,
+  updateGuestTier,
   whatsappLink,
+  personalizedLink,
   exportCSV
 } = useGuests(() => wedding.value?.id)
 
+const toast = useToast()
 const config = useRuntimeConfig()
 const siteUrl = computed(() => config.public.siteUrl || (import.meta.client ? window.location.origin : ''))
+
+const copiedId = ref<string | null>(null)
+
+async function copyGuestLink(guest: GuestDoc) {
+  if (!wedding.value) return
+  const link = personalizedLink(guest, siteUrl.value, wedding.value.slug)
+  try {
+    await navigator.clipboard.writeText(link)
+    copiedId.value = guest.id
+    toast.add({ title: 'Link copied', description: `Personalized for ${guest.name} \u2014 share it anywhere.`, color: 'success' })
+    setTimeout(() => {
+      if (copiedId.value === guest.id) copiedId.value = null
+    }, 2000)
+  } catch {
+    toast.add({ title: 'Could not copy link', color: 'error' })
+  }
+}
 
 const newGuest = reactive({ name: '', phone: '', tier: 'general' as 'vip' | 'general' })
 const adding = ref(false)
@@ -275,6 +312,38 @@ useSeoMeta({ title: 'Guest List — WeddingCard' })
 }
 
 /* Rows */
+.tier-toggle {
+  width: 3.5rem;
+  padding: 0.3rem 0;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: center;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.tier-toggle-general {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.tier-toggle-general:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: white;
+}
+
+.tier-toggle-vip {
+  background: rgba(212, 160, 23, 0.18);
+  color: #f3ddaa;
+  border-color: rgba(212, 160, 23, 0.3);
+}
+
+.tier-toggle-vip:hover {
+  background: rgba(212, 160, 23, 0.28);
+}
+
 .guest-row {
   display: flex;
   align-items: center;

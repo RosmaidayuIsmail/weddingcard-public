@@ -11,6 +11,15 @@
     </div>
   </div>
 
+  <div v-else-if="wedding.content.rsvpEnabled === false" class="min-h-screen invite-backdrop flex items-center justify-center text-white text-center px-6" :style="styleVars">
+    <div class="p-8 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 shadow-2xl max-w-sm">
+      <UIcon name="i-heroicons-envelope" class="w-10 h-10 text-gold-300/60 mb-4 mx-auto" />
+      <p class="text-xl font-display mb-2">RSVP isn't needed for this celebration.</p>
+      <p class="text-sm text-white/60 mb-6">{{ wedding.content.brideName }} &amp; {{ wedding.content.groomName }} aren't collecting RSVPs online — this is an invitation-only card.</p>
+      <UButton :to="`/w/${slug}`" variant="soft" color="neutral" class="rounded-full">Back to invitation</UButton>
+    </div>
+  </div>
+
   <section v-else class="min-h-screen theme-surface text-white flex items-center justify-center px-4 py-12 relative overflow-x-hidden bg-[#04101f]" :style="styleVars">
     <!-- FIXED: Added Missing Cover Photo and Ornaments to Live RSVP Page -->
     <div class="absolute inset-0 z-0 bg-gradient-to-b" :style="{ background: `linear-gradient(160deg, var(--theme-bg-from), var(--theme-bg-via), var(--theme-bg-to))` }"></div>

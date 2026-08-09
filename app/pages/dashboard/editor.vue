@@ -79,6 +79,12 @@
               />
             </UFormField>
 
+            <div v-if="form.innerTopIcon && form.innerTopIcon !== 'none'" class="flex items-center gap-3 mb-2">
+              <span class="text-xs text-white/50 shrink-0">Size</span>
+              <input v-model.number="form.iconSize" type="range" min="50" max="200" step="5" class="flex-1 accent-[#e3b04a]">
+              <span class="text-xs text-white/70 w-10 text-right shrink-0">{{ form.iconSize ?? 100 }}%</span>
+            </div>
+
             <div v-if="form.innerTopIcon === 'custom'" class="p-4 rounded-xl bg-[#111827] border border-gray-700 space-y-3 mb-2">
               <p class="text-xs text-white/50">Upload your own icon — designed in Canva, found on Google, wherever. A small transparent PNG works best.</p>
               <div class="flex items-center gap-3">
@@ -157,8 +163,25 @@
                 <UInput v-model="form.btnDetails" placeholder="View Details" size="lg" class="w-full" />
               </UFormField>
               <UFormField label="Button Text: RSVP Now">
-                <UInput v-model="form.btnRsvp" placeholder="RSVP Now" size="lg" class="w-full" />
+                <UInput v-model="form.btnRsvp" placeholder="RSVP Now" size="lg" class="w-full" :disabled="form.rsvpEnabled === false" />
               </UFormField>
+            </div>
+
+            <div class="flex items-center justify-between p-4 rounded-xl bg-[#111827] border border-gray-700">
+              <div class="pr-4">
+                <p class="text-sm font-semibold text-white">Collect RSVPs</p>
+                <p class="text-xs text-white/50 mt-0.5">Turn off for an invitation-only card with no RSVP button or form — useful if you're tracking attendance another way.</p>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                :aria-checked="form.rsvpEnabled !== false"
+                class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0"
+                :class="form.rsvpEnabled !== false ? 'bg-[#e3b04a]' : 'bg-gray-700'"
+                @click="form.rsvpEnabled = !form.rsvpEnabled"
+              >
+                <span class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform" :class="form.rsvpEnabled !== false ? 'translate-x-6' : 'translate-x-1'" />
+              </button>
             </div>
 
             <div class="h-px w-full bg-white/5 my-2"></div>
@@ -323,6 +346,11 @@
             <div class="panel-header">
               <h2 class="text-lg font-semibold text-white">Hero Photo (Inner Card)</h2>
               <p class="text-xs text-white/50">This sets the mood behind your invitation's main text inside the envelope.</p>
+              <p class="text-xs text-indigo-300/80 mt-1 flex items-center gap-1">
+                <UIcon name="i-heroicons-information-circle" class="w-3.5 h-3.5 shrink-0" />
+                This is separate from your envelope/cover screen's background — that one lives on the
+                <NuxtLink to="/dashboard/opening" class="underline hover:text-indigo-200">Opening Design</NuxtLink> page.
+              </p>
             </div>
 
             <!-- Hide System Text Toggle -->
@@ -384,11 +412,17 @@
               </div>
             </div>
 
-            <div v-if="form.coverPhotoUrl" class="flex justify-end">
+            <div v-if="form.coverPhotoUrl" class="flex justify-end gap-2">
+              <UButton variant="soft" color="neutral" icon="i-heroicons-scissors" size="sm" :loading="bgRemoving" :disabled="!cloudinaryConfigured" @click="handleRemoveBackground">
+                {{ bgRemoving ? 'Removing background…' : 'Remove background' }}
+              </UButton>
               <UButton variant="ghost" color="error" icon="i-heroicons-trash" size="sm" @click="removePhoto">
                 Remove photo
               </UButton>
             </div>
+            <p v-if="form.coverPhotoUrl" class="text-[11px] text-white/40 -mt-2">
+              Runs entirely in your browser — first use downloads a small AI model, so it may take a moment.
+            </p>
 
             <div class="p-5 rounded-xl bg-indigo-900/20 border border-indigo-800">
               <div class="flex items-start gap-4">
@@ -643,6 +677,7 @@ definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
 const { wedding, loading, saving, updateContent, updateTheme } = useMyWedding()
 const { isConfigured: cloudinaryConfigured, uploadImage } = useCloudinary()
+const { removeBackground, processing: bgRemoving } = useBackgroundRemoval()
 const { getTheme, fontOptions } = useThemes()
 const toast = useToast()
 
@@ -839,6 +874,7 @@ watch(
     if (!form.innerIntro) form.innerIntro = 'To the wedding celebration of'
     if (!form.btnDetails) form.btnDetails = 'View Details'
     if (!form.btnRsvp) form.btnRsvp = 'RSVP Now'
+    if (form.rsvpEnabled === undefined) form.rsvpEnabled = true
 
     if (form.greetingX === undefined) form.greetingX = 50
     if (form.greetingY === undefined) form.greetingY = 20
@@ -852,6 +888,7 @@ watch(
     if (form.venueY === undefined) form.venueY = 78
     if (form.iconX === undefined) form.iconX = 50
     if (form.iconY === undefined) form.iconY = 10
+    if (form.iconSize === undefined) form.iconSize = 100
     if (!form.namesLayout) form.namesLayout = 'horizontal'
 
     if (!form.bank) form.bank = { name: '', accountName: '', accountNumber: '', qrCodeUrl: '' }
@@ -889,6 +926,21 @@ async function handleFileSelect(event: Event) {
     uploading.value = false
   }
   if (fileInput.value) fileInput.value.value = ''
+}
+
+async function handleRemoveBackground() {
+  if (!form.coverPhotoUrl || !wedding.value) return
+  try {
+    const sourceResponse = await fetch(form.coverPhotoUrl)
+    const sourceBlob = await sourceResponse.blob()
+    const resultBlob = await removeBackground(sourceBlob)
+    const url = await uploadImage(resultBlob, `weddings/${wedding.value.id}`, 'no-bg.png')
+    form.coverPhotoUrl = url
+    toast.add({ title: 'Background removed — remember to save', color: 'success' })
+  } catch (error) {
+    console.error(error)
+    toast.add({ title: 'Could not remove background', description: 'This runs in your browser and needs a modern browser with enough memory. Try a smaller image.', color: 'error' })
+  }
 }
 
 async function handleQrSelect(event: Event) {

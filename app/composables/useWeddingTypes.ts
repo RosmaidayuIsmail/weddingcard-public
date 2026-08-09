@@ -42,6 +42,8 @@ export interface WeddingContent {
   innerIntro: string
   btnDetails: string
   btnRsvp: string
+  /** When false, the RSVP button/page are hidden - for invitation-only cards */
+  rsvpEnabled: boolean
   rsvpTitle: string
   rsvpDeadlineText: string
   rsvpAttendQuestion: string
@@ -52,6 +54,8 @@ export interface WeddingContent {
   rsvpDietaryLabel: string
   rsvpWishesLabel: string
   innerTopIcon: string
+  /** Percentage scale for the icon, 50-200, default 100 */
+  iconSize: number
   customIconUrl: string
   hideSystemText: boolean
   
@@ -145,6 +149,7 @@ export function createDefaultContent(brideName = '', groomName = ''): WeddingCon
     innerIntro: 'To the wedding celebration of',
     btnDetails: 'View Details',
     btnRsvp: 'RSVP Now',
+    rsvpEnabled: true,
     rsvpTitle: 'RSVP',
     rsvpDeadlineText: 'Kindly respond by',
     rsvpAttendQuestion: 'Will you be attending?',
@@ -155,6 +160,7 @@ export function createDefaultContent(brideName = '', groomName = ''): WeddingCon
     rsvpDietaryLabel: 'Dietary restrictions (if any)',
     rsvpWishesLabel: 'Wishes & Blessings',
     innerTopIcon: 'none',
+    iconSize: 100,
     customIconUrl: '',
     hideSystemText: false,
     namesLayout: 'horizontal',

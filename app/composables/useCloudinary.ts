@@ -9,7 +9,7 @@ export function useCloudinary() {
 
   const isConfigured = Boolean(config.cloudinaryCloudName && config.cloudinaryUploadPreset)
 
-  async function uploadImage(file: File, folder?: string): Promise<string> {
+  async function uploadImage(file: Blob, folder?: string, filename = 'upload.png'): Promise<string> {
     if (!isConfigured) {
       throw new Error(
         'Cloudinary is not configured. Add NUXT_PUBLIC_CLOUDINARY_CLOUD_NAME and NUXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET to .env.'
@@ -17,7 +17,7 @@ export function useCloudinary() {
     }
 
     const formData = new FormData()
-    formData.append('file', file)
+    formData.append('file', file, file instanceof File ? file.name : filename)
     formData.append('upload_preset', config.cloudinaryUploadPreset)
     if (folder) formData.append('folder', folder)
 

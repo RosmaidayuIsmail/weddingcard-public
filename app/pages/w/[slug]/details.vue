@@ -24,7 +24,8 @@
     <div class="max-w-lg w-full relative z-10 animate-fade-up">
       <div class="flex items-center justify-between mb-6 px-2">
         <UButton :to="`/w/${slug}`" variant="ghost" color="neutral" size="md" icon="i-heroicons-arrow-left" aria-label="Back to Cover" class="text-white/70 hover:text-white rounded-full bg-white/5 border border-white/10 backdrop-blur-sm" />
-        <UButton :to="`/w/${slug}/rsvp`" color="primary" size="sm" class="rounded-full shadow-lg font-semibold px-5">RSVP</UButton>
+        <UButton v-if="wedding.content.rsvpEnabled !== false" :to="`/w/${slug}/rsvp`" color="primary" size="sm" class="rounded-full shadow-lg font-semibold px-5">RSVP</UButton>
+        <div v-else class="w-10" aria-hidden="true" />
       </div>
 
       <div class="flex gap-1.5 w-full mb-4 px-2">

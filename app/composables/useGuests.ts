@@ -99,8 +99,12 @@ export function useGuests(weddingIdSource: string | Ref<string | undefined> | ((
     toast.add({ title: 'Guest removed', color: 'neutral' })
   }
 
+  function personalizedLink(guest: GuestDoc, siteUrl: string, slug: string) {
+    return `${siteUrl}/w/${slug}/rsvp?to=${encodeURIComponent(guest.name)}`
+  }
+
   function whatsappLink(guest: GuestDoc, siteUrl: string, slug: string) {
-    const inviteUrl = `${siteUrl}/w/${slug}/rsvp?to=${encodeURIComponent(guest.name)}`
+    const inviteUrl = personalizedLink(guest, siteUrl, slug)
     const message = `You're invited! Please RSVP here: ${inviteUrl}`
     const phone = guest.phone.replace(/[^0-9]/g, '')
     return phone ? `https://wa.me/${phone}?text=${encodeURIComponent(message)}` : `https://wa.me/?text=${encodeURIComponent(message)}`
@@ -142,6 +146,7 @@ export function useGuests(weddingIdSource: string | Ref<string | undefined> | ((
     updateGuestTier,
     removeGuest,
     whatsappLink,
+    personalizedLink,
     exportCSV
   }
 }

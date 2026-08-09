@@ -8,15 +8,24 @@
       
       <!-- 1. Top Icon -->
       <div v-if="content.innerTopIcon && content.innerTopIcon !== 'none'"
-           class="absolute flex flex-col items-center justify-center text-center w-full px-4 z-20 select-none"
+           class="absolute flex flex-col items-center justify-center text-center w-full max-w-full px-4 z-20 select-none"
            :class="{ 'cursor-move hover:ring-2 hover:ring-gold-400 hover:bg-black/20 rounded-2xl p-2 transition-colors': editable, 'transition-transform': !isDragging.icon }"
            :style="{ left: `${content.iconX ?? 50}%`, top: `${content.iconY ?? 15}%`, transform: 'translate(-50%, -50%)' }"
            @pointerdown="onPointerDown($event, 'icon')"
       >
-        <span v-if="content.innerTopIcon === 'bismillah'" class="text-4xl" :style="{ color: 'var(--theme-accent)', fontFamily: `'Amiri', 'Traditional Arabic', serif` }">﷽</span>
-        <UIcon v-else-if="content.innerTopIcon === 'rings'" name="i-heroicons-lifebuoy" class="w-8 h-8" :style="{ color: 'var(--theme-accent)' }" />
-        <UIcon v-else-if="content.innerTopIcon === 'heart'" name="i-heroicons-heart" class="w-8 h-8" :style="{ color: 'var(--theme-accent)' }" />
-        <img v-else-if="content.innerTopIcon === 'custom' && content.customIconUrl" :src="content.customIconUrl" alt="" class="w-12 h-12 object-contain drop-shadow">
+        <span
+          v-if="content.innerTopIcon === 'bismillah'"
+          :style="{
+            color: 'var(--theme-accent)',
+            fontFamily: `'Amiri', 'Traditional Arabic', serif`,
+            fontSize: `clamp(0.9rem, ${16 * ((content.iconSize ?? 100) / 100)}vw, ${1.8 * ((content.iconSize ?? 100) / 100)}rem)`,
+            lineHeight: 1,
+            whiteSpace: 'nowrap'
+          }"
+        >﷽</span>
+        <UIcon v-else-if="content.innerTopIcon === 'rings'" name="i-heroicons-lifebuoy" :style="{ color: 'var(--theme-accent)', width: `${1.5 * ((content.iconSize ?? 100) / 100)}rem`, height: `${1.5 * ((content.iconSize ?? 100) / 100)}rem` }" />
+        <UIcon v-else-if="content.innerTopIcon === 'heart'" name="i-heroicons-heart" :style="{ color: 'var(--theme-accent)', width: `${1.5 * ((content.iconSize ?? 100) / 100)}rem`, height: `${1.5 * ((content.iconSize ?? 100) / 100)}rem` }" />
+        <img v-else-if="content.innerTopIcon === 'custom' && content.customIconUrl" :src="content.customIconUrl" alt="" class="object-contain drop-shadow" :style="{ width: `${3 * ((content.iconSize ?? 100) / 100)}rem`, height: `${3 * ((content.iconSize ?? 100) / 100)}rem` }">
       </div>
 
       <!-- 2. Greeting -->
@@ -83,6 +92,41 @@
       <span class="text-[9px] uppercase tracking-widest text-white/40">Buttons area — avoid placing text here</span>
     </div>
   </div>
+
+  <Teleport to="body">
+    <div v-if="quickEditKey" class="quick-edit-backdrop" @click.self="closeQuickEdit">
+      <div class="quick-edit-panel">
+        <p class="quick-edit-title">{{ QUICK_EDIT_TITLE[quickEditKey] }}</p>
+
+        <template v-if="quickEditKey === 'names'">
+          <label class="quick-edit-label">Bride's name</label>
+          <input v-model="quickEditDraft.bride" type="text" class="quick-edit-input" placeholder="Bride" autofocus>
+          <label class="quick-edit-label">Groom's name</label>
+          <input v-model="quickEditDraft.groom" type="text" class="quick-edit-input" placeholder="Groom">
+
+          <label class="quick-edit-label">Layout</label>
+          <div class="quick-edit-layout-row">
+            <button type="button" class="quick-edit-layout-btn" :class="{ 'quick-edit-layout-btn-active': content.namesLayout !== 'vertical' }" @click="content.namesLayout = 'horizontal'">
+              Straight (Side by Side)
+            </button>
+            <button type="button" class="quick-edit-layout-btn" :class="{ 'quick-edit-layout-btn-active': content.namesLayout === 'vertical' }" @click="content.namesLayout = 'vertical'">
+              Stacked
+            </button>
+          </div>
+        </template>
+
+        <template v-else>
+          <label class="quick-edit-label">{{ QUICK_EDIT_PLACEHOLDER[quickEditKey] }}</label>
+          <input v-model="quickEditDraft.text" type="text" class="quick-edit-input" :placeholder="QUICK_EDIT_PLACEHOLDER[quickEditKey]" autofocus>
+        </template>
+
+        <div class="quick-edit-actions">
+          <button type="button" class="quick-edit-cancel" @click="closeQuickEdit">Cancel</button>
+          <button type="button" class="quick-edit-save" @click="saveQuickEdit">Done</button>
+        </div>
+      </div>
+    </div>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
@@ -106,6 +150,64 @@ const styleVars = computed(() =>
 
 const isDragging = ref<Record<string, boolean>>({ icon: false, greeting: false, intro: false, names: false, date: false, venue: false })
 
+// Tapping (not dragging) a text block opens a small inline editor right in
+// the preview, so mobile users can adjust text without hunting through the
+// separate form fields below.
+const quickEditKey = ref<string | null>(null)
+const quickEditDraft = reactive({ text: '', bride: '', groom: '' })
+
+const QUICK_EDIT_FIELD: Partial<Record<string, keyof WeddingContent>> = {
+  greeting: 'innerGreeting',
+  intro: 'innerIntro',
+  date: 'dateLabel',
+  venue: 'venueName'
+}
+
+const QUICK_EDIT_TITLE: Record<string, string> = {
+  names: 'Edit Names',
+  greeting: 'Edit Greeting',
+  intro: 'Edit Intro Line',
+  date: 'Edit Date',
+  venue: 'Edit Venue Name'
+}
+
+const QUICK_EDIT_PLACEHOLDER: Record<string, string> = {
+  greeting: "You're Invited",
+  intro: 'To the wedding celebration of',
+  date: 'Wednesday, 9 September 2026',
+  venue: 'Grand Ballroom'
+}
+
+function openQuickEdit(key: string) {
+  if (key === 'names') {
+    quickEditDraft.bride = props.content.brideName || ''
+    quickEditDraft.groom = props.content.groomName || ''
+  } else if (QUICK_EDIT_FIELD[key]) {
+    quickEditDraft.text = (props.content[QUICK_EDIT_FIELD[key]!] as string) || ''
+  } else {
+    return
+  }
+  quickEditKey.value = key
+}
+
+function saveQuickEdit() {
+  if (!quickEditKey.value) return
+  if (quickEditKey.value === 'names') {
+    props.content.brideName = quickEditDraft.bride
+    props.content.groomName = quickEditDraft.groom
+  } else {
+    const field = QUICK_EDIT_FIELD[quickEditKey.value]
+    if (field) {
+      ;(props.content as unknown as Record<string, string>)[field] = quickEditDraft.text
+    }
+  }
+  quickEditKey.value = null
+}
+
+function closeQuickEdit() {
+  quickEditKey.value = null
+}
+
 function onPointerDown(e: PointerEvent, key: string) {
   if (!props.editable) return
   e.preventDefault()
@@ -115,8 +217,15 @@ function onPointerDown(e: PointerEvent, key: string) {
   if (!parent) return
 
   const rect = parent.getBoundingClientRect()
+  const startClientX = e.clientX
+  const startClientY = e.clientY
+  let moved = false
 
   const onPointerMove = (moveEvent: PointerEvent) => {
+    if (Math.abs(moveEvent.clientX - startClientX) > 6 || Math.abs(moveEvent.clientY - startClientY) > 6) {
+      moved = true
+    }
+
     let x = ((moveEvent.clientX - rect.left) / rect.width) * 100
     let y = ((moveEvent.clientY - rect.top) / rect.height) * 100
     
@@ -129,6 +238,8 @@ function onPointerDown(e: PointerEvent, key: string) {
     isDragging.value[key] = false
     window.removeEventListener('pointermove', onPointerMove)
     window.removeEventListener('pointerup', onPointerUp)
+    // A tap (no meaningful movement) opens the quick editor instead of just repositioning
+    if (!moved) openQuickEdit(key)
   }
 
   window.addEventListener('pointermove', onPointerMove)
@@ -178,5 +289,109 @@ function onPointerDown(e: PointerEvent, key: string) {
   opacity: 0.85;
   font-weight: 300;
   letter-spacing: 0.05em;
+}
+
+.quick-edit-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.quick-edit-panel {
+  width: 100%;
+  max-width: 340px;
+  background: #111827;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1rem;
+  padding: 1.25rem;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+}
+
+.quick-edit-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: white;
+  margin-bottom: 0.5rem;
+}
+
+.quick-edit-label {
+  display: block;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 0.35rem;
+  margin-top: 0.75rem;
+}
+
+.quick-edit-input {
+  width: 100%;
+  padding: 0.6rem 0.8rem;
+  border-radius: 0.6rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: white;
+  font-size: 0.9rem;
+}
+
+.quick-edit-input:focus {
+  outline: none;
+  border-color: #e3b04a;
+}
+
+.quick-edit-layout-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.quick-edit-layout-btn {
+  flex: 1;
+  padding: 0.5rem;
+  border-radius: 0.6rem;
+  font-size: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.6);
+  transition: all 0.15s ease;
+}
+
+.quick-edit-layout-btn-active {
+  border-color: #e3b04a;
+  background: rgba(212, 160, 23, 0.15);
+  color: #f3ddaa;
+}
+
+.quick-edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+}
+
+.quick-edit-cancel,
+.quick-edit-save {
+  padding: 0.5rem 1.1rem;
+  border-radius: 0.6rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.quick-edit-cancel {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.quick-edit-cancel:hover {
+  color: white;
+}
+
+.quick-edit-save {
+  background: #e3b04a;
+  color: #1f1400;
+  font-weight: 600;
 }
 </style>
