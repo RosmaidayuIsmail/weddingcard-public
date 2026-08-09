@@ -63,7 +63,7 @@
           <p v-if="guestName" class="text-xs sm:text-sm tracking-[0.4em] uppercase font-semibold mb-2 drop-shadow-md" :style="{ color: 'var(--theme-accent)' }">
             {{ wedding.content.openingGreeting || 'Dear' }} {{ guestName }}
           </p>
-          <h1 class="text-sm sm:text-base tracking-[0.35em] uppercase text-white/80 drop-shadow-md">
+          <h1 class="text-sm sm:text-base tracking-[0.35em] uppercase drop-shadow-md" :style="{ color: 'var(--theme-accent)' }">
             {{ wedding.content.innerGreeting || "You're Invited" }}
           </h1>
         </div>
@@ -189,7 +189,7 @@ watch(
   (value) => {
     if (!value) return
     useSeoMeta({
-      title: `${value.content.openingTitle || "You're Invited"} \u2014 ${value.content.brideName} & ${value.content.groomName}'s Wedding`,
+      title: `${value.content.openingTitle || "You're Invited"} — ${value.content.brideName} & ${value.content.groomName}'s Wedding`,
       description: value.content.dateLabel
         ? `Join us on ${value.content.dateLabel} as we celebrate our wedding. View the details and RSVP online.`
         : 'View the wedding details and RSVP online.'
