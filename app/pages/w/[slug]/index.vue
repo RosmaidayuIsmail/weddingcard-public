@@ -129,7 +129,7 @@
       </div>
       <div class="flex flex-col sm:flex-row items-center justify-center gap-4 w-full max-w-lg mx-auto">
         <UButton
-          :to="`/w/${slug}/details`"
+          :to="detailsLink"
           size="xl"
           :color="wedding.content.rsvpEnabled === false ? 'primary' : 'neutral'"
           :variant="wedding.content.rsvpEnabled === false ? 'solid' : 'soft'"
@@ -138,7 +138,7 @@
         >
           {{ wedding.content.btnDetails || 'View Details' }}
         </UButton>
-        <UButton v-if="wedding.content.rsvpEnabled !== false" :to="`/w/${slug}/rsvp`" size="xl" color="primary" class="w-full sm:w-auto font-semibold rounded-full px-10 shadow-[0_0_30px_-5px_var(--theme-accent)] hover:scale-105 transition-transform animate-glow">
+        <UButton v-if="wedding.content.rsvpEnabled !== false" :to="rsvpLink" size="xl" color="primary" class="w-full sm:w-auto font-semibold rounded-full px-10 shadow-[0_0_30px_-5px_var(--theme-accent)] hover:scale-105 transition-transform animate-glow">
           {{ wedding.content.btnRsvp || 'RSVP Now' }}
         </UButton>
       </div>
@@ -182,6 +182,9 @@ const guestName = computed(() => {
   return typeof raw === 'string' ? raw : ''
 })
 
+const detailsLink = computed(() => (guestName.value ? `/w/${slug}/details?to=${encodeURIComponent(guestName.value)}` : `/w/${slug}/details`))
+const rsvpLink = computed(() => (guestName.value ? `/w/${slug}/rsvp?to=${encodeURIComponent(guestName.value)}` : `/w/${slug}/rsvp`))
+
 const opened = ref(false)
 
 watch(
@@ -189,7 +192,7 @@ watch(
   (value) => {
     if (!value) return
     useSeoMeta({
-      title: `${value.content.openingTitle || "You're Invited"} \u2014 ${value.content.brideName} & ${value.content.groomName}'s Wedding`,
+      title: `${value.content.openingTitle || "You're Invited"} — ${value.content.brideName} & ${value.content.groomName}'s Wedding`,
       description: value.content.dateLabel
         ? `Join us on ${value.content.dateLabel} as we celebrate our wedding. View the details and RSVP online.`
         : 'View the wedding details and RSVP online.'

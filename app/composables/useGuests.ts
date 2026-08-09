@@ -100,7 +100,7 @@ export function useGuests(weddingIdSource: string | Ref<string | undefined> | ((
   }
 
   function personalizedLink(guest: GuestDoc, siteUrl: string, slug: string) {
-    return `${siteUrl}/w/${slug}/rsvp?to=${encodeURIComponent(guest.name)}`
+    return `${siteUrl}/w/${slug}?to=${encodeURIComponent(guest.name)}`
   }
 
   function whatsappLink(

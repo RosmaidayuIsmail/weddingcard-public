@@ -23,8 +23,8 @@
 
     <div class="max-w-lg w-full relative z-10 animate-fade-up">
       <div class="flex items-center justify-between mb-6 px-2">
-        <UButton :to="`/w/${slug}`" variant="ghost" color="neutral" size="md" icon="i-heroicons-arrow-left" aria-label="Back to Cover" class="text-white/70 hover:text-white rounded-full bg-white/5 border border-white/10 backdrop-blur-sm" />
-        <UButton v-if="wedding.content.rsvpEnabled !== false" :to="`/w/${slug}/rsvp`" color="primary" size="sm" class="rounded-full shadow-lg font-semibold px-5">RSVP</UButton>
+        <UButton :to="coverLink" variant="ghost" color="neutral" size="md" icon="i-heroicons-arrow-left" aria-label="Back to Cover" class="text-white/70 hover:text-white rounded-full bg-white/5 border border-white/10 backdrop-blur-sm" />
+        <UButton v-if="wedding.content.rsvpEnabled !== false" :to="rsvpLink" color="primary" size="sm" class="rounded-full shadow-lg font-semibold px-5">RSVP</UButton>
         <div v-else class="w-10" aria-hidden="true" />
       </div>
 
@@ -172,6 +172,14 @@
 <script setup lang="ts">
 const route = useRoute()
 const slug = route.params.slug as string
+
+const guestNameQuery = computed(() => {
+  const raw = route.query.to
+  return typeof raw === 'string' ? raw : ''
+})
+
+const coverLink = computed(() => (guestNameQuery.value ? `/w/${slug}?to=${encodeURIComponent(guestNameQuery.value)}` : `/w/${slug}`))
+const rsvpLink = computed(() => (guestNameQuery.value ? `/w/${slug}/rsvp?to=${encodeURIComponent(guestNameQuery.value)}` : `/w/${slug}/rsvp`))
 
 const { wedding, loading, notFound } = useWeddingBySlug(slug)
 const { themeStyleVars } = useThemes()
