@@ -16,6 +16,10 @@
     <!-- Decorative background layers live at the page level (not inside the
          hero canvas below) specifically so they visually continue across
          the footer too, instead of stopping abruptly at the hero's edge. -->
+    <div v-if="wedding.content.coverPhotoUrl && opened" class="absolute inset-0 z-0 opacity-40 transition-opacity duration-1000 animate-in fade-in">
+      <img :src="wedding.content.coverPhotoUrl" alt="Background" class="w-full h-full object-cover scale-105 animate-[pulse_20s_ease-in-out_infinite_alternate]">
+      <div class="absolute inset-0" :style="{ background: `linear-gradient(to bottom, transparent 0%, var(--theme-bg-to) 55%, var(--theme-bg-to) 100%)` }" />
+    </div>
     <PetalsBackground v-if="wedding.content.enablePetals !== false" />
     <CardOrnament v-if="opened" :style="wedding.content.ornamentStyle" color="var(--theme-accent)" />
 
@@ -23,11 +27,6 @@
          same as the editor's preview mockup. Nothing else on the page shares
          this coordinate space, so nothing can ever collide with it. -->
     <div class="relative overflow-hidden" :style="{ minHeight: 'max(100vh, 700px)' }">
-      <div v-if="wedding.content.coverPhotoUrl && opened" class="absolute inset-0 z-0 opacity-40 transition-opacity duration-1000 animate-in fade-in">
-        <img :src="wedding.content.coverPhotoUrl" alt="Background" class="w-full h-full object-cover scale-105 animate-[pulse_20s_ease-in-out_infinite_alternate]">
-        <div class="absolute inset-0" :style="{ background: `linear-gradient(to bottom, transparent, var(--theme-bg-to))` }" />
-      </div>
-
       <EnvelopeIntro v-model:opened="opened" :guest-name="guestName" :content="wedding.content" />
 
       <div v-if="opened" class="absolute top-6 right-6 z-30">
