@@ -67,6 +67,8 @@ export interface WeddingContent {
   /** Independent icon setting for the Inner Card (details/story) page - see innerTopIcon for the Cover page's icon */
   detailsTopIcon: string
   detailsIconSize: number
+  /** Optional line shown below the Cover page's icon, e.g. "Together with their families" */
+  iconSubtitle: string
   customIconUrl: string
   hideSystemText: boolean
   
@@ -175,6 +177,7 @@ export function createDefaultContent(brideName = '', groomName = ''): WeddingCon
     iconSize: 100,
     detailsTopIcon: 'none',
     detailsIconSize: 100,
+    iconSubtitle: '',
     customIconUrl: '',
     hideSystemText: false,
     namesLayout: 'horizontal',

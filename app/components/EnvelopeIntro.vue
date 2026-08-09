@@ -1,5 +1,5 @@
 <template>
-  <Transition :name="transitionName">
+  <Transition :name="transitionName" :duration="transitionName === 'envelope-classic' ? 1500 : undefined">
     <div
       v-if="!opened"
       class="envelope-overlay"
@@ -42,19 +42,43 @@
          <div class="absolute top-10 left-10 w-48 h-48 bg-[#93c5fd] rounded-full mix-blend-multiply filter blur-[60px] opacity-40"></div>
       </div>
 
+      <!-- Wax Seal Card (new style) - a solid two-panel card with a seal at the
+           center seam; reuses the same split-open mechanic as Canva Split Door -->
+      <div v-else-if="content.openingStyle === 'wax-seal'" class="absolute inset-0 z-0 flex" :style="{ background: `linear-gradient(160deg, var(--theme-bg-from, #0d2a4a), var(--theme-bg-via, #142a45) 60%, var(--theme-bg-to, #04101f))` }">
+        <div class="relative w-1/2 h-full door-left flex items-center justify-end pr-1">
+          <div class="w-full h-[68%] rounded-l-2xl border-y-2 border-l-2" :style="{ borderColor: 'var(--theme-accent, #e3b04a)' }"></div>
+        </div>
+        <div class="relative w-1/2 h-full door-right flex items-center justify-start pl-1">
+          <div class="w-full h-[68%] rounded-r-2xl border-y-2 border-r-2" :style="{ borderColor: 'var(--theme-accent, #e3b04a)' }"></div>
+        </div>
+        <div class="wax-seal absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
+          <div class="wax-seal-circle" :style="{ background: `radial-gradient(circle at 35% 30%, var(--theme-accent-soft, #f3ddaa), var(--theme-accent, #d4a017))` }">
+            <UIcon name="i-heroicons-heart" class="w-6 h-6" style="color: rgba(0,0,0,0.45);" />
+          </div>
+        </div>
+      </div>
+
       <!-- Classic Envelope Default Background -->
       <div v-else class="absolute inset-0 z-0 bg-gradient-to-br" :style="{ background: `linear-gradient(135deg, var(--theme-bg-from, #0d2a4a) 0%, var(--theme-bg-to, #04101f) 100%)` }"></div>
 
       <!-- Content Container (Fades out smoothly during door split) -->
       <div class="content-container relative z-20 w-full max-w-md mx-auto flex flex-col items-center justify-center p-6 text-center animate-fade-up">
         
-        <!-- Classic Envelope SVG -->
-        <svg v-if="content.openingStyle === 'classic'" viewBox="0 0 200 140" class="envelope-svg mb-8" xmlns="http://www.w3.org/2000/svg">
-          <rect x="6" y="18" width="188" height="112" rx="8" fill="var(--theme-bg-via, #0b2a4d)" stroke="var(--theme-accent, #e3b04a)" stroke-width="2" />
-          <path d="M10 22 L100 92 L190 22" fill="none" stroke="var(--theme-accent, #e3b04a)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />
-          <circle cx="100" cy="70" r="16" fill="var(--theme-accent, #d4a017)" stroke="var(--theme-accent-soft, #f3ddaa)" stroke-width="1.5" />
-          <path d="M100 62 L104 70 L100 78 L96 70 Z" fill="var(--theme-bg-to, #3a2705)" />
-        </svg>
+        <!-- Classic Envelope: flap hinges open, revealing a card that emerges and grows -->
+        <div v-if="content.openingStyle === 'classic'" class="envelope-classic-wrap mb-8">
+          <div class="envelope-inner-card" :style="{ background: `linear-gradient(160deg, var(--theme-bg-from, #0d2a4a), var(--theme-bg-to, #04101f))`, borderColor: 'var(--theme-accent, #e3b04a)' }">
+            <UIcon name="i-heroicons-heart" class="w-6 h-6" :style="textStyleAccent" />
+          </div>
+          <svg viewBox="0 0 200 140" class="envelope-body-svg" xmlns="http://www.w3.org/2000/svg">
+            <rect x="6" y="18" width="188" height="112" rx="8" fill="var(--theme-bg-via, #0b2a4d)" stroke="var(--theme-accent, #e3b04a)" stroke-width="2" />
+            <path d="M10 92 L100 40 L190 92" fill="none" stroke="var(--theme-accent, #e3b04a)" stroke-width="1.5" opacity="0.35" />
+          </svg>
+          <svg viewBox="0 0 200 140" class="envelope-flap-svg" xmlns="http://www.w3.org/2000/svg">
+            <path d="M6 18 L194 18 L100 92 Z" fill="var(--theme-bg-via, #0b2a4d)" stroke="var(--theme-accent, #e3b04a)" stroke-width="2" stroke-linejoin="round" />
+            <circle cx="100" cy="52" r="13" fill="var(--theme-accent, #d4a017)" stroke="var(--theme-accent-soft, #f3ddaa)" stroke-width="1.5" />
+            <path d="M100 45 L104 52 L100 59 L96 52 Z" fill="var(--theme-bg-to, #3a2705)" />
+          </svg>
+        </div>
 
         <!-- Typography -->
         <p class="font-heading text-5xl sm:text-6xl drop-shadow-lg leading-tight mb-4" :style="textStyleAccent">
@@ -62,12 +86,9 @@
         </p>
 
         <!-- Dynamic Guest Name Box -->
-        <div v-if="guestName" class="mt-4 mb-6 p-4 border border-white/20 rounded-xl backdrop-blur-md min-w-[200px]" :style="guestBoxStyle">
-          <p class="text-[0.65rem] uppercase tracking-[0.2em] opacity-80 mb-1" :style="textStyleBase">
-            {{ content.openingGreeting || "Dear" }}
-          </p>
-          <p class="font-display font-semibold text-2xl tracking-wide" :style="textStyleBase">
-            {{ guestName }}
+        <div v-if="guestName" class="mt-4 mb-6 p-4 border border-white/20 rounded-xl backdrop-blur-md min-w-[200px] max-w-[300px]" :style="guestBoxStyle">
+          <p class="text-sm sm:text-base leading-relaxed" :style="textStyleBase">
+            <span v-if="greetingParts.before" class="opacity-90">{{ greetingParts.before }} </span><span class="font-display font-semibold text-xl sm:text-2xl">{{ guestName }}</span><span v-if="greetingParts.after" class="opacity-90"> {{ greetingParts.after }}</span>
           </p>
         </div>
 
@@ -102,7 +123,8 @@ function open() {
 
 // Dynamically sets the transition animation based on the chosen style
 const transitionName = computed(() => {
-  if (props.content.openingStyle === 'custom-split') return 'split-door'
+  if (props.content.openingStyle === 'custom-split' || props.content.openingStyle === 'wax-seal') return 'split-door'
+  if (props.content.openingStyle === 'classic') return 'envelope-classic'
   return 'envelope-fade'
 })
 
@@ -119,6 +141,16 @@ const textStyleAccent = computed(() => {
 const textStyleBase = computed(() => {
   if (props.content.openingStyle === 'minimal-light') return { color: '#1e293b' }
   return { color: '#ffffff' }
+})
+
+const greetingParts = computed(() => {
+  const raw = props.content.openingGreeting || 'Dear'
+  if (raw.includes('{guestName}')) {
+    const [before, after] = raw.split('{guestName}')
+    return { before: before.trim(), after: after.trim() }
+  }
+  // Old-style plain prefix (e.g. saved as just "Menjemput") - render before the name, nothing after
+  return { before: raw.trim(), after: '' }
 })
 
 const guestBoxStyle = computed(() => {
@@ -139,8 +171,11 @@ const guestBoxStyle = computed(() => {
   overflow: hidden;
 }
 
-.envelope-svg {
+/* Classic Envelope: layered wrap - card behind, body behind flap, flap on top when closed */
+.envelope-classic-wrap {
+  position: relative;
   width: min(70vw, 260px);
+  aspect-ratio: 200 / 140;
   filter: drop-shadow(0 15px 30px rgba(0, 0, 0, 0.4));
   animation: envelope-bob 3.5s ease-in-out infinite;
 }
@@ -148,6 +183,83 @@ const guestBoxStyle = computed(() => {
 @keyframes envelope-bob {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-10px); }
+}
+
+.envelope-inner-card {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  width: 62%;
+  height: 60%;
+  transform: translate(-50%, -50%) scale(0.9);
+  border-radius: 0.5rem;
+  border: 2px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  z-index: 4;
+}
+
+.envelope-body-svg {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+}
+
+.envelope-flap-svg {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  width: 100%;
+  height: 100%;
+  transform-origin: 50% 13%;
+}
+
+/* Staged open sequence: flap hinges open first, then the card emerges and
+   grows on top, then the whole body fades - each delay lets the previous
+   step read clearly instead of everything happening at once. */
+.envelope-classic-leave-active .envelope-classic-wrap {
+  animation: none;
+}
+.envelope-classic-leave-active .envelope-flap-svg {
+  transform: perspective(700px) rotateX(-165deg);
+  transition: transform 0.65s cubic-bezier(0.65, 0, 0.35, 1);
+}
+.envelope-classic-leave-active .envelope-inner-card {
+  opacity: 1;
+  transform: translate(-50%, -70%) scale(1.4);
+  transition: opacity 0.5s ease 0.3s, transform 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s;
+}
+.envelope-classic-leave-active .envelope-body-svg {
+  opacity: 0;
+  transition: opacity 0.4s ease 0.5s;
+}
+.envelope-classic-leave-active {
+  transition: opacity 0.6s ease 0.9s;
+}
+.envelope-classic-leave-to {
+  opacity: 0;
+}
+
+/* Wax Seal */
+.wax-seal-circle {
+  width: 56px;
+  height: 56px;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4), inset 0 2px 4px rgba(255, 255, 255, 0.3);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.split-door-leave-active .wax-seal {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.3) rotate(25deg);
+  transition: opacity 0.4s ease, transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 /* 1. Standard Fade Animation */
@@ -159,7 +271,7 @@ const guestBoxStyle = computed(() => {
   transform: scale(1.1) translateY(-20px);
 }
 
-/* 2. Grand Split Door Animation */
+/* 2. Grand Split Door Animation (also used by Wax Seal) */
 .split-door-leave-active {
   transition: opacity 1.2s ease;
 }
@@ -181,8 +293,15 @@ const guestBoxStyle = computed(() => {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .envelope-svg {
+  .envelope-classic-wrap {
     animation: none;
+  }
+  .envelope-classic-leave-active .envelope-flap-svg,
+  .envelope-classic-leave-active .envelope-inner-card,
+  .envelope-classic-leave-active .envelope-body-svg,
+  .envelope-classic-leave-active {
+    transition-duration: 0.2s;
+    transition-delay: 0s;
   }
 }
 </style>

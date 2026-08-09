@@ -22,11 +22,12 @@
       <div class="print-overlay">
         
         <div class="flex-1 flex flex-col justify-center items-center w-full mt-8">
-          <div v-if="wedding.content.innerTopIcon && wedding.content.innerTopIcon !== 'none'" class="mb-4">
-            <span v-if="wedding.content.innerTopIcon === 'bismillah'" :style="{ color: 'var(--theme-accent)', fontFamily: `'Amiri', 'Traditional Arabic', serif`, fontSize: '1.6rem' }">﷽</span>
+          <div v-if="wedding.content.innerTopIcon && wedding.content.innerTopIcon !== 'none'" class="mb-4 max-w-[85%]">
+            <p v-if="wedding.content.innerTopIcon === 'bismillah'" dir="rtl" :style="{ color: 'var(--theme-accent)', fontFamily: `'Amiri', 'Traditional Arabic', serif`, fontSize: '1.3rem' }">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</p>
             <UIcon v-else-if="wedding.content.innerTopIcon === 'rings'" name="i-heroicons-lifebuoy" class="w-7 h-7" :style="{ color: 'var(--theme-accent)' }" />
             <UIcon v-else-if="wedding.content.innerTopIcon === 'heart'" name="i-heroicons-heart" class="w-7 h-7" :style="{ color: 'var(--theme-accent)' }" />
             <img v-else-if="wedding.content.innerTopIcon === 'custom' && wedding.content.customIconUrl" :src="wedding.content.customIconUrl" alt="" class="w-10 h-10 object-contain mx-auto">
+            <p v-if="wedding.content.iconSubtitle" class="mt-2 text-xs italic opacity-70">{{ wedding.content.iconSubtitle }}</p>
           </div>
 
           <p class="print-eyebrow">{{ wedding.content.innerGreeting || "You're Invited" }}</p>

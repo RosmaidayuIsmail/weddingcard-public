@@ -85,6 +85,10 @@
               <span class="text-xs text-white/70 w-10 text-right shrink-0">{{ form.iconSize ?? 100 }}%</span>
             </div>
 
+            <UFormField v-if="form.innerTopIcon && form.innerTopIcon !== 'none'" label="Subtitle below icon (optional)" class="mb-2">
+              <UInput v-model="form.iconSubtitle" placeholder="e.g. Together with their families" size="lg" class="w-full" />
+            </UFormField>
+
             <div v-if="form.innerTopIcon === 'custom'" class="p-4 rounded-xl bg-[#111827] border border-gray-700 space-y-3 mb-2">
               <p class="text-xs text-white/50">Upload your own icon — designed in Canva, found on Google, wherever. A small transparent PNG works best.</p>
               <div class="flex items-center gap-3">
@@ -656,7 +660,8 @@
         </div>
 
         <!-- Right Column: Live Preview Frame -->
-        <div class="w-full lg:w-[360px] xl:w-[400px] shrink-0 flex flex-col items-center pb-8 lg:pb-0 lg:sticky lg:top-8 lg:self-start order-1 lg:order-2">
+        <div class="w-full lg:w-[360px] xl:w-[400px] shrink-0 order-1 lg:order-2">
+        <div class="flex flex-col items-center pb-8 lg:pb-0 lg:sticky lg:top-8">
           
           <div class="flex items-center justify-between w-full mb-4 px-2">
             <div class="flex bg-gray-900 border border-gray-700 rounded-lg p-1">
@@ -698,6 +703,7 @@
           <UButton block variant="soft" color="gray" class="mt-6 w-full max-w-[360px] rounded-xl py-3 border border-gray-700 hover:bg-gray-800 transition-colors shrink-0" icon="i-heroicons-printer" :to="wedding ? `/w/${wedding.slug}/print` : undefined" target="_blank" external>
             Generate Printable PDF
           </UButton>
+        </div>
         </div>
 
       </div>
@@ -938,6 +944,7 @@ watch(
     if (form.iconX === undefined) form.iconX = 50
     if (form.iconY === undefined) form.iconY = 10
     if (form.iconSize === undefined) form.iconSize = 100
+    if (form.iconSubtitle === undefined) form.iconSubtitle = ''
     if (form.detailsTopIcon === undefined) form.detailsTopIcon = 'none'
     if (form.detailsIconSize === undefined) form.detailsIconSize = 100
     if (!form.namesLayout) form.namesLayout = 'horizontal'

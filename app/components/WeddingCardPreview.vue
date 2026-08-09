@@ -13,19 +13,20 @@
            :style="{ left: `${content.iconX ?? 50}%`, top: `${content.iconY ?? 15}%`, transform: 'translate(-50%, -50%)' }"
            @pointerdown="onPointerDown($event, 'icon')"
       >
-        <span
+        <p
           v-if="content.innerTopIcon === 'bismillah'"
+          class="leading-relaxed"
+          dir="rtl"
           :style="{
             color: 'var(--theme-accent)',
             fontFamily: `'Amiri', 'Traditional Arabic', serif`,
-            fontSize: `clamp(0.9rem, ${16 * ((content.iconSize ?? 100) / 100)}vw, ${1.8 * ((content.iconSize ?? 100) / 100)}rem)`,
-            lineHeight: 1,
-            whiteSpace: 'nowrap'
+            fontSize: `clamp(0.75rem, ${8 * ((content.iconSize ?? 100) / 100)}vw, ${1.1 * ((content.iconSize ?? 100) / 100)}rem)`
           }"
-        >﷽</span>
+        >بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</p>
         <UIcon v-else-if="content.innerTopIcon === 'rings'" name="i-heroicons-lifebuoy" :style="{ color: 'var(--theme-accent)', width: `${1.5 * ((content.iconSize ?? 100) / 100)}rem`, height: `${1.5 * ((content.iconSize ?? 100) / 100)}rem` }" />
         <UIcon v-else-if="content.innerTopIcon === 'heart'" name="i-heroicons-heart" :style="{ color: 'var(--theme-accent)', width: `${1.5 * ((content.iconSize ?? 100) / 100)}rem`, height: `${1.5 * ((content.iconSize ?? 100) / 100)}rem` }" />
         <img v-else-if="content.innerTopIcon === 'custom' && content.customIconUrl" :src="content.customIconUrl" alt="" class="object-contain drop-shadow" :style="{ width: `${3 * ((content.iconSize ?? 100) / 100)}rem`, height: `${3 * ((content.iconSize ?? 100) / 100)}rem` }">
+        <p v-if="content.iconSubtitle" class="mt-2 text-[0.6rem] text-white/60 italic">{{ content.iconSubtitle }}</p>
       </div>
 
       <!-- 2. Greeting -->

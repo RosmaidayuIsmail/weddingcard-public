@@ -23,16 +23,16 @@
               <!-- Story -->
               <template v-if="currentKey === 'story'">
                 <div v-if="content.detailsTopIcon && content.detailsTopIcon !== 'none'" class="flex justify-center mb-4 w-full px-2">
-                  <span
+                  <p
                     v-if="content.detailsTopIcon === 'bismillah'"
+                    class="leading-relaxed"
+                    dir="rtl"
                     :style="{
                       color: 'var(--theme-accent)',
                       fontFamily: `'Amiri', 'Traditional Arabic', serif`,
-                      fontSize: `clamp(0.9rem, ${16 * ((content.detailsIconSize ?? 100) / 100)}vw, ${1.8 * ((content.detailsIconSize ?? 100) / 100)}rem)`,
-                      lineHeight: 1,
-                      whiteSpace: 'nowrap'
+                      fontSize: `clamp(0.75rem, ${8 * ((content.detailsIconSize ?? 100) / 100)}vw, ${1.1 * ((content.detailsIconSize ?? 100) / 100)}rem)`
                     }"
-                  >﷽</span>
+                  >بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</p>
                   <UIcon v-else-if="content.detailsTopIcon === 'rings'" name="i-heroicons-lifebuoy" :style="{ color: 'var(--theme-accent)', width: `${1.5 * ((content.detailsIconSize ?? 100) / 100)}rem`, height: `${1.5 * ((content.detailsIconSize ?? 100) / 100)}rem` }" />
                   <UIcon v-else-if="content.detailsTopIcon === 'heart'" name="i-heroicons-heart" :style="{ color: 'var(--theme-accent)', width: `${1.5 * ((content.detailsIconSize ?? 100) / 100)}rem`, height: `${1.5 * ((content.detailsIconSize ?? 100) / 100)}rem` }" />
                   <img v-else-if="content.detailsTopIcon === 'custom' && content.customIconUrl" :src="content.customIconUrl" alt="" class="object-contain drop-shadow" :style="{ width: `${3 * ((content.detailsIconSize ?? 100) / 100)}rem`, height: `${3 * ((content.detailsIconSize ?? 100) / 100)}rem` }">

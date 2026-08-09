@@ -40,19 +40,20 @@
           class="absolute flex flex-col items-center justify-center text-center w-full max-w-[92vw] px-4 animate-in fade-in zoom-in delay-100"
           :style="{ left: `${wedding.content.iconX ?? 50}%`, top: `${wedding.content.iconY ?? 15}%`, transform: 'translate(-50%, -50%)' }"
         >
-          <span
+          <p
             v-if="wedding.content.innerTopIcon === 'bismillah'"
+            class="leading-relaxed"
+            dir="rtl"
             :style="{
               color: 'var(--theme-accent)',
               fontFamily: `'Amiri', 'Traditional Arabic', serif`,
-              fontSize: `clamp(1.1rem, ${6 * ((wedding.content.iconSize ?? 100) / 100)}vw, ${3 * ((wedding.content.iconSize ?? 100) / 100)}rem)`,
-              lineHeight: 1,
-              whiteSpace: 'nowrap'
+              fontSize: `clamp(1.25rem, ${3.2 * ((wedding.content.iconSize ?? 100) / 100)}vw, ${1.9 * ((wedding.content.iconSize ?? 100) / 100)}rem)`
             }"
-          >﷽</span>
+          >بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</p>
           <UIcon v-else-if="wedding.content.innerTopIcon === 'rings'" name="i-heroicons-lifebuoy" :style="{ color: 'var(--theme-accent)', width: `${2 * ((wedding.content.iconSize ?? 100) / 100)}rem`, height: `${2 * ((wedding.content.iconSize ?? 100) / 100)}rem` }" />
           <UIcon v-else-if="wedding.content.innerTopIcon === 'heart'" name="i-heroicons-heart" :style="{ color: 'var(--theme-accent)', width: `${2 * ((wedding.content.iconSize ?? 100) / 100)}rem`, height: `${2 * ((wedding.content.iconSize ?? 100) / 100)}rem` }" />
           <img v-else-if="wedding.content.innerTopIcon === 'custom' && wedding.content.customIconUrl" :src="wedding.content.customIconUrl" alt="" class="object-contain drop-shadow" :style="{ width: `${3.5 * ((wedding.content.iconSize ?? 100) / 100)}rem`, height: `${3.5 * ((wedding.content.iconSize ?? 100) / 100)}rem` }">
+          <p v-if="wedding.content.iconSubtitle" class="mt-3 text-xs sm:text-sm text-white/60 italic">{{ wedding.content.iconSubtitle }}</p>
         </div>
 
         <!-- 2. Greeting -->
@@ -60,9 +61,6 @@
           class="absolute w-full max-w-3xl text-center px-4 flex flex-col items-center transition-all duration-700 animate-in fade-in zoom-in delay-150"
           :style="{ left: `${wedding.content.greetingX ?? 50}%`, top: `${wedding.content.greetingY ?? 25}%`, transform: 'translate(-50%, -50%)' }"
         >
-          <p v-if="guestName" class="text-xs sm:text-sm tracking-[0.4em] uppercase font-semibold mb-2 drop-shadow-md" :style="{ color: 'var(--theme-accent)' }">
-            {{ wedding.content.openingGreeting || 'Dear' }} {{ guestName }}
-          </p>
           <h1 class="text-sm sm:text-base tracking-[0.35em] uppercase drop-shadow-md" :style="{ color: 'var(--theme-accent)' }">
             {{ wedding.content.innerGreeting || "You're Invited" }}
           </h1>
@@ -192,7 +190,7 @@ watch(
   (value) => {
     if (!value) return
     useSeoMeta({
-      title: `${value.content.openingTitle || "You're Invited"} — ${value.content.brideName} & ${value.content.groomName}'s Wedding`,
+      title: `${value.content.openingTitle || "You're Invited"} \u2014 ${value.content.brideName} & ${value.content.groomName}'s Wedding`,
       description: value.content.dateLabel
         ? `Join us on ${value.content.dateLabel} as we celebrate our wedding. View the details and RSVP online.`
         : 'View the wedding details and RSVP online.'
