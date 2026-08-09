@@ -1,5 +1,5 @@
 <template>
-  <div class="h-full min-h-screen lg:h-[calc(100vh-6rem)] flex flex-col overflow-x-hidden">
+  <div class="min-h-screen flex flex-col overflow-x-hidden">
     
     <div v-if="loading" class="flex flex-col items-center justify-center flex-1 text-white/60 space-y-4">
       <UIcon name="i-heroicons-arrow-path" class="w-8 h-8 animate-spin" style="color: #e3b04a;" />
@@ -47,7 +47,7 @@
       <div class="flex-1 flex flex-col lg:flex-row gap-8 xl:gap-12 lg:min-h-0">
         
         <!-- Left Column: Controls -->
-        <div class="flex-1 w-full lg:overflow-y-auto custom-scrollbar lg:pr-6 pb-8 lg:pb-20 space-y-8 order-2 lg:order-1">
+        <div class="flex-1 w-full pb-8 space-y-8 order-2 lg:order-1">
           
           <div class="flex overflow-x-auto hide-scrollbar pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 gap-2">
             <button
@@ -586,7 +586,7 @@
         </div>
 
         <!-- Right Column: Live Preview Frame -->
-        <div class="w-full lg:w-[360px] xl:w-[400px] shrink-0 flex flex-col items-center pb-8 lg:pb-0 lg:overflow-y-auto hide-scrollbar order-1 lg:order-2">
+        <div class="w-full lg:w-[360px] xl:w-[400px] shrink-0 flex flex-col items-center pb-8 lg:pb-0 lg:sticky lg:top-8 lg:self-start order-1 lg:order-2">
           
           <div class="flex items-center justify-between w-full mb-4 px-2">
             <div class="flex bg-gray-900 border border-gray-700 rounded-lg p-1">
@@ -852,6 +852,7 @@ watch(
     if (form.venueY === undefined) form.venueY = 78
     if (form.iconX === undefined) form.iconX = 50
     if (form.iconY === undefined) form.iconY = 10
+    if (!form.namesLayout) form.namesLayout = 'horizontal'
 
     if (!form.bank) form.bank = { name: '', accountName: '', accountNumber: '', qrCodeUrl: '' }
     if (form.dateISO) {

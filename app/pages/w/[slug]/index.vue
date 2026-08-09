@@ -90,17 +90,17 @@
           class="absolute w-full max-w-3xl text-center px-4 flex flex-col items-center transition-all duration-700 animate-in fade-in zoom-in delay-500"
           :style="{ left: `${wedding.content.dateX ?? 50}%`, top: `${wedding.content.dateY ?? 70}%`, transform: 'translate(-50%, -50%)' }"
         >
-          <p class="text-sm sm:text-base font-medium text-white/90 drop-shadow-md whitespace-nowrap">
+          <p class="text-sm sm:text-base font-medium text-white/90 drop-shadow-md">
             {{ wedding.content.dateLabel }}
           </p>
         </div>
 
         <!-- 6. Venue -->
         <div
-          class="absolute w-full max-w-3xl text-center px-4 flex flex-col items-center transition-all duration-700 animate-in fade-in zoom-in delay-500"
+          class="absolute w-full max-w-md text-center px-4 flex flex-col items-center transition-all duration-700 animate-in fade-in zoom-in delay-500"
           :style="{ left: `${wedding.content.venueX ?? 50}%`, top: `${wedding.content.venueY ?? 78}%`, transform: 'translate(-50%, -50%)' }"
         >
-          <p v-if="wedding.content.venueAddress" class="text-xs sm:text-sm text-white/70 italic drop-shadow-md whitespace-nowrap">
+          <p v-if="wedding.content.venueAddress" class="text-xs sm:text-sm text-white/70 italic drop-shadow-md">
             {{ wedding.content.venueAddress }}
           </p>
         </div>

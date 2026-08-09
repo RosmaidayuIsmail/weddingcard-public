@@ -29,9 +29,9 @@
         </NuxtLink>
       </nav>
 
-      <!-- Bottom Status Area (Desktop Only) -->
-      <div class="mt-auto pt-6 hidden md:block">
-        <div v-if="wedding" class="rounded-xl border border-white/10 bg-white/5 p-4 text-sm mb-4 shadow-inner relative overflow-hidden group">
+      <!-- Bottom Status Area -->
+      <div class="mt-auto pt-6">
+        <div v-if="wedding" class="rounded-xl border border-white/10 bg-white/5 p-4 text-sm mb-4 shadow-inner relative overflow-hidden group hidden md:block">
           <div class="absolute inset-0 bg-gradient-to-br from-gold-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
           <p class="text-white/40 uppercase tracking-widest text-[0.65rem] font-semibold mb-1 relative z-10">Live Page</p>
           <p class="text-gold-200 truncate font-medium relative z-10">/w/{{ wedding.slug }}</p>
