@@ -56,6 +56,9 @@ export interface WeddingContent {
   innerTopIcon: string
   /** Percentage scale for the icon, 50-200, default 100 */
   iconSize: number
+  /** Independent icon setting for the Inner Card (details/story) page - see innerTopIcon for the Cover page's icon */
+  detailsTopIcon: string
+  detailsIconSize: number
   customIconUrl: string
   hideSystemText: boolean
   
@@ -161,6 +164,8 @@ export function createDefaultContent(brideName = '', groomName = ''): WeddingCon
     rsvpWishesLabel: 'Wishes & Blessings',
     innerTopIcon: 'none',
     iconSize: 100,
+    detailsTopIcon: 'none',
+    detailsIconSize: 100,
     customIconUrl: '',
     hideSystemText: false,
     namesLayout: 'horizontal',

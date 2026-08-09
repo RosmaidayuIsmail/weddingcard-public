@@ -49,10 +49,20 @@
           <div :key="currentSlide" class="space-y-6 text-center w-full absolute left-0 px-8 sm:px-10">
             
             <template v-if="currentKey === 'story'">
-              <div v-if="wedding.content.innerTopIcon && wedding.content.innerTopIcon !== 'none'" class="flex justify-center mb-4">
-                <span v-if="wedding.content.innerTopIcon === 'bismillah'" class="text-5xl" :style="{ color: 'var(--theme-accent)', fontFamily: `'Amiri', 'Traditional Arabic', serif` }">﷽</span>
-                <UIcon v-else-if="wedding.content.innerTopIcon === 'rings'" name="i-heroicons-lifebuoy" class="w-10 h-10" :style="{ color: 'var(--theme-accent)' }" />
-                <UIcon v-else-if="wedding.content.innerTopIcon === 'heart'" name="i-heroicons-heart" class="w-10 h-10" :style="{ color: 'var(--theme-accent)' }" />
+              <div v-if="wedding.content.detailsTopIcon && wedding.content.detailsTopIcon !== 'none'" class="flex justify-center mb-4 w-full px-2">
+                <span
+                  v-if="wedding.content.detailsTopIcon === 'bismillah'"
+                  :style="{
+                    color: 'var(--theme-accent)',
+                    fontFamily: `'Amiri', 'Traditional Arabic', serif`,
+                    fontSize: `clamp(1.1rem, ${6 * ((wedding.content.detailsIconSize ?? 100) / 100)}vw, ${3 * ((wedding.content.detailsIconSize ?? 100) / 100)}rem)`,
+                    lineHeight: 1,
+                    whiteSpace: 'nowrap'
+                  }"
+                >﷽</span>
+                <UIcon v-else-if="wedding.content.detailsTopIcon === 'rings'" name="i-heroicons-lifebuoy" :style="{ color: 'var(--theme-accent)', width: `${2.5 * ((wedding.content.detailsIconSize ?? 100) / 100)}rem`, height: `${2.5 * ((wedding.content.detailsIconSize ?? 100) / 100)}rem` }" />
+                <UIcon v-else-if="wedding.content.detailsTopIcon === 'heart'" name="i-heroicons-heart" :style="{ color: 'var(--theme-accent)', width: `${2.5 * ((wedding.content.detailsIconSize ?? 100) / 100)}rem`, height: `${2.5 * ((wedding.content.detailsIconSize ?? 100) / 100)}rem` }" />
+                <img v-else-if="wedding.content.detailsTopIcon === 'custom' && wedding.content.customIconUrl" :src="wedding.content.customIconUrl" alt="" class="object-contain drop-shadow" :style="{ width: `${4 * ((wedding.content.detailsIconSize ?? 100) / 100)}rem`, height: `${4 * ((wedding.content.detailsIconSize ?? 100) / 100)}rem` }">
               </div>
               <p v-if="!wedding.content.hideSystemText" class="text-white/90 text-lg leading-relaxed whitespace-pre-line font-light">{{ wedding.content.story }}</p>
             </template>

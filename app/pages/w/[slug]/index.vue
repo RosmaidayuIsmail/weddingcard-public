@@ -16,9 +16,9 @@
     <!-- Decorative background layers live at the page level (not inside the
          hero canvas below) specifically so they visually continue across
          the footer too, instead of stopping abruptly at the hero's edge. -->
-    <div v-if="wedding.content.coverPhotoUrl && opened" class="absolute inset-0 z-0 opacity-40 transition-opacity duration-1000 animate-in fade-in">
+    <div v-if="wedding.content.coverPhotoUrl && opened" class="absolute inset-0 z-0 opacity-[0.55] transition-opacity duration-1000 animate-in fade-in">
       <img :src="wedding.content.coverPhotoUrl" alt="Background" class="w-full h-full object-cover scale-105 animate-[pulse_20s_ease-in-out_infinite_alternate]">
-      <div class="absolute inset-0" :style="{ background: `linear-gradient(to bottom, transparent 0%, var(--theme-bg-to) 55%, var(--theme-bg-to) 100%)` }" />
+      <div class="absolute inset-0" :style="{ background: `linear-gradient(to bottom, transparent 0%, transparent 60%, var(--theme-bg-to) 82%, var(--theme-bg-to) 100%)` }" />
     </div>
     <PetalsBackground v-if="wedding.content.enablePetals !== false" />
     <CardOrnament v-if="opened" :style="wedding.content.ornamentStyle" color="var(--theme-accent)" />

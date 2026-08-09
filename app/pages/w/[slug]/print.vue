@@ -22,11 +22,24 @@
       <div class="print-overlay">
         
         <div class="flex-1 flex flex-col justify-center items-center w-full mt-8">
-          <p class="print-eyebrow">You're Invited</p>
-          <p class="print-names font-heading">
+          <div v-if="wedding.content.innerTopIcon && wedding.content.innerTopIcon !== 'none'" class="mb-4">
+            <span v-if="wedding.content.innerTopIcon === 'bismillah'" :style="{ color: 'var(--theme-accent)', fontFamily: `'Amiri', 'Traditional Arabic', serif`, fontSize: '1.6rem' }">﷽</span>
+            <UIcon v-else-if="wedding.content.innerTopIcon === 'rings'" name="i-heroicons-lifebuoy" class="w-7 h-7" :style="{ color: 'var(--theme-accent)' }" />
+            <UIcon v-else-if="wedding.content.innerTopIcon === 'heart'" name="i-heroicons-heart" class="w-7 h-7" :style="{ color: 'var(--theme-accent)' }" />
+            <img v-else-if="wedding.content.innerTopIcon === 'custom' && wedding.content.customIconUrl" :src="wedding.content.customIconUrl" alt="" class="w-10 h-10 object-contain mx-auto">
+          </div>
+
+          <p class="print-eyebrow">{{ wedding.content.innerGreeting || "You're Invited" }}</p>
+
+          <div v-if="wedding.content.namesLayout === 'vertical'" class="print-names font-heading flex flex-col items-center gap-0 leading-tight" style="font-size: clamp(1.8rem, 7vw, 2.6rem); line-height: 1.15;">
+            <span>{{ wedding.content.brideName }}</span>
+            <span class="text-[0.4em] opacity-80" style="color: var(--theme-accent);">&amp;</span>
+            <span>{{ wedding.content.groomName }}</span>
+          </div>
+          <p v-else class="print-names font-heading">
             {{ wedding.content.brideName }} <span class="text-[0.6em] mx-1 opacity-90" style="color: var(--theme-accent);">&amp;</span> {{ wedding.content.groomName }}
           </p>
-          
+
           <div class="mt-8 space-y-3">
             <p class="print-meta font-medium text-[1.1rem]">{{ wedding.content.dateLabel }}</p>
             <p class="print-meta opacity-90">{{ wedding.content.timeLabel }}</p>

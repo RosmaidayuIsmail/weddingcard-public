@@ -192,6 +192,17 @@
               </template>
               <UTextarea v-model="form.story" :rows="4" class="w-full resize-none custom-scrollbar" />
             </UFormField>
+
+            <div class="p-4 rounded-xl bg-[#111827] border border-gray-700 mt-4">
+              <p class="text-sm font-semibold text-white mb-1">Inner Card Icon</p>
+              <p class="text-xs text-white/50 mb-3">A separate icon just for this page (shown above your story) — independent from the Cover page's icon above, so you can use Bismillah on one and rings or a heart on the other, for example.</p>
+              <USelect v-model="form.detailsTopIcon" :items="topIconOptions" size="lg" class="w-full mb-2 shadow-inner" />
+              <div v-if="form.detailsTopIcon && form.detailsTopIcon !== 'none'" class="flex items-center gap-3">
+                <span class="text-xs text-white/50 shrink-0">Size</span>
+                <input v-model.number="form.detailsIconSize" type="range" min="50" max="200" step="5" class="flex-1 accent-[#e3b04a]">
+                <span class="text-xs text-white/70 w-10 text-right shrink-0">{{ form.detailsIconSize ?? 100 }}%</span>
+              </div>
+            </div>
           </div>
 
           <!-- Event details -->
@@ -889,6 +900,8 @@ watch(
     if (form.iconX === undefined) form.iconX = 50
     if (form.iconY === undefined) form.iconY = 10
     if (form.iconSize === undefined) form.iconSize = 100
+    if (form.detailsTopIcon === undefined) form.detailsTopIcon = 'none'
+    if (form.detailsIconSize === undefined) form.detailsIconSize = 100
     if (!form.namesLayout) form.namesLayout = 'horizontal'
 
     if (!form.bank) form.bank = { name: '', accountName: '', accountNumber: '', qrCodeUrl: '' }
