@@ -44,6 +44,14 @@ export interface WeddingContent {
   btnRsvp: string
   /** When false, the RSVP button/page are hidden - for invitation-only cards */
   rsvpEnabled: boolean
+  /**
+   * WhatsApp/copy-link share message template. Supports tokens:
+   * {guestName} {brideName} {groomName} {date} {link}
+   * {guestName} is only filled in when sharing a specific guest's
+   * personalized link from the Guests page - it's empty on the general
+   * share button on the invitation itself.
+   */
+  shareMessage: string
   rsvpTitle: string
   rsvpDeadlineText: string
   rsvpAttendQuestion: string
@@ -153,6 +161,7 @@ export function createDefaultContent(brideName = '', groomName = ''): WeddingCon
     btnDetails: 'View Details',
     btnRsvp: 'RSVP Now',
     rsvpEnabled: true,
+    shareMessage: "You're invited to {brideName} & {groomName}'s wedding! {date}. RSVP here: {link}",
     rsvpTitle: 'RSVP',
     rsvpDeadlineText: 'Kindly respond by',
     rsvpAttendQuestion: 'Will you be attending?',
@@ -176,4 +185,23 @@ export function createDefaultContent(brideName = '', groomName = ''): WeddingCon
     dateX: 50, dateY: 68,
     venueX: 50, venueY: 78
   }
+}
+
+/**
+ * Fills in a share-message template (see WeddingContent.shareMessage) with
+ * real values. Any token not provided (e.g. {guestName} with no guest name)
+ * is simply removed rather than left as literal "{guestName}" text.
+ */
+export function buildShareMessage(
+  template: string,
+  tokens: { guestName?: string; brideName: string; groomName: string; date?: string; link: string }
+): string {
+  return template
+    .replace(/\{guestName\}/g, tokens.guestName || '')
+    .replace(/\{brideName\}/g, tokens.brideName || '')
+    .replace(/\{groomName\}/g, tokens.groomName || '')
+    .replace(/\{date\}/g, tokens.date || '')
+    .replace(/\{link\}/g, tokens.link || '')
+    .replace(/\s{2,}/g, ' ')
+    .trim()
 }

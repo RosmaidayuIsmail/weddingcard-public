@@ -186,6 +186,31 @@
 
             <div class="h-px w-full bg-white/5 my-2"></div>
 
+            <div class="p-4 rounded-xl bg-[#111827] border border-gray-700">
+              <p class="text-sm font-semibold text-white mb-1">WhatsApp / Share Message</p>
+              <p class="text-xs text-white/50 mb-3">
+                Customize the text people see when you share your invite — translate it, add your own words, whatever fits.
+                Tap a token below to insert it. {guestName} only fills in when you send a personalized link from the
+                <NuxtLink to="/dashboard/guests" class="underline hover:text-gold-300">Guest List</NuxtLink> page.
+              </p>
+              <div class="flex flex-wrap gap-1.5 mb-2">
+                <button
+                  v-for="token in shareTokens"
+                  :key="token"
+                  type="button"
+                  class="text-[11px] px-2 py-1 rounded-md bg-white/5 border border-white/10 text-gold-200 hover:bg-white/10 transition-colors font-mono"
+                  @click="form.shareMessage = (form.shareMessage || '') + token"
+                >
+                  {{ token }}
+                </button>
+              </div>
+              <UTextarea v-model="form.shareMessage" :rows="3" class="w-full resize-none custom-scrollbar" placeholder="You're invited to {brideName} & {groomName}'s wedding! {date}. RSVP here: {link}" />
+              <div class="mt-3 p-3 rounded-lg bg-black/30 border border-white/5">
+                <p class="text-[10px] uppercase tracking-widest text-white/30 mb-1">Preview</p>
+                <p class="text-xs text-white/70 whitespace-pre-line">{{ shareMessagePreview }}</p>
+              </div>
+            </div>
+
             <UFormField label="Your Story / Opening Message">
               <template #help>
                 <span class="text-xs text-white/40">A short, heartfelt welcome message for your guests.</span>
@@ -681,7 +706,7 @@
 </template>
 
 <script setup lang="ts">
-import { createDefaultContent, type WeddingContent } from '~/composables/useWeddingTypes'
+import { createDefaultContent, buildShareMessage, type WeddingContent } from '~/composables/useWeddingTypes'
 import { onClickOutside } from '@vueuse/core'
 
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
@@ -716,6 +741,18 @@ const iconUploading = ref(false)
 const adminCanvaTemplate = ref('')
 
 // FIXED: Defined options array here as a standard ref for the Dropdown
+const shareTokens = ['{guestName}', '{brideName}', '{groomName}', '{date}', '{link}']
+
+const shareMessagePreview = computed(() =>
+  buildShareMessage(form.shareMessage || "You're invited to {brideName} & {groomName}'s wedding! {date}. RSVP here: {link}", {
+    guestName: 'Aisyah',
+    brideName: form.brideName || 'Bride',
+    groomName: form.groomName || 'Groom',
+    date: form.dateLabel || 'Saturday, 1 January 2027',
+    link: 'https://weddingcard.example/w/your-slug'
+  })
+)
+
 const topIconOptions = ref([
   { label: 'None', value: 'none' },
   { label: 'Bismillah (﷽)', value: 'bismillah' },
@@ -886,6 +923,7 @@ watch(
     if (!form.btnDetails) form.btnDetails = 'View Details'
     if (!form.btnRsvp) form.btnRsvp = 'RSVP Now'
     if (form.rsvpEnabled === undefined) form.rsvpEnabled = true
+    if (!form.shareMessage) form.shareMessage = "You're invited to {brideName} & {groomName}'s wedding! {date}. RSVP here: {link}"
 
     if (form.greetingX === undefined) form.greetingX = 50
     if (form.greetingY === undefined) form.greetingY = 20

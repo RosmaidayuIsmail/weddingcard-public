@@ -103,9 +103,21 @@ export function useGuests(weddingIdSource: string | Ref<string | undefined> | ((
     return `${siteUrl}/w/${slug}/rsvp?to=${encodeURIComponent(guest.name)}`
   }
 
-  function whatsappLink(guest: GuestDoc, siteUrl: string, slug: string) {
+  function whatsappLink(
+    guest: GuestDoc,
+    siteUrl: string,
+    slug: string,
+    content?: { shareMessage?: string; brideName?: string; groomName?: string; dateLabel?: string }
+  ) {
     const inviteUrl = personalizedLink(guest, siteUrl, slug)
-    const message = `You're invited! Please RSVP here: ${inviteUrl}`
+    const template = content?.shareMessage || "Dear {guestName}, you're invited to {brideName} & {groomName}'s wedding! {date}. RSVP here: {link}"
+    const message = buildShareMessage(template, {
+      guestName: guest.name,
+      brideName: content?.brideName || '',
+      groomName: content?.groomName || '',
+      date: content?.dateLabel,
+      link: inviteUrl
+    })
     const phone = guest.phone.replace(/[^0-9]/g, '')
     return phone ? `https://wa.me/${phone}?text=${encodeURIComponent(message)}` : `https://wa.me/?text=${encodeURIComponent(message)}`
   }

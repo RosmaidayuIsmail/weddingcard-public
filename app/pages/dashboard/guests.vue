@@ -145,7 +145,7 @@
                 color="success"
                 variant="ghost"
                 icon="i-heroicons-chat-bubble-left-right"
-                :to="whatsappLink(guest, siteUrl, wedding.slug)"
+                :to="whatsappLink(guest, siteUrl, wedding.slug, wedding.content)"
                 target="_blank"
                 external
                 title="Send WhatsApp Invite"

@@ -23,7 +23,9 @@
 </template>
 
 <script setup lang="ts">
-const props = defineProps<{ brideName: string; groomName: string; dateLabel?: string }>()
+import { buildShareMessage } from '~/composables/useWeddingTypes'
+
+const props = defineProps<{ brideName: string; groomName: string; dateLabel?: string; shareMessage?: string }>()
 const toast = useToast()
 const copied = ref(false)
 
@@ -32,8 +34,15 @@ const currentUrl = computed(() => {
   return ''
 })
 
+const DEFAULT_TEMPLATE = "You're invited to {brideName} & {groomName}'s wedding! {date}. RSVP here: {link}"
+
 const whatsappUrl = computed(() => {
-  const text = `You're invited to ${props.brideName} & ${props.groomName}'s wedding!${props.dateLabel ? ` ${props.dateLabel}.` : ''} RSVP here: ${currentUrl.value}`
+  const text = buildShareMessage(props.shareMessage || DEFAULT_TEMPLATE, {
+    brideName: props.brideName,
+    groomName: props.groomName,
+    date: props.dateLabel,
+    link: currentUrl.value
+  })
   return `https://wa.me/?text=${encodeURIComponent(text)}`
 })
 
