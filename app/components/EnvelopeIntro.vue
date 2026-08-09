@@ -86,10 +86,10 @@
         </p>
 
         <!-- Dynamic Guest Name Box -->
-        <div v-if="guestName" class="mt-4 mb-6 p-4 border border-white/20 rounded-xl backdrop-blur-md min-w-[200px] max-w-[300px]" :style="guestBoxStyle">
-          <p class="text-sm sm:text-base leading-relaxed" :style="textStyleBase">
-            <span v-if="greetingParts.before" class="opacity-90">{{ greetingParts.before }} </span><span class="font-display font-semibold text-xl sm:text-2xl">{{ guestName }}</span><span v-if="greetingParts.after" class="opacity-90"> {{ greetingParts.after }}</span>
-          </p>
+        <div v-if="guestName" class="mt-4 mb-6 p-5 border border-white/20 rounded-xl backdrop-blur-md min-w-[200px] max-w-[300px] flex flex-col items-center gap-1.5" :style="guestBoxStyle">
+          <p v-if="greetingParts.before" class="text-sm sm:text-base uppercase tracking-[0.15em] opacity-90" :style="textStyleBase">{{ greetingParts.before }}</p>
+          <p class="font-display font-semibold text-2xl sm:text-3xl leading-tight" :style="textStyleBase">{{ guestName }}</p>
+          <p v-if="greetingParts.after" class="text-sm sm:text-base uppercase tracking-[0.15em] opacity-90" :style="textStyleBase">{{ greetingParts.after }}</p>
         </div>
 
         <button class="mt-8 flex flex-col items-center gap-2 group focus:outline-none">
