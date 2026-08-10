@@ -52,7 +52,7 @@
           >بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</p>
           <UIcon v-else-if="wedding.content.innerTopIcon === 'rings'" name="i-heroicons-lifebuoy" :style="{ color: 'var(--theme-accent)', width: `${2 * ((wedding.content.iconSize ?? 100) / 100)}rem`, height: `${2 * ((wedding.content.iconSize ?? 100) / 100)}rem` }" />
           <UIcon v-else-if="wedding.content.innerTopIcon === 'heart'" name="i-heroicons-heart" :style="{ color: 'var(--theme-accent)', width: `${2 * ((wedding.content.iconSize ?? 100) / 100)}rem`, height: `${2 * ((wedding.content.iconSize ?? 100) / 100)}rem` }" />
-          <img v-else-if="wedding.content.innerTopIcon === 'custom' && wedding.content.customIconUrl" :src="wedding.content.customIconUrl" alt="" class="object-contain drop-shadow" :style="{ width: `${3.5 * ((wedding.content.iconSize ?? 100) / 100)}rem`, height: `${3.5 * ((wedding.content.iconSize ?? 100) / 100)}rem` }">
+          <img v-else-if="wedding.content.innerTopIcon === 'custom' && wedding.content.customIconUrl" :src="wedding.content.customIconUrl" alt="" class="object-contain drop-shadow" :style="{ width: `${7 * ((wedding.content.iconSize ?? 100) / 100)}rem`, height: 'auto', maxWidth: '90vw', maxHeight: `${7 * ((wedding.content.iconSize ?? 100) / 100)}rem` }">
           <p v-if="wedding.content.iconSubtitle" class="mt-3 text-xs sm:text-sm text-white/60 italic">{{ wedding.content.iconSubtitle }}</p>
         </div>
 

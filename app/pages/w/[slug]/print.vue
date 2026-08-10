@@ -26,7 +26,7 @@
             <p v-if="wedding.content.innerTopIcon === 'bismillah'" dir="rtl" :style="{ color: 'var(--theme-accent)', fontFamily: `'Amiri', 'Traditional Arabic', serif`, fontSize: '1.3rem' }">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</p>
             <UIcon v-else-if="wedding.content.innerTopIcon === 'rings'" name="i-heroicons-lifebuoy" class="w-7 h-7" :style="{ color: 'var(--theme-accent)' }" />
             <UIcon v-else-if="wedding.content.innerTopIcon === 'heart'" name="i-heroicons-heart" class="w-7 h-7" :style="{ color: 'var(--theme-accent)' }" />
-            <img v-else-if="wedding.content.innerTopIcon === 'custom' && wedding.content.customIconUrl" :src="wedding.content.customIconUrl" alt="" class="w-10 h-10 object-contain mx-auto">
+            <img v-else-if="wedding.content.innerTopIcon === 'custom' && wedding.content.customIconUrl" :src="wedding.content.customIconUrl" alt="" class="object-contain mx-auto" :style="{ width: `${3.5 * ((wedding.content.iconSize ?? 100) / 100)}rem`, height: 'auto', maxWidth: '80%' }">
             <p v-if="wedding.content.iconSubtitle" class="mt-2 text-xs italic opacity-70">{{ wedding.content.iconSubtitle }}</p>
           </div>
 

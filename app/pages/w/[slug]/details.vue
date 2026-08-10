@@ -40,7 +40,7 @@
 
       <div
         ref="cardRef"
-        class="relative bg-ink-900/40 backdrop-blur-xl border rounded-[2rem] shadow-2xl p-8 sm:p-10 min-h-[420px] flex flex-col justify-center touch-pan-y transition-all duration-500 hover:shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
+        class="relative bg-ink-900/40 backdrop-blur-xl border rounded-[2rem] shadow-2xl p-8 sm:p-10 min-h-[600px] sm:min-h-[640px] flex flex-col justify-center touch-pan-y transition-all duration-500 hover:shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
         :style="{ borderColor: 'var(--theme-accent-soft)' }"
         @mouseenter="paused = true"
         @mouseleave="paused = false"
@@ -62,7 +62,7 @@
                 >بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</p>
                 <UIcon v-else-if="wedding.content.detailsTopIcon === 'rings'" name="i-heroicons-lifebuoy" :style="{ color: 'var(--theme-accent)', width: `${2.5 * ((wedding.content.detailsIconSize ?? 100) / 100)}rem`, height: `${2.5 * ((wedding.content.detailsIconSize ?? 100) / 100)}rem` }" />
                 <UIcon v-else-if="wedding.content.detailsTopIcon === 'heart'" name="i-heroicons-heart" :style="{ color: 'var(--theme-accent)', width: `${2.5 * ((wedding.content.detailsIconSize ?? 100) / 100)}rem`, height: `${2.5 * ((wedding.content.detailsIconSize ?? 100) / 100)}rem` }" />
-                <img v-else-if="wedding.content.detailsTopIcon === 'custom' && wedding.content.customIconUrl" :src="wedding.content.customIconUrl" alt="" class="object-contain drop-shadow" :style="{ width: `${4 * ((wedding.content.detailsIconSize ?? 100) / 100)}rem`, height: `${4 * ((wedding.content.detailsIconSize ?? 100) / 100)}rem` }">
+                <img v-else-if="wedding.content.detailsTopIcon === 'custom' && wedding.content.customIconUrl" :src="wedding.content.customIconUrl" alt="" class="object-contain drop-shadow" :style="{ width: `${7 * ((wedding.content.detailsIconSize ?? 100) / 100)}rem`, height: 'auto', maxWidth: '85%', maxHeight: `${7 * ((wedding.content.detailsIconSize ?? 100) / 100)}rem` }">
               </div>
               <p v-if="!wedding.content.hideSystemText" class="text-white/90 text-lg leading-relaxed whitespace-pre-line" :style="{ fontWeight: 'var(--theme-text-weight)' }">{{ wedding.content.story }}</p>
             </template>

@@ -26,7 +26,7 @@
         >بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</p>
         <UIcon v-else-if="content.innerTopIcon === 'rings'" name="i-heroicons-lifebuoy" :style="{ color: 'var(--theme-accent)', width: `${1.5 * ((content.iconSize ?? 100) / 100)}rem`, height: `${1.5 * ((content.iconSize ?? 100) / 100)}rem` }" />
         <UIcon v-else-if="content.innerTopIcon === 'heart'" name="i-heroicons-heart" :style="{ color: 'var(--theme-accent)', width: `${1.5 * ((content.iconSize ?? 100) / 100)}rem`, height: `${1.5 * ((content.iconSize ?? 100) / 100)}rem` }" />
-        <img v-else-if="content.innerTopIcon === 'custom' && content.customIconUrl" :src="content.customIconUrl" alt="" class="object-contain drop-shadow" :style="{ width: `${3 * ((content.iconSize ?? 100) / 100)}rem`, height: `${3 * ((content.iconSize ?? 100) / 100)}rem` }">
+        <img v-else-if="content.innerTopIcon === 'custom' && content.customIconUrl" :src="content.customIconUrl" alt="" class="object-contain drop-shadow" :style="{ width: `${6 * ((content.iconSize ?? 100) / 100)}rem`, height: 'auto', maxWidth: '90%', maxHeight: `${6 * ((content.iconSize ?? 100) / 100)}rem` }">
         <p v-if="content.iconSubtitle" class="mt-2 text-[0.6rem] text-white/60 italic">{{ content.iconSubtitle }}</p>
       </div>
 
