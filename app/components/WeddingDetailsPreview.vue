@@ -16,9 +16,9 @@
         </div>
       </div>
 
-      <div class="relative flex-1 bg-ink-900/40 backdrop-blur-xl border rounded-[1.5rem] shadow-xl p-5 flex flex-col justify-center transition-all duration-300" :style="{ borderColor: 'var(--theme-accent-soft)' }">
+      <div class="relative flex-1 bg-ink-900/40 backdrop-blur-xl border rounded-[1.5rem] shadow-xl p-5 flex flex-col justify-center transition-all duration-300 overflow-y-auto hide-scrollbar" :style="{ borderColor: 'var(--theme-accent-soft)' }">
          <Transition :name="direction" mode="out-in">
-           <div :key="currentSlide" class="space-y-4 text-center w-full absolute left-0 px-5">
+           <div :key="currentSlide" class="space-y-3 text-center w-full px-1 py-2">
               
               <!-- Story -->
               <template v-if="currentKey === 'story'">

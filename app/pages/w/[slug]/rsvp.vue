@@ -29,7 +29,7 @@
       <div class="absolute inset-0" :style="{ background: `linear-gradient(to bottom, transparent, var(--theme-bg-to))` }"></div>
     </div>
 
-    <PetalsBackground v-if="wedding.content.enablePetals !== false" class="z-0 pointer-events-none" />
+    <PetalsBackground v-if="wedding.content.enablePetals !== false" :style-name="wedding.content.petalStyle" class="z-0 pointer-events-none" />
     <CardOrnament :style="wedding.content.ornamentStyle" color="var(--theme-accent)" class="z-0 pointer-events-none" />
 
     <UContainer class="max-w-xl w-full relative z-10 animate-fade-up">
@@ -228,7 +228,8 @@ const styleVars = computed(() =>
       bgTo: wedding.value?.content.customBgTo,
       accent: wedding.value?.content.customAccent
     },
-    wedding.value?.content.customFontFamily || wedding.value?.content.fontFamily
+    wedding.value?.content.customFontFamily || wedding.value?.content.fontFamily,
+    wedding.value?.content.textWeight
   )
 )
 

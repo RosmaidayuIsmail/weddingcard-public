@@ -26,6 +26,8 @@ export interface WeddingContent {
   hashtag: string
   enableGift: boolean
   enablePetals: boolean
+  /** Which floating particle style to use: 'petals' | 'confetti' | 'hearts' | 'sparkles' */
+  petalStyle: string
   bank: WeddingBank
   coverPhotoUrl: string
   audioSrc: string
@@ -36,6 +38,16 @@ export interface WeddingContent {
   customFontUrl: string
   customFontFamily: string
   ornamentStyle: string
+  /** CSS font-weight for body/description text (intro, story, addresses) - helps legibility on busy or low-contrast themes */
+  textWeight: string
+  /** Monogram / logo emblem shown on the print card and details page */
+  monogramEnabled: boolean
+  monogramType: string // 'auto' | 'custom-text' | 'upload'
+  monogramText: string // used when monogramType is 'custom-text'
+  monogramImageUrl: string // used when monogramType is 'upload'
+  monogramFont: string // curated font id, used unless monogramFontUrl is set
+  monogramFontUrl: string // custom Google Font stylesheet URL
+  monogramFontFamily: string // custom Google Font CSS family name
   openingStyle: string
   openingBgUrl: string
   openingTitle: string
@@ -148,6 +160,7 @@ export function createDefaultContent(brideName = '', groomName = ''): WeddingCon
     hashtag: '',
     enableGift: false,
     enablePetals: true,
+    petalStyle: 'petals',
     bank: { name: '', accountName: '', accountNumber: '', qrCodeUrl: '' },
     coverPhotoUrl: '',
     audioSrc: '',
@@ -158,6 +171,14 @@ export function createDefaultContent(brideName = '', groomName = ''): WeddingCon
     customFontUrl: '',
     customFontFamily: '',
     ornamentStyle: 'none',
+    textWeight: '300',
+    monogramEnabled: false,
+    monogramType: 'auto',
+    monogramText: '',
+    monogramImageUrl: '',
+    monogramFont: 'Cormorant Garamond',
+    monogramFontUrl: '',
+    monogramFontFamily: '',
     openingStyle: 'classic',
     openingBgUrl: '',
     openingTitle: "You're Invited",
@@ -196,10 +217,18 @@ export function createDefaultContent(brideName = '', groomName = ''): WeddingCon
 }
 
 /**
- * Fills in a share-message template (see WeddingContent.shareMessage) with
- * real values. Any token not provided (e.g. {guestName} with no guest name)
- * is simply removed rather than left as literal "{guestName}" text.
+ * Builds a "B & G" style monogram from initials when the couple hasn't
+ * typed a custom monogram text of their own.
  */
+export function autoMonogramText(brideName: string, groomName: string): string {
+  const b = brideName.trim().charAt(0).toUpperCase()
+  const g = groomName.trim().charAt(0).toUpperCase()
+  if (!b && !g) return ''
+  if (!b) return g
+  if (!g) return b
+  return `${b} & ${g}`
+}
+
 export function buildShareMessage(
   template: string,
   tokens: { guestName?: string; brideName: string; groomName: string; date?: string; link: string }

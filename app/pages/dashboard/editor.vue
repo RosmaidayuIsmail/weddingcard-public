@@ -649,6 +649,85 @@
               </div>
             </div>
 
+            <!-- Monogram -->
+            <div class="pt-6 border-t border-gray-800">
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <h3 class="text-sm font-semibold text-white mb-1">Monogram</h3>
+                  <p class="text-xs text-gray-400">A small emblem shown on your printed card and details page — your initials, custom text, or your own uploaded logo.</p>
+                </div>
+                <button
+                  type="button"
+                  class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out"
+                  :class="form.monogramEnabled ? 'bg-[#e3b04a]' : 'bg-gray-700'"
+                  @click="form.monogramEnabled = !form.monogramEnabled"
+                >
+                  <span aria-hidden="true" class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out" :class="form.monogramEnabled ? 'translate-x-5' : 'translate-x-0'" />
+                </button>
+              </div>
+
+              <div v-if="form.monogramEnabled" class="space-y-4">
+                <div class="flex bg-gray-900 border border-gray-700 rounded-lg p-1">
+                  <button type="button" class="flex-1 py-2 text-xs sm:text-sm font-medium rounded-md transition-all" :class="form.monogramType === 'auto' ? 'bg-gray-700 text-gold-300' : 'text-gray-400 hover:text-white'" @click="form.monogramType = 'auto'">
+                    Auto (Initials)
+                  </button>
+                  <button type="button" class="flex-1 py-2 text-xs sm:text-sm font-medium rounded-md transition-all" :class="form.monogramType === 'custom-text' ? 'bg-gray-700 text-gold-300' : 'text-gray-400 hover:text-white'" @click="form.monogramType = 'custom-text'">
+                    Custom Text
+                  </button>
+                  <button type="button" class="flex-1 py-2 text-xs sm:text-sm font-medium rounded-md transition-all" :class="form.monogramType === 'upload' ? 'bg-gray-700 text-gold-300' : 'text-gray-400 hover:text-white'" @click="form.monogramType = 'upload'">
+                    Upload Logo
+                  </button>
+                </div>
+
+                <UFormField v-if="form.monogramType === 'custom-text'" label="Monogram Text">
+                  <UInput v-model="form.monogramText" placeholder="e.g. S & D" size="lg" class="w-full" />
+                </UFormField>
+
+                <div v-if="form.monogramType === 'upload'" class="p-4 rounded-xl bg-[#111827] border border-gray-700 space-y-3">
+                  <div class="flex items-center gap-3">
+                    <div v-if="form.monogramImageUrl" class="w-16 h-16 rounded-lg overflow-hidden border border-gray-700 bg-black/30 shrink-0 flex items-center justify-center">
+                      <img :src="form.monogramImageUrl" alt="Monogram" class="max-w-full max-h-full object-contain">
+                    </div>
+                    <input ref="monogramInput" type="file" accept="image/*" class="hidden" @change="handleMonogramSelect">
+                    <div class="flex flex-wrap gap-2">
+                      <UButton size="sm" variant="soft" color="neutral" icon="i-heroicons-arrow-up-tray" :loading="monogramUploading" :disabled="!cloudinaryConfigured" @click="monogramInput?.click()">
+                        {{ form.monogramImageUrl ? 'Change logo' : 'Upload logo' }}
+                      </UButton>
+                      <UButton v-if="form.monogramImageUrl" size="sm" variant="ghost" color="error" icon="i-heroicons-trash" @click="form.monogramImageUrl = ''" />
+                    </div>
+                  </div>
+                </div>
+
+                <template v-if="form.monogramType !== 'upload'">
+                  <div class="flex bg-gray-900 border border-gray-700 rounded-lg p-1">
+                    <button type="button" class="flex-1 py-2 text-xs sm:text-sm font-medium rounded-md transition-all" :class="!useCustomMonogramFont ? 'bg-gray-700 text-gold-300' : 'text-gray-400 hover:text-white'" @click="useCustomMonogramFont = false">
+                      Curated Font
+                    </button>
+                    <button type="button" class="flex-1 py-2 text-xs sm:text-sm font-medium rounded-md transition-all flex items-center justify-center gap-2" :class="useCustomMonogramFont ? 'bg-gray-700 text-gold-300' : 'text-gray-400 hover:text-white'" @click="useCustomMonogramFont = true">
+                      <UIcon name="i-heroicons-link" class="w-3.5 h-3.5" /> Custom Google Font
+                    </button>
+                  </div>
+
+                  <USelect v-show="!useCustomMonogramFont" v-model="form.monogramFont" :items="fontSelectItems" size="lg" class="w-full shadow-inner" />
+
+                  <div v-show="useCustomMonogramFont" class="space-y-3">
+                    <UInput v-model="form.monogramFontUrl" placeholder="Paste Google Fonts URL..." size="md" class="w-full">
+                      <template #leading><UIcon name="i-heroicons-link" style="color: #e3b04a;" class="w-4 h-4" /></template>
+                    </UInput>
+                    <UInput v-model="form.monogramFontFamily" placeholder="Auto-filled..." size="md" class="w-full">
+                      <template #leading><UIcon name="i-heroicons-code-bracket" style="color: #e3b04a;" class="w-4 h-4" /></template>
+                    </UInput>
+                  </div>
+
+                  <div class="p-6 rounded-xl bg-gray-900 border border-gray-800 text-center flex items-center justify-center min-h-[90px]">
+                    <span class="text-3xl" :style="{ fontFamily: monogramFontFamilyComputed, color: form.customAccent || currentTheme.palette.accent }">
+                      {{ monogramDisplayText }}
+                    </span>
+                  </div>
+                </template>
+              </div>
+            </div>
+
             <!-- Ornaments & Petals Toggle -->
             <div class="pt-6 border-t border-gray-800 space-y-6">
               <div>
@@ -693,6 +772,38 @@
                   />
                 </button>
               </div>
+
+              <div v-if="form.enablePetals" class="pt-2 grid grid-cols-4 gap-2">
+                <button
+                  v-for="opt in petalStyleOptions"
+                  :key="opt.value"
+                  type="button"
+                  class="flex flex-col items-center gap-1.5 p-3 rounded-xl border transition-colors"
+                  :class="(form.petalStyle || 'petals') === opt.value ? 'border-[#e3b04a] bg-[#e3b04a]/10 text-gold-200' : 'border-gray-700 text-gray-400 hover:border-gray-600'"
+                  @click="form.petalStyle = opt.value"
+                >
+                  <UIcon :name="opt.icon" class="w-5 h-5" />
+                  <span class="text-[10px] font-medium">{{ opt.label }}</span>
+                </button>
+              </div>
+
+              <div class="pt-4 border-t border-gray-800">
+                <h3 class="text-sm font-semibold text-white mb-1">Text Boldness</h3>
+                <p class="text-xs text-gray-400 mb-3">If descriptive text is hard to read against your chosen colors (especially busy or darker themes), try a bolder weight.</p>
+                <div class="grid grid-cols-4 gap-2">
+                  <button
+                    v-for="opt in textWeightOptions"
+                    :key="opt.value"
+                    type="button"
+                    class="p-2.5 rounded-xl border text-xs transition-colors"
+                    :style="{ fontWeight: opt.value }"
+                    :class="(form.textWeight || '300') === opt.value ? 'border-[#e3b04a] bg-[#e3b04a]/10 text-gold-200' : 'border-gray-700 text-gray-400 hover:border-gray-600'"
+                    @click="form.textWeight = opt.value"
+                  >
+                    {{ opt.label }}
+                  </button>
+                </div>
+              </div>
             </div>
 
           </div>
@@ -700,7 +811,7 @@
 
         <!-- Right Column: Live Preview Frame -->
         <div class="w-full lg:w-[360px] xl:w-[400px] shrink-0 order-1 lg:order-2">
-        <div class="flex flex-col items-center pb-8 lg:pb-0 lg:sticky lg:top-8">
+        <div class="flex flex-col items-center pb-8 lg:pb-0 sticky top-4 lg:top-8 z-30">
           
           <div class="flex items-center justify-between w-full mb-4 px-2">
             <div class="flex bg-gray-900 border border-gray-700 rounded-lg p-1">
@@ -751,7 +862,7 @@
 </template>
 
 <script setup lang="ts">
-import { createDefaultContent, buildShareMessage, type WeddingContent } from '~/composables/useWeddingTypes'
+import { createDefaultContent, buildShareMessage, autoMonogramText, type WeddingContent } from '~/composables/useWeddingTypes'
 import { onClickOutside } from '@vueuse/core'
 
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
@@ -787,6 +898,9 @@ const bridePhotoInput = ref<HTMLInputElement | null>(null)
 const bridePhotoUploading = ref(false)
 const groomPhotoInput = ref<HTMLInputElement | null>(null)
 const groomPhotoUploading = ref(false)
+const monogramInput = ref<HTMLInputElement | null>(null)
+const monogramUploading = ref(false)
+const useCustomMonogramFont = ref(false)
 
 const adminCanvaTemplate = ref('')
 
@@ -802,6 +916,20 @@ const shareMessagePreview = computed(() =>
     link: 'https://weddingcard.example/w/your-slug'
   })
 )
+
+const textWeightOptions = [
+  { label: 'Light', value: '300' },
+  { label: 'Regular', value: '400' },
+  { label: 'Medium', value: '600' },
+  { label: 'Bold', value: '700' }
+]
+
+const petalStyleOptions = [
+  { label: 'Petals', value: 'petals', icon: 'i-heroicons-sparkles' },
+  { label: 'Confetti', value: 'confetti', icon: 'i-heroicons-squares-2x2' },
+  { label: 'Hearts', value: 'hearts', icon: 'i-heroicons-heart' },
+  { label: 'Sparkle', value: 'sparkles', icon: 'i-heroicons-star' }
+]
 
 const topIconOptions = ref([
   { label: 'None', value: 'none' },
@@ -922,12 +1050,48 @@ watch(() => form.customFontUrl, (newVal) => {
   }
 })
 
+watch(() => form.monogramFontUrl, (newVal) => {
+  if (newVal && newVal.includes('fonts.google.com/specimen/')) {
+    try {
+      const urlObj = new URL(newVal)
+      const pathSegments = urlObj.pathname.split('/').filter(Boolean)
+      const rawFontName = pathSegments[pathSegments.length - 1]
+
+      if (rawFontName) {
+        const cleanFontNameEncoded = rawFontName.split('?')[0]
+        form.monogramFontUrl = `https://fonts.googleapis.com/css2?family=${cleanFontNameEncoded}&display=swap`
+        if (!form.monogramFontFamily) {
+          const fontNameDecoded = decodeURIComponent(cleanFontNameEncoded).replace(/\+/g, ' ')
+          form.monogramFontFamily = `'${fontNameDecoded}', serif`
+        }
+        toast.add({ title: 'Google Font auto-formatted!', color: 'success' })
+      }
+    } catch (e) {
+      console.error(e)
+    }
+  }
+})
+
+const monogramDisplayText = computed(() => {
+  if (form.monogramType === 'custom-text' && form.monogramText) return form.monogramText
+  return autoMonogramText(form.brideName, form.groomName) || 'B & G'
+})
+
+const monogramFontFamilyComputed = computed(() => {
+  if (useCustomMonogramFont.value && form.monogramFontFamily) return form.monogramFontFamily
+  return getFontFamilyName(form.monogramFont || 'Cormorant Garamond')
+})
+
 useHead({
   link: computed(() => {
+    const links: Array<{ rel: string; href: string }> = []
     if (form.customFontUrl && !form.customFontUrl.includes('fonts.google.com/specimen/')) {
-      return [{ rel: 'stylesheet', href: form.customFontUrl }]
+      links.push({ rel: 'stylesheet', href: form.customFontUrl })
     }
-    return []
+    if (form.monogramFontUrl && !form.monogramFontUrl.includes('fonts.google.com/specimen/')) {
+      links.push({ rel: 'stylesheet', href: form.monogramFontUrl })
+    }
+    return links
   })
 })
 
@@ -965,6 +1129,11 @@ watch(
     // Fallbacks
     if (form.enableGift === undefined) form.enableGift = false
     if (form.enablePetals === undefined) form.enablePetals = true
+    if (!form.petalStyle) form.petalStyle = 'petals'
+    if (!form.textWeight) form.textWeight = '300'
+    if (form.monogramEnabled === undefined) form.monogramEnabled = false
+    if (!form.monogramType) form.monogramType = 'auto'
+    if (!form.monogramFont) form.monogramFont = 'Cormorant Garamond'
     if (form.hideSystemText === undefined) form.hideSystemText = false
     if (!form.innerTopIcon) form.innerTopIcon = 'none'
 
@@ -999,6 +1168,9 @@ watch(
     }
     if (form.customFontUrl || form.customFontFamily) {
       useCustomFont.value = true
+    }
+    if (form.monogramFontUrl || form.monogramFontFamily) {
+      useCustomMonogramFont.value = true
     }
   },
   { immediate: true }
@@ -1107,6 +1279,22 @@ async function handleGroomPhotoSelect(event: Event) {
     groomPhotoUploading.value = false
   }
   if (groomPhotoInput.value) groomPhotoInput.value.value = ''
+}
+
+async function handleMonogramSelect(event: Event) {
+  const file = (event.target as HTMLInputElement).files?.[0]
+  if (!file || !wedding.value) return
+  monogramUploading.value = true
+  try {
+    const url = await uploadImage(file, `weddings/${wedding.value.id}/monogram`)
+    form.monogramImageUrl = url
+    toast.add({ title: 'Logo uploaded — remember to save', color: 'success' })
+  } catch (error) {
+    toast.add({ title: 'Upload failed', color: 'error' })
+  } finally {
+    monogramUploading.value = false
+  }
+  if (monogramInput.value) monogramInput.value.value = ''
 }
 
 function removePhoto() {

@@ -59,12 +59,19 @@
           <p class="print-caption">Scan to RSVP</p>
         </div>
 
+        <div v-if="wedding.content.monogramEnabled" class="print-monogram">
+          <img v-if="wedding.content.monogramType === 'upload' && wedding.content.monogramImageUrl" :src="wedding.content.monogramImageUrl" alt="Monogram" class="print-monogram-image">
+          <span v-else :style="{ fontFamily: monogramFontFamily, color: 'var(--theme-accent)' }">{{ monogramDisplayText }}</span>
+        </div>
+
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { autoMonogramText } from '~/composables/useWeddingTypes'
+
 const route = useRoute()
 const slug = route.params.slug as string
 
@@ -88,11 +95,29 @@ const styleVars = computed(() =>
 // Injects the custom Google Font stylesheet onto the print page
 useHead({
   link: computed(() => {
+    const links: Array<{ rel: string; href: string }> = []
     if (wedding.value?.content.customFontUrl && !wedding.value?.content.customFontUrl.includes('fonts.google.com/specimen/')) {
-      return [{ rel: 'stylesheet', href: wedding.value.content.customFontUrl }]
+      links.push({ rel: 'stylesheet', href: wedding.value.content.customFontUrl })
     }
-    return []
+    if (wedding.value?.content.monogramFontUrl && !wedding.value?.content.monogramFontUrl.includes('fonts.google.com/specimen/')) {
+      links.push({ rel: 'stylesheet', href: wedding.value.content.monogramFontUrl })
+    }
+    return links
   })
+})
+
+const monogramDisplayText = computed(() => {
+  const content = wedding.value?.content
+  if (!content) return ''
+  if (content.monogramType === 'custom-text' && content.monogramText) return content.monogramText
+  return autoMonogramText(content.brideName, content.groomName) || `${content.brideName?.charAt(0) || ''} & ${content.groomName?.charAt(0) || ''}`
+})
+
+const monogramFontFamily = computed(() => {
+  const content = wedding.value?.content
+  if (!content) return 'serif'
+  if (content.monogramFontFamily) return content.monogramFontFamily
+  return `'${content.monogramFont || 'Cormorant Garamond'}', serif`
 })
 
 const qrCodeUrl = computed(() => {
@@ -209,6 +234,21 @@ useSeoMeta({ title: 'Printable Card' })
   text-transform: uppercase;
   color: var(--theme-accent);
   text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+.print-monogram {
+  position: absolute;
+  bottom: 1.5rem;
+  left: 1.5rem;
+  font-size: 1.75rem;
+  line-height: 1;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+.print-monogram-image {
+  width: 3rem;
+  height: 3rem;
+  object-fit: contain;
 }
 
 @media print {

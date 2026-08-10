@@ -2,7 +2,7 @@
   <div class="preview-card" :style="styleVars">
     <div class="absolute inset-0 z-0 bg-gradient-to-b from-transparent to-black/60 pointer-events-none"></div>
     <CardOrnament :style="content.ornamentStyle" color="var(--theme-accent)" class="pointer-events-none" />
-    <div v-if="content.coverPhotoUrl" class="preview-photo pointer-events-none" :style="{ backgroundImage: `url(${content.coverPhotoUrl})` }" />
+    <div v-if="content.coverPhotoUrl" class="preview-photo pointer-events-none" :class="{ 'preview-photo-contain': content.hideSystemText }" :style="{ backgroundImage: `url(${content.coverPhotoUrl})` }" />
 
     <template v-if="!content.hideSystemText">
       
@@ -268,6 +268,12 @@ function onPointerDown(e: PointerEvent, key: string) {
   background-size: cover;
   background-position: center;
   opacity: 0.45;
+}
+
+.preview-photo-contain {
+  background-size: contain;
+  background-repeat: no-repeat;
+  opacity: 1;
 }
 
 .preview-eyebrow {

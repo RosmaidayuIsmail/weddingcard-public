@@ -16,11 +16,11 @@
     <!-- Decorative background layers live at the page level (not inside the
          hero canvas below) specifically so they visually continue across
          the footer too, instead of stopping abruptly at the hero's edge. -->
-    <div v-if="wedding.content.coverPhotoUrl && opened" class="absolute inset-0 z-0 opacity-[0.55] transition-opacity duration-1000 animate-in fade-in">
-      <img :src="wedding.content.coverPhotoUrl" alt="Background" class="w-full h-full object-cover scale-105 animate-[pulse_20s_ease-in-out_infinite_alternate]">
+    <div v-if="wedding.content.coverPhotoUrl && opened" class="absolute inset-0 z-0 transition-opacity duration-1000 animate-in fade-in" :class="wedding.content.hideSystemText ? 'opacity-100' : 'opacity-[0.55]'">
+      <img :src="wedding.content.coverPhotoUrl" alt="Background" class="w-full h-full animate-[pulse_20s_ease-in-out_infinite_alternate]" :class="wedding.content.hideSystemText ? 'object-contain' : 'object-cover scale-105'">
       <div class="absolute inset-0" :style="{ background: `linear-gradient(to bottom, transparent 0%, transparent 60%, var(--theme-bg-to) 82%, var(--theme-bg-to) 100%)` }" />
     </div>
-    <PetalsBackground v-if="wedding.content.enablePetals !== false" />
+    <PetalsBackground v-if="wedding.content.enablePetals !== false" :style-name="wedding.content.petalStyle" />
     <CardOrnament v-if="opened" :style="wedding.content.ornamentStyle" color="var(--theme-accent)" />
 
     <!-- HERO CANVAS: every 0-100% position below is relative to THIS box only,
@@ -71,7 +71,7 @@
           class="absolute w-full max-w-3xl text-center px-4 flex flex-col items-center transition-all duration-700 animate-in fade-in zoom-in delay-300"
           :style="{ left: `${wedding.content.introX ?? 50}%`, top: `${wedding.content.introY ?? 32}%`, transform: 'translate(-50%, -50%)' }"
         >
-          <p class="text-base sm:text-lg font-light text-white/70 italic drop-shadow-md">
+          <p class="text-base sm:text-lg text-white/80 italic drop-shadow-md" :style="{ fontWeight: 'var(--theme-text-weight)' }">
             {{ wedding.content.innerIntro || "To the wedding celebration of" }}
           </p>
         </div>
@@ -106,7 +106,7 @@
           class="absolute w-full max-w-md text-center px-4 flex flex-col items-center transition-all duration-700 animate-in fade-in zoom-in delay-500"
           :style="{ left: `${wedding.content.venueX ?? 50}%`, top: `${wedding.content.venueY ?? 78}%`, transform: 'translate(-50%, -50%)' }"
         >
-          <p v-if="wedding.content.venueAddress" class="text-xs sm:text-sm text-white/70 italic drop-shadow-md">
+          <p v-if="wedding.content.venueAddress" class="text-xs sm:text-sm text-white/80 italic drop-shadow-md" :style="{ fontWeight: 'var(--theme-text-weight)' }">
             {{ wedding.content.venueAddress }}
           </p>
         </div>
@@ -162,7 +162,8 @@ const styleVars = computed(() =>
       bgTo: wedding.value?.content.customBgTo,
       accent: wedding.value?.content.customAccent
     },
-    wedding.value?.content.customFontFamily || wedding.value?.content.fontFamily
+    wedding.value?.content.customFontFamily || wedding.value?.content.fontFamily,
+    wedding.value?.content.textWeight
   )
 )
 

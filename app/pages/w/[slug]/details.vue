@@ -13,12 +13,12 @@
   <div v-else class="min-h-screen theme-surface text-white px-4 py-8 sm:p-10 flex items-center justify-center relative overflow-hidden bg-ink-950" :style="styleVars">
     <div class="absolute inset-0 z-0 bg-gradient-to-b" :style="{ background: `linear-gradient(160deg, var(--theme-bg-from), var(--theme-bg-via), var(--theme-bg-to))` }"></div>
     
-    <div v-if="wedding.content.coverPhotoUrl" class="absolute inset-0 z-0 opacity-40 transition-opacity duration-1000 animate-in fade-in">
-      <img :src="wedding.content.coverPhotoUrl" alt="Background" class="w-full h-full object-cover" />
+    <div v-if="wedding.content.coverPhotoUrl" class="absolute inset-0 z-0 transition-opacity duration-1000 animate-in fade-in" :class="wedding.content.hideSystemText ? 'opacity-100' : 'opacity-40'">
+      <img :src="wedding.content.coverPhotoUrl" alt="Background" class="w-full h-full" :class="wedding.content.hideSystemText ? 'object-contain' : 'object-cover'" />
       <div class="absolute inset-0" :style="{ background: `linear-gradient(to bottom, transparent, var(--theme-bg-to))` }"></div>
     </div>
 
-    <PetalsBackground v-if="wedding.content.enablePetals !== false" class="z-0" />
+    <PetalsBackground v-if="wedding.content.enablePetals !== false" :style-name="wedding.content.petalStyle" class="z-0" />
     <CardOrnament :style="wedding.content.ornamentStyle" color="var(--theme-accent)" class="z-0" />
 
     <div class="max-w-lg w-full relative z-10 animate-fade-up">
@@ -64,7 +64,7 @@
                 <UIcon v-else-if="wedding.content.detailsTopIcon === 'heart'" name="i-heroicons-heart" :style="{ color: 'var(--theme-accent)', width: `${2.5 * ((wedding.content.detailsIconSize ?? 100) / 100)}rem`, height: `${2.5 * ((wedding.content.detailsIconSize ?? 100) / 100)}rem` }" />
                 <img v-else-if="wedding.content.detailsTopIcon === 'custom' && wedding.content.customIconUrl" :src="wedding.content.customIconUrl" alt="" class="object-contain drop-shadow" :style="{ width: `${4 * ((wedding.content.detailsIconSize ?? 100) / 100)}rem`, height: `${4 * ((wedding.content.detailsIconSize ?? 100) / 100)}rem` }">
               </div>
-              <p v-if="!wedding.content.hideSystemText" class="text-white/90 text-lg leading-relaxed whitespace-pre-line font-light">{{ wedding.content.story }}</p>
+              <p v-if="!wedding.content.hideSystemText" class="text-white/90 text-lg leading-relaxed whitespace-pre-line" :style="{ fontWeight: 'var(--theme-text-weight)' }">{{ wedding.content.story }}</p>
             </template>
 
             <template v-else-if="currentKey === 'couple'">
@@ -76,6 +76,10 @@
                 </h2>
                 <div class="h-px w-16 mx-auto my-4" :style="{ background: 'var(--theme-accent)' }"></div>
                 <p class="text-sm uppercase tracking-widest text-white/60">Bride &amp; Groom</p>
+                <div v-if="wedding.content.monogramEnabled" class="mt-5 flex justify-center">
+                  <img v-if="wedding.content.monogramType === 'upload' && wedding.content.monogramImageUrl" :src="wedding.content.monogramImageUrl" alt="Monogram" class="w-12 h-12 object-contain opacity-90">
+                  <span v-else class="text-2xl" :style="{ fontFamily: monogramFontFamily, color: 'var(--theme-accent)' }">{{ monogramDisplayText }}</span>
+                </div>
               </div>
             </template>
 
@@ -86,14 +90,14 @@
                   <img v-if="wedding.content.bridePhotoUrl" :src="wedding.content.bridePhotoUrl" alt="" class="w-20 h-20 rounded-full object-cover mx-auto mb-3 border-2" :style="{ borderColor: 'var(--theme-accent)' }">
                   <p class="text-xs uppercase tracking-widest font-semibold mb-2" :style="{ color: 'var(--theme-accent)' }">Bride</p>
                   <p class="font-bold text-lg text-white/90">{{ wedding.content.brideFullName }}</p>
-                  <p class="text-sm text-white/60 font-light">Child of <br/>{{ wedding.content.brideParents }}</p>
+                  <p class="text-sm text-white/70" :style="{ fontWeight: 'var(--theme-text-weight)' }">Child of <br/>{{ wedding.content.brideParents }}</p>
                 </div>
                 <div class="h-px bg-white/10 w-24 mx-auto my-6" />
                 <div v-if="wedding.content.groomFullName || wedding.content.groomParents" class="space-y-1">
                   <img v-if="wedding.content.groomPhotoUrl" :src="wedding.content.groomPhotoUrl" alt="" class="w-20 h-20 rounded-full object-cover mx-auto mb-3 border-2" :style="{ borderColor: 'var(--theme-accent)' }">
                   <p class="text-xs uppercase tracking-widest font-semibold mb-2" :style="{ color: 'var(--theme-accent)' }">Groom</p>
                   <p class="font-bold text-lg text-white/90">{{ wedding.content.groomFullName }}</p>
-                  <p class="text-sm text-white/60 font-light">Child of <br/>{{ wedding.content.groomParents }}</p>
+                  <p class="text-sm text-white/70" :style="{ fontWeight: 'var(--theme-text-weight)' }">Child of <br/>{{ wedding.content.groomParents }}</p>
                 </div>
               </div>
             </template>
@@ -172,6 +176,8 @@
 </template>
 
 <script setup lang="ts">
+import { autoMonogramText } from '~/composables/useWeddingTypes'
+
 const route = useRoute()
 const slug = route.params.slug as string
 
@@ -186,6 +192,20 @@ const rsvpLink = computed(() => (guestNameQuery.value ? `/w/${slug}/rsvp?to=${en
 const { wedding, loading, notFound } = useWeddingBySlug(slug)
 const { themeStyleVars } = useThemes()
 
+const monogramDisplayText = computed(() => {
+  const content = wedding.value?.content
+  if (!content) return ''
+  if (content.monogramType === 'custom-text' && content.monogramText) return content.monogramText
+  return autoMonogramText(content.brideName, content.groomName) || `${content.brideName?.charAt(0) || ''} & ${content.groomName?.charAt(0) || ''}`
+})
+
+const monogramFontFamily = computed(() => {
+  const content = wedding.value?.content
+  if (!content) return 'serif'
+  if (content.monogramFontFamily) return content.monogramFontFamily
+  return `'${content.monogramFont || 'Cormorant Garamond'}', serif`
+})
+
 const styleVars = computed(() =>
   themeStyleVars(
     wedding.value?.themeId,
@@ -194,16 +214,21 @@ const styleVars = computed(() =>
       bgTo: wedding.value?.content.customBgTo,
       accent: wedding.value?.content.customAccent
     },
-    wedding.value?.content.customFontFamily || wedding.value?.content.fontFamily
+    wedding.value?.content.customFontFamily || wedding.value?.content.fontFamily,
+    wedding.value?.content.textWeight
   )
 )
 
 useHead({
   link: computed(() => {
+    const links: Array<{ rel: string; href: string }> = []
     if (wedding.value?.content.customFontUrl && !wedding.value.content.customFontUrl.includes('fonts.google.com/specimen/')) {
-      return [{ rel: 'stylesheet', href: wedding.value.content.customFontUrl }]
+      links.push({ rel: 'stylesheet', href: wedding.value.content.customFontUrl })
     }
-    return []
+    if (wedding.value?.content.monogramFontUrl && !wedding.value.content.monogramFontUrl.includes('fonts.google.com/specimen/')) {
+      links.push({ rel: 'stylesheet', href: wedding.value.content.monogramFontUrl })
+    }
+    return links
   })
 })
 

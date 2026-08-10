@@ -167,7 +167,7 @@ export function useThemes() {
     return themes.find((theme) => theme.id === themeId) ?? themes.find((theme) => theme.id === DEFAULT_THEME_ID)!
   }
 
-  function themeStyleVars(themeId: string | undefined | null, overrides?: ColorOverrides, fontFamily?: string) {
+  function themeStyleVars(themeId: string | undefined | null, overrides?: ColorOverrides, fontFamily?: string, textWeight?: string) {
     const theme = getTheme(themeId)
     const bgFrom = overrides?.bgFrom || theme.palette.bgFrom
     const bgTo = overrides?.bgTo || theme.palette.bgTo
@@ -185,7 +185,8 @@ export function useThemes() {
       '--theme-accent-soft': overrides?.accent ? hexToRgba(accent, 0.18) : theme.palette.accentSoft,
       '--theme-ink': theme.palette.ink,
       '--theme-on-accent': theme.palette.onAccent,
-      '--theme-heading-font': finalFont
+      '--theme-heading-font': finalFont,
+      '--theme-text-weight': textWeight || '300'
     }
   }
 
