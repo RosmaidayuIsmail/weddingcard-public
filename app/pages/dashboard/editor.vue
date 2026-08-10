@@ -26,21 +26,6 @@
             Customize every detail of your digital invitation
           </p>
         </div>
-        
-        <div class="flex items-center gap-3">
-          <span v-if="savedAt" class="text-xs font-medium text-emerald-400 bg-emerald-400/10 px-3 py-1.5 rounded-full flex items-center gap-1.5 animate-in fade-in zoom-in duration-300">
-            <UIcon name="i-heroicons-check-circle" class="w-4 h-4" /> Saved
-          </span>
-          <UButton 
-            size="lg" 
-            color="primary" 
-            class="font-semibold shadow-xl shadow-gold-500/20 transition-all hover:-translate-y-0.5 hover:shadow-gold-500/30 w-full sm:w-auto" 
-            :loading="saving" 
-            @click="saveContent"
-          >
-            Save changes
-          </UButton>
-        </div>
       </div>
 
       <!-- Fully Mobile-Responsive Dual Pane Setup -->
@@ -812,7 +797,22 @@
         <!-- Right Column: Live Preview Frame -->
         <div ref="previewColumnRef" class="w-full lg:w-[360px] xl:w-[400px] shrink-0 order-1 lg:order-2">
         <div class="flex flex-col items-center pb-8 lg:pb-0 sticky top-4 z-30" :style="previewFixedStyle">
-          
+
+          <div class="flex items-center justify-between w-full mb-3 px-2 gap-2">
+            <span v-if="savedAt" class="text-xs font-medium text-emerald-400 bg-emerald-400/10 px-2.5 py-1.5 rounded-full flex items-center gap-1 shrink-0 animate-in fade-in zoom-in duration-300">
+              <UIcon name="i-heroicons-check-circle" class="w-3.5 h-3.5" /> Saved
+            </span>
+            <UButton
+              size="sm"
+              color="primary"
+              class="font-semibold shadow-lg shadow-gold-500/20 transition-all hover:-translate-y-0.5 flex-1"
+              :loading="saving"
+              @click="saveContent"
+            >
+              Save changes
+            </UButton>
+          </div>
+
           <div class="flex items-center justify-between w-full mb-4 px-2">
             <div class="flex bg-gray-900 border border-gray-700 rounded-lg p-1">
               <button 
@@ -829,7 +829,7 @@
               >Inner Card</button>
             </div>
             
-            <UButton variant="link" color="gray" size="xs" :to="wedding ? `/w/${wedding.slug}` : undefined" target="_blank" external padded={false}>
+            <UButton variant="link" color="gray" size="xs" :to="wedding ? `/w/${wedding.slug}` : undefined" target="_blank" external :padded="false">
               Open Live <UIcon name="i-heroicons-arrow-top-right-on-square" class="ml-1 w-3 h-3"/>
             </UButton>
           </div>
@@ -863,7 +863,7 @@
 
 <script setup lang="ts">
 import { createDefaultContent, buildShareMessage, autoMonogramText, type WeddingContent } from '~/composables/useWeddingTypes'
-import { onClickOutside, useElementBounding, useMediaQuery } from '@vueuse/core'
+import { onClickOutside, useElementBounding } from '@vueuse/core'
 
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
@@ -879,18 +879,22 @@ const toast = useToast()
 // block in a way that was hard to pin down with certainty. Rather than keep
 // guessing, this measures the column's real on-screen position and pins it
 // with `position: fixed`, which anchors straight to the viewport and cannot
-// be broken by any ancestor's overflow/scroll setup.
+// be broken by any ancestor's overflow/scroll setup. Applied at all screen
+// sizes so mobile behaves the same as desktop - the phone mockup itself
+// shrinks on small screens (see .phone-bezel) so it doesn't dominate the
+// whole viewport when pinned.
 const previewColumnRef = ref<HTMLElement | null>(null)
-const isDesktop = useMediaQuery('(min-width: 1024px)')
 const columnBounding = useElementBounding(previewColumnRef, { windowResize: true, windowScroll: false })
 
 const previewFixedStyle = computed(() => {
-  if (!isDesktop.value || columnBounding.width.value === 0) return {}
+  if (columnBounding.width.value === 0) return {}
   return {
     position: 'fixed' as const,
     left: `${columnBounding.left.value}px`,
-    top: '2rem',
-    width: `${columnBounding.width.value}px`
+    top: '1rem',
+    width: `${columnBounding.width.value}px`,
+    maxHeight: 'calc(100vh - 2rem)',
+    overflowY: 'auto' as const
   }
 })
 
@@ -1430,13 +1434,19 @@ useSeoMeta({ title: 'Design Studio — WeddingCard' })
 
 .phone-bezel {
   position: relative;
-  height: 720px; 
+  height: min(72vh, 720px);
   background: #000;
   border: 12px solid #1e293b;
   border-radius: 2.5rem;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), inset 0 0 0 2px rgba(255, 255, 255, 0.05);
   overflow: hidden;
   transform: translateZ(0);
+}
+
+@media (min-width: 1024px) {
+  .phone-bezel {
+    height: 720px;
+  }
 }
 
 .phone-notch {
