@@ -810,8 +810,8 @@
         </div>
 
         <!-- Right Column: Live Preview Frame -->
-        <div class="w-full lg:w-[360px] xl:w-[400px] shrink-0 order-1 lg:order-2">
-        <div class="flex flex-col items-center pb-8 lg:pb-0 sticky top-4 lg:top-8 z-30">
+        <div ref="previewColumnRef" class="w-full lg:w-[360px] xl:w-[400px] shrink-0 order-1 lg:order-2">
+        <div class="flex flex-col items-center pb-8 lg:pb-0 sticky top-4 z-30" :style="previewFixedStyle">
           
           <div class="flex items-center justify-between w-full mb-4 px-2">
             <div class="flex bg-gray-900 border border-gray-700 rounded-lg p-1">
@@ -863,7 +863,7 @@
 
 <script setup lang="ts">
 import { createDefaultContent, buildShareMessage, autoMonogramText, type WeddingContent } from '~/composables/useWeddingTypes'
-import { onClickOutside } from '@vueuse/core'
+import { onClickOutside, useElementBounding, useMediaQuery } from '@vueuse/core'
 
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
@@ -872,6 +872,27 @@ const { isConfigured: cloudinaryConfigured, uploadImage } = useCloudinary()
 const { removeBackground, processing: bgRemoving } = useBackgroundRemoval()
 const { getTheme, fontOptions } = useThemes()
 const toast = useToast()
+
+// The preview panel needs to stay visible while the (much taller) form
+// column scrolls. CSS `position: sticky` kept failing here across multiple
+// attempts - some ancestor in the chain was interfering with its containing
+// block in a way that was hard to pin down with certainty. Rather than keep
+// guessing, this measures the column's real on-screen position and pins it
+// with `position: fixed`, which anchors straight to the viewport and cannot
+// be broken by any ancestor's overflow/scroll setup.
+const previewColumnRef = ref<HTMLElement | null>(null)
+const isDesktop = useMediaQuery('(min-width: 1024px)')
+const columnBounding = useElementBounding(previewColumnRef, { windowResize: true, windowScroll: false })
+
+const previewFixedStyle = computed(() => {
+  if (!isDesktop.value || columnBounding.width.value === 0) return {}
+  return {
+    position: 'fixed' as const,
+    left: `${columnBounding.left.value}px`,
+    top: '2rem',
+    width: `${columnBounding.width.value}px`
+  }
+})
 
 const sections = [
   { id: 'couple', label: 'The Couple', icon: 'i-heroicons-heart' },
