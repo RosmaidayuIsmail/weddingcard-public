@@ -51,7 +51,7 @@
     </aside>
 
     <!-- Main Content Area -->
-    <main class="relative z-10 flex-1 p-4 md:p-8 lg:p-12 w-full mx-auto max-w-7xl overflow-x-hidden">
+    <main class="relative z-10 flex-1 p-4 md:p-8 lg:p-12 w-full mx-auto max-w-7xl overflow-x-hidden overflow-y-visible">
       <slot />
     </main>
   </div>

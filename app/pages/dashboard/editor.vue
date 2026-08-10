@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen flex flex-col overflow-x-hidden">
+  <div class="min-h-screen flex flex-col overflow-x-hidden overflow-y-visible">
     
     <div v-if="loading" class="flex flex-col items-center justify-center flex-1 text-white/60 space-y-4">
       <UIcon name="i-heroicons-arrow-path" class="w-8 h-8 animate-spin" style="color: #e3b04a;" />

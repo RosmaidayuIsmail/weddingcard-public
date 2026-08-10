@@ -81,19 +81,19 @@
         </div>
 
         <!-- Typography -->
-        <p class="font-heading text-5xl sm:text-6xl drop-shadow-lg leading-tight mb-4" :style="textStyleAccent">
+        <p class="font-heading text-5xl sm:text-6xl leading-tight mb-4" :style="[textStyleAccent, titleShadow]">
           {{ content.openingTitle || "You're Invited" }}
         </p>
 
         <!-- Dynamic Guest Name Box -->
         <div v-if="guestName" class="mt-4 mb-6 p-5 border border-white/20 rounded-xl backdrop-blur-md min-w-[200px] max-w-[300px] flex flex-col items-center gap-1.5" :style="guestBoxStyle">
-          <p v-if="greetingParts.before" class="text-sm sm:text-base uppercase tracking-[0.15em] opacity-90" :style="textStyleBase">{{ greetingParts.before }}</p>
-          <p class="font-display font-semibold text-2xl sm:text-3xl leading-tight" :style="textStyleBase">{{ guestName }}</p>
-          <p v-if="greetingParts.after" class="text-sm sm:text-base uppercase tracking-[0.15em] opacity-90" :style="textStyleBase">{{ greetingParts.after }}</p>
+          <p v-if="greetingParts.before" class="text-sm sm:text-base uppercase tracking-[0.15em] opacity-90" :style="[textStyleBase, titleShadow]">{{ greetingParts.before }}</p>
+          <p class="font-display font-semibold text-2xl sm:text-3xl leading-tight" :style="[textStyleBase, titleShadow]">{{ guestName }}</p>
+          <p v-if="greetingParts.after" class="text-sm sm:text-base uppercase tracking-[0.15em] opacity-90" :style="[textStyleBase, titleShadow]">{{ greetingParts.after }}</p>
         </div>
 
         <button class="mt-8 flex flex-col items-center gap-2 group focus:outline-none">
-          <span class="text-sm tracking-[0.25em] uppercase font-bold transition-all group-hover:scale-105" :style="textStyleBase">
+          <span class="text-sm tracking-[0.25em] uppercase font-bold transition-all group-hover:scale-105" :style="[textStyleBase, titleShadow]">
             {{ content.openingActionText || "Tap to open" }}
           </span>
           <UIcon name="i-heroicons-chevron-double-down" class="w-5 h-5 animate-bounce mt-1" :style="textStyleAccent" />
@@ -141,6 +141,13 @@ const textStyleAccent = computed(() => {
 const textStyleBase = computed(() => {
   if (props.content.openingStyle === 'minimal-light') return { color: '#1e293b' }
   return { color: '#ffffff' }
+})
+
+const titleShadow = computed(() => {
+  if (props.content.openingStyle === 'minimal-light') {
+    return { textShadow: '0 2px 16px rgba(255,255,255,0.7), 0 2px 6px rgba(255,255,255,0.85)' }
+  }
+  return { textShadow: '0 2px 16px rgba(0,0,0,0.55), 0 2px 6px rgba(0,0,0,0.75), 0 1px 2px rgba(0,0,0,0.9)' }
 })
 
 const greetingParts = computed(() => {
