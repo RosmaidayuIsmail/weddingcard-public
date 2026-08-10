@@ -18,7 +18,7 @@
          the footer too, instead of stopping abruptly at the hero's edge. -->
     <div v-if="wedding.content.coverPhotoUrl && opened" class="absolute inset-0 z-0 transition-opacity duration-1000 animate-in fade-in" :class="wedding.content.hideSystemText ? 'opacity-100' : 'opacity-[0.55]'">
       <img :src="wedding.content.coverPhotoUrl" alt="Background" class="w-full h-full animate-[pulse_20s_ease-in-out_infinite_alternate]" :class="wedding.content.hideSystemText ? 'object-contain' : 'object-cover scale-105'">
-      <div class="absolute inset-0" :style="{ background: `linear-gradient(to bottom, transparent 0%, transparent 60%, var(--theme-bg-to) 82%, var(--theme-bg-to) 100%)` }" />
+      <div class="absolute inset-0" :style="{ background: `linear-gradient(to bottom, transparent 0%, var(--theme-bg-to) 90%)` }" />
     </div>
     <PetalsBackground v-if="wedding.content.enablePetals !== false" :style-name="wedding.content.petalStyle" />
     <CardOrnament v-if="opened" :style="wedding.content.ornamentStyle" color="var(--theme-accent)" />
@@ -61,7 +61,7 @@
           class="absolute w-full max-w-3xl text-center px-4 flex flex-col items-center transition-all duration-700 animate-in fade-in zoom-in delay-150"
           :style="{ left: `${wedding.content.greetingX ?? 50}%`, top: `${wedding.content.greetingY ?? 25}%`, transform: 'translate(-50%, -50%)' }"
         >
-          <h1 class="text-sm sm:text-base tracking-[0.35em] uppercase drop-shadow-md" :style="{ color: 'var(--theme-accent)' }">
+          <h1 class="text-sm sm:text-base tracking-[0.35em] uppercase drop-shadow-md" :style="{ color: 'var(--theme-accent)', fontWeight: 'var(--theme-text-weight)' }">
             {{ wedding.content.innerGreeting || "You're Invited" }}
           </h1>
         </div>
@@ -191,7 +191,7 @@ watch(
   (value) => {
     if (!value) return
     useSeoMeta({
-      title: `${value.content.openingTitle || "You're Invited"} \u2014 ${value.content.brideName} & ${value.content.groomName}'s Wedding`,
+      title: `${value.content.openingTitle || "You're Invited"} — ${value.content.brideName} & ${value.content.groomName}'s Wedding`,
       description: value.content.dateLabel
         ? `Join us on ${value.content.dateLabel} as we celebrate our wedding. View the details and RSVP online.`
         : 'View the wedding details and RSVP online.'

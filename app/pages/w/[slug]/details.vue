@@ -159,15 +159,15 @@
           </div>
         </Transition>
 
-        <div class="absolute inset-y-0 left-0 w-1/4 z-10 cursor-pointer" @click="prev"></div>
-        <div class="absolute inset-y-0 right-0 w-1/4 z-10 cursor-pointer" @click="next"></div>
+        <div class="absolute inset-y-0 left-0 w-1/4 z-10 cursor-pointer" @click="manualPrev"></div>
+        <div class="absolute inset-y-0 right-0 w-1/4 z-10 cursor-pointer" @click="manualNext"></div>
       </div>
 
       <div class="flex justify-center gap-12 mt-6 text-white/40">
-        <button type="button" aria-label="Previous slide" class="hover:text-white transition-colors p-2 rounded-full hover:bg-white/10" @click="prev">
+        <button type="button" aria-label="Previous slide" class="hover:text-white transition-colors p-2 rounded-full hover:bg-white/10" @click="manualPrev">
           <UIcon name="i-heroicons-chevron-left" class="w-8 h-8" />
         </button>
-        <button type="button" aria-label="Next slide" class="hover:text-white transition-colors p-2 rounded-full hover:bg-white/10" @click="next">
+        <button type="button" aria-label="Next slide" class="hover:text-white transition-colors p-2 rounded-full hover:bg-white/10" @click="manualNext">
           <UIcon name="i-heroicons-chevron-right" class="w-8 h-8" />
         </button>
       </div>
@@ -259,6 +259,7 @@ function goTo(index: number) {
   if (index === currentSlide.value) return
   direction.value = index > currentSlide.value ? 'slide-next' : 'slide-prev'
   currentSlide.value = index
+  restartAutoSlide()
 }
 
 function next() {
@@ -271,12 +272,35 @@ function prev() {
   currentSlide.value = (currentSlide.value - 1 + slideKeys.value.length) % slideKeys.value.length
 }
 
+// Called by user-facing controls (arrow buttons, click zones, swipe) so a
+// manual navigation always restarts the 7s auto-advance window - without
+// this, the background timer could fire moments after a manual click,
+// making it look like the slide "flashed" then jumped on its own.
+function manualNext() {
+  next()
+  restartAutoSlide()
+}
+
+function manualPrev() {
+  prev()
+  restartAutoSlide()
+}
+
 let autoSlideInterval: ReturnType<typeof setInterval> | null = null
 
-onMounted(() => {
+function startAutoSlide() {
   autoSlideInterval = setInterval(() => {
     if (!paused.value) next()
   }, 7000)
+}
+
+function restartAutoSlide() {
+  if (autoSlideInterval) clearInterval(autoSlideInterval)
+  startAutoSlide()
+}
+
+onMounted(() => {
+  startAutoSlide()
 })
 
 onBeforeUnmount(() => {
@@ -286,17 +310,17 @@ onBeforeUnmount(() => {
 const { direction: swipeDirection, isSwiping } = useSwipe(cardRef, {
   threshold: 40,
   onSwipeEnd() {
-    if (swipeDirection.value === 'left') next()
-    else if (swipeDirection.value === 'right') prev()
+    if (swipeDirection.value === 'left') manualNext()
+    else if (swipeDirection.value === 'right') manualPrev()
   }
 })
 
 watch(isSwiping, (value) => {
-  paused.value = value || paused.value
+  paused.value = value
 })
 
-onKeyStroke('ArrowRight', () => next())
-onKeyStroke('ArrowLeft', () => prev())
+onKeyStroke('ArrowRight', () => manualNext())
+onKeyStroke('ArrowLeft', () => manualPrev())
 
 watch(
   wedding,

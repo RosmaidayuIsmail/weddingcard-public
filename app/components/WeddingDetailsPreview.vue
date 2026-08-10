@@ -8,6 +8,7 @@
     </div>
 
     <CardOrnament :style="content.ornamentStyle" color="var(--theme-accent)" class="z-0" />
+    <PetalsBackground v-if="content.enablePetals !== false" :style-name="content.petalStyle" :count="12" class="z-0 pointer-events-none" />
 
     <div class="relative z-10 flex-1 flex flex-col mt-2">
       <div class="flex gap-1 mb-4 w-full px-2 shrink-0">

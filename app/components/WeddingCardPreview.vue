@@ -2,6 +2,7 @@
   <div class="preview-card" :style="styleVars">
     <div class="absolute inset-0 z-0 bg-gradient-to-b from-transparent to-black/60 pointer-events-none"></div>
     <CardOrnament :style="content.ornamentStyle" color="var(--theme-accent)" class="pointer-events-none" />
+    <PetalsBackground v-if="content.enablePetals !== false" :style-name="content.petalStyle" :count="12" class="pointer-events-none" />
     <div v-if="content.coverPhotoUrl" class="preview-photo pointer-events-none" :class="{ 'preview-photo-contain': content.hideSystemText }" :style="{ backgroundImage: `url(${content.coverPhotoUrl})` }" />
 
     <template v-if="!content.hideSystemText">
