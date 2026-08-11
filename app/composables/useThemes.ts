@@ -142,6 +142,40 @@ export const themes: Theme[] = [
       ink: '#f2f7f2',
       onAccent: '#0a2b1f'
     }
+  },
+  {
+    id: 'lavender-dusk',
+    name: 'Lavender Dusk',
+    tagline: 'Deep plum and soft lilac for a dreamy, romantic evening',
+    price: 29,
+    currency: 'RM',
+    headingFont: 'Allura',
+    palette: {
+      bgFrom: '#170a29',
+      bgVia: '#2b1350',
+      bgTo: '#3d1e6b',
+      accent: '#c9a7eb',
+      accentSoft: 'rgba(201, 167, 235, 0.18)',
+      ink: '#f6f0fb',
+      onAccent: '#170a29'
+    }
+  },
+  {
+    id: 'sky-serenade',
+    name: 'Sky Serenade',
+    tagline: 'Soft powder blue and cream for a light, airy feel',
+    price: 0,
+    currency: 'RM',
+    headingFont: 'Cormorant Garamond',
+    palette: {
+      bgFrom: '#eef5fb',
+      bgVia: '#dbe9f5',
+      bgTo: '#c5daeb',
+      accent: '#3b7ba3',
+      accentSoft: 'rgba(59, 123, 163, 0.14)',
+      ink: '#1e3a4c',
+      onAccent: '#eef5fb'
+    }
   }
 ]
 

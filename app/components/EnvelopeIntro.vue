@@ -42,19 +42,15 @@
          <div class="absolute top-10 left-10 w-48 h-48 bg-[#93c5fd] rounded-full mix-blend-multiply filter blur-[60px] opacity-40"></div>
       </div>
 
-      <!-- Wax Seal Card (new style) - a solid two-panel card with a seal at the
-           center seam; reuses the same split-open mechanic as Canva Split Door -->
+      <!-- Wax Seal Card (new style) - a solid two-panel card; the seal itself now
+           lives in the content container below so it doesn't fight the title/
+           greeting box for the same central space -->
       <div v-else-if="content.openingStyle === 'wax-seal'" class="absolute inset-0 z-0 flex" :style="{ background: `linear-gradient(160deg, var(--theme-bg-from, #0d2a4a), var(--theme-bg-via, #142a45) 60%, var(--theme-bg-to, #04101f))` }">
         <div class="relative w-1/2 h-full door-left flex items-center justify-end pr-1">
           <div class="w-full h-[68%] rounded-l-2xl border-y-2 border-l-2" :style="{ borderColor: 'var(--theme-accent, #e3b04a)' }"></div>
         </div>
         <div class="relative w-1/2 h-full door-right flex items-center justify-start pl-1">
           <div class="w-full h-[68%] rounded-r-2xl border-y-2 border-r-2" :style="{ borderColor: 'var(--theme-accent, #e3b04a)' }"></div>
-        </div>
-        <div class="wax-seal absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
-          <div class="wax-seal-circle" :style="{ background: `radial-gradient(circle at 35% 30%, var(--theme-accent-soft, #f3ddaa), var(--theme-accent, #d4a017))` }">
-            <UIcon name="i-heroicons-heart" class="w-6 h-6" style="color: rgba(0,0,0,0.45);" />
-          </div>
         </div>
       </div>
 
@@ -80,20 +76,28 @@
           </svg>
         </div>
 
+        <!-- Wax Seal: a real embossed-looking stamp with the couple's initials,
+             sitting cleanly above the title instead of overlapping it -->
+        <div v-if="content.openingStyle === 'wax-seal'" class="wax-seal mb-6">
+          <div class="wax-seal-circle" :style="{ background: `radial-gradient(circle at 32% 28%, var(--theme-accent-soft, #f3ddaa) 0%, var(--theme-accent, #d4a017) 55%, var(--theme-accent, #d4a017) 75%, rgba(0,0,0,0.35) 100%)` }">
+            <span class="wax-seal-initials">{{ sealInitials }}</span>
+          </div>
+        </div>
+
         <!-- Typography -->
-        <p class="font-heading text-5xl sm:text-6xl leading-tight mb-4" :style="[textStyleAccent, titleShadow]">
+        <p class="font-heading text-5xl sm:text-6xl leading-tight mb-4" :style="[textStyleAccent, titleShadow, titleStyle]">
           {{ content.openingTitle || "You're Invited" }}
         </p>
 
         <!-- Dynamic Guest Name Box -->
         <div v-if="guestName" class="mt-4 mb-6 p-5 border border-white/20 rounded-xl backdrop-blur-md min-w-[200px] max-w-[300px] flex flex-col items-center gap-1.5" :style="guestBoxStyle">
-          <p v-if="greetingParts.before" class="text-sm sm:text-base uppercase tracking-[0.15em] opacity-90" :style="[textStyleBase, titleShadow]">{{ greetingParts.before }}</p>
-          <p class="font-display font-semibold text-2xl sm:text-3xl leading-tight" :style="[textStyleBase, titleShadow]">{{ guestName }}</p>
-          <p v-if="greetingParts.after" class="text-sm sm:text-base uppercase tracking-[0.15em] opacity-90" :style="[textStyleBase, titleShadow]">{{ greetingParts.after }}</p>
+          <p v-if="greetingParts.before" class="text-sm sm:text-base uppercase tracking-[0.15em] opacity-90" :style="[textStyleBase, titleShadow, greetingStyle]">{{ greetingParts.before }}</p>
+          <p class="font-display font-semibold text-2xl sm:text-3xl leading-tight" :style="[textStyleBase, titleShadow, greetingStyle]">{{ guestName }}</p>
+          <p v-if="greetingParts.after" class="text-sm sm:text-base uppercase tracking-[0.15em] opacity-90" :style="[textStyleBase, titleShadow, greetingStyle]">{{ greetingParts.after }}</p>
         </div>
 
         <button class="mt-8 flex flex-col items-center gap-2 group focus:outline-none">
-          <span class="text-sm tracking-[0.25em] uppercase font-bold transition-all group-hover:scale-105" :style="[textStyleBase, titleShadow]">
+          <span class="text-sm tracking-[0.25em] uppercase font-bold transition-all group-hover:scale-105" :style="[textStyleBase, titleShadow, actionStyle]">
             {{ content.openingActionText || "Tap to open" }}
           </span>
           <UIcon name="i-heroicons-chevron-double-down" class="w-5 h-5 animate-bounce mt-1" :style="textStyleAccent" />
@@ -125,6 +129,10 @@ function open() {
 const transitionName = computed(() => {
   if (props.content.openingStyle === 'custom-split' || props.content.openingStyle === 'wax-seal') return 'split-door'
   if (props.content.openingStyle === 'classic') return 'envelope-classic'
+  if (props.content.openingStyle === 'slide-up') return 'slide-up-open'
+  if (props.content.openingStyle === 'slide-down') return 'slide-down-open'
+  if (props.content.openingStyle === 'slide-left') return 'slide-left-open'
+  if (props.content.openingStyle === 'slide-right') return 'slide-right-open'
   return 'envelope-fade'
 })
 
@@ -148,6 +156,74 @@ const titleShadow = computed(() => {
     return { textShadow: '0 2px 16px rgba(255,255,255,0.7), 0 2px 6px rgba(255,255,255,0.85)' }
   }
   return { textShadow: '0 2px 16px rgba(0,0,0,0.55), 0 2px 6px rgba(0,0,0,0.75), 0 1px 2px rgba(0,0,0,0.9)' }
+})
+
+// Builds a style-override object for one of the three customizable opening
+// text elements. Only includes properties the user has actually set, so
+// anything left blank naturally falls back to the element's normal styling.
+function buildTextOverride(font: string, fontUrl: string, fontFamily: string, size: number, color: string, weight: string) {
+  const style: Record<string, string> = {}
+  if (fontFamily) style.fontFamily = fontFamily
+  else if (font) style.fontFamily = `'${font}', cursive`
+  if (color) style.color = color
+  if (weight) style.fontWeight = weight
+  if (size && size !== 100) style.fontSize = `calc(1em * ${size / 100})`
+  return style
+}
+
+const titleStyle = computed(() =>
+  buildTextOverride(
+    props.content.openingTitleFont,
+    props.content.openingTitleFontUrl,
+    props.content.openingTitleFontFamily,
+    props.content.openingTitleSize,
+    props.content.openingTitleColor,
+    props.content.openingTitleWeight
+  )
+)
+
+const greetingStyle = computed(() =>
+  buildTextOverride(
+    props.content.openingGreetingFont,
+    props.content.openingGreetingFontUrl,
+    props.content.openingGreetingFontFamily,
+    props.content.openingGreetingSize,
+    props.content.openingGreetingColor,
+    props.content.openingGreetingWeight
+  )
+)
+
+const actionStyle = computed(() =>
+  buildTextOverride(
+    props.content.openingActionFont,
+    props.content.openingActionFontUrl,
+    props.content.openingActionFontFamily,
+    props.content.openingActionSize,
+    props.content.openingActionColor,
+    props.content.openingActionWeight
+  )
+)
+
+// Loads any custom Google Font stylesheets the user pasted in for these
+// three elements, so the overrides above actually render in the chosen font.
+useHead({
+  link: computed(() => {
+    const links: Array<{ rel: string; href: string }> = []
+    const urls = [props.content.openingTitleFontUrl, props.content.openingGreetingFontUrl, props.content.openingActionFontUrl]
+    for (const url of urls) {
+      if (url && !url.includes('fonts.google.com/specimen/')) {
+        links.push({ rel: 'stylesheet', href: url })
+      }
+    }
+    return links
+  })
+})
+
+const sealInitials = computed(() => {
+  const b = (props.content.brideName || '').trim().charAt(0).toUpperCase()
+  const g = (props.content.groomName || '').trim().charAt(0).toUpperCase()
+  if (!b && !g) return '❤'
+  return `${b}${g ? ' & ' + g : ''}`
 })
 
 const greetingParts = computed(() => {
@@ -252,20 +328,36 @@ const guestBoxStyle = computed(() => {
 }
 
 /* Wax Seal */
+.wax-seal {
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.45));
+}
+
 .wax-seal-circle {
-  width: 56px;
-  height: 56px;
+  width: 84px;
+  height: 84px;
   border-radius: 9999px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4), inset 0 2px 4px rgba(255, 255, 255, 0.3);
-  border: 2px solid rgba(255, 255, 255, 0.2);
+  box-shadow:
+    inset 0 3px 6px rgba(255, 255, 255, 0.35),
+    inset 0 -6px 10px rgba(0, 0, 0, 0.35),
+    0 2px 4px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(0, 0, 0, 0.25);
+}
+
+.wax-seal-initials {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 700;
+  font-size: 1.4rem;
+  letter-spacing: 0.05em;
+  color: rgba(0, 0, 0, 0.55);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
 .split-door-leave-active .wax-seal {
   opacity: 0;
-  transform: translate(-50%, -50%) scale(0.3) rotate(25deg);
+  transform: scale(0.3) rotate(25deg);
   transition: opacity 0.4s ease, transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -276,6 +368,35 @@ const guestBoxStyle = computed(() => {
 .envelope-fade-leave-to {
   opacity: 0;
   transform: scale(1.1) translateY(-20px);
+}
+
+/* 3. Slide Open Animations (new, additive - each slides the whole cover
+   off screen in its named direction, revealing the card underneath) */
+.slide-up-open-leave-active,
+.slide-down-open-leave-active,
+.slide-left-open-leave-active,
+.slide-right-open-leave-active {
+  transition: transform 0.65s cubic-bezier(0.65, 0, 0.35, 1), opacity 0.5s ease;
+}
+
+.slide-up-open-leave-to {
+  transform: translateY(-100%);
+  opacity: 0.4;
+}
+
+.slide-down-open-leave-to {
+  transform: translateY(100%);
+  opacity: 0.4;
+}
+
+.slide-left-open-leave-to {
+  transform: translateX(-100%);
+  opacity: 0.4;
+}
+
+.slide-right-open-leave-to {
+  transform: translateX(100%);
+  opacity: 0.4;
 }
 
 /* 2. Grand Split Door Animation (also used by Wax Seal) */

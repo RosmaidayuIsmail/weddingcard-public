@@ -40,6 +40,10 @@ export interface WeddingContent {
   ornamentStyle: string
   /** CSS font-weight for body/description text (intro, story, addresses) - helps legibility on busy or low-contrast themes */
   textWeight: string
+  /** Override color for the bride & groom names specifically - falls back to the theme's ink color when empty */
+  nameColor: string
+  /** Percentage scale for the bride & groom names, 50-200, default 100 */
+  nameSize: number
   /** Monogram / logo emblem shown on the print card and details page */
   monogramEnabled: boolean
   monogramType: string // 'auto' | 'custom-text' | 'upload'
@@ -53,6 +57,29 @@ export interface WeddingContent {
   openingTitle: string
   openingGreeting: string
   openingActionText: string
+  /**
+   * Per-element typography overrides for the opening/envelope screen's three
+   * text elements. Each falls back to sensible defaults when empty, so
+   * existing cards are unaffected until the user opts in.
+   */
+  openingTitleFont: string
+  openingTitleFontUrl: string
+  openingTitleFontFamily: string
+  openingTitleSize: number
+  openingTitleColor: string
+  openingTitleWeight: string
+  openingGreetingFont: string
+  openingGreetingFontUrl: string
+  openingGreetingFontFamily: string
+  openingGreetingSize: number
+  openingGreetingColor: string
+  openingGreetingWeight: string
+  openingActionFont: string
+  openingActionFontUrl: string
+  openingActionFontFamily: string
+  openingActionSize: number
+  openingActionColor: string
+  openingActionWeight: string
   innerGreeting: string
   innerIntro: string
   btnDetails: string
@@ -76,6 +103,28 @@ export interface WeddingContent {
   rsvpSeatingLabel: string
   rsvpDietaryLabel: string
   rsvpWishesLabel: string
+  /** Additional RSVP text - all translatable so a Malay (or any language) card can be fully localized */
+  rsvpNameLabel: string
+  rsvpNamePlaceholder: string
+  rsvpDietaryPlaceholder: string
+  rsvpWishesSubtitle: string
+  rsvpWishesPlaceholder: string
+  rsvpSummaryTitle: string
+  rsvpSummaryNameLabel: string
+  rsvpSummaryStatusLabel: string
+  rsvpSummaryGuestsLabel: string
+  rsvpSummarySpecialLabel: string
+  rsvpSummaryDietaryLabel: string
+  rsvpAttendingText: string
+  rsvpNotAttendingText: string
+  rsvpBackButton: string
+  rsvpContinueButton: string
+  rsvpConfirmButton: string
+  rsvpSuccessYes: string
+  rsvpSuccessNo: string
+  rsvpStepAboutYou: string
+  rsvpStepDetails: string
+  rsvpStepWishes: string
   innerTopIcon: string
   /** Percentage scale for the icon, 50-200, default 100 */
   iconSize: number
@@ -172,6 +221,8 @@ export function createDefaultContent(brideName = '', groomName = ''): WeddingCon
     customFontFamily: '',
     ornamentStyle: 'none',
     textWeight: '300',
+    nameColor: '',
+    nameSize: 100,
     monogramEnabled: false,
     monogramType: 'auto',
     monogramText: '',
@@ -184,6 +235,24 @@ export function createDefaultContent(brideName = '', groomName = ''): WeddingCon
     openingTitle: "You're Invited",
     openingGreeting: 'Dear',
     openingActionText: 'Tap to open',
+    openingTitleFont: '',
+    openingTitleFontUrl: '',
+    openingTitleFontFamily: '',
+    openingTitleSize: 100,
+    openingTitleColor: '',
+    openingTitleWeight: '',
+    openingGreetingFont: '',
+    openingGreetingFontUrl: '',
+    openingGreetingFontFamily: '',
+    openingGreetingSize: 100,
+    openingGreetingColor: '',
+    openingGreetingWeight: '',
+    openingActionFont: '',
+    openingActionFontUrl: '',
+    openingActionFontFamily: '',
+    openingActionSize: 100,
+    openingActionColor: '',
+    openingActionWeight: '',
     innerGreeting: "You're Invited",
     innerIntro: 'To the wedding celebration of',
     btnDetails: 'View Details',
@@ -199,6 +268,27 @@ export function createDefaultContent(brideName = '', groomName = ''): WeddingCon
     rsvpSeatingLabel: 'Do you require special seating? (e.g., wheelchair access)',
     rsvpDietaryLabel: 'Dietary restrictions (if any)',
     rsvpWishesLabel: 'Wishes & Blessings',
+    rsvpNameLabel: 'Name(s)',
+    rsvpNamePlaceholder: 'Type your full name',
+    rsvpDietaryPlaceholder: 'e.g. Vegetarian, No Seafood',
+    rsvpWishesSubtitle: 'Write your well wishes for the couple',
+    rsvpWishesPlaceholder: 'May your marriage be blessed...',
+    rsvpSummaryTitle: 'RSVP Summary',
+    rsvpSummaryNameLabel: 'Name:',
+    rsvpSummaryStatusLabel: 'Status:',
+    rsvpSummaryGuestsLabel: 'Guests:',
+    rsvpSummarySpecialLabel: 'Special:',
+    rsvpSummaryDietaryLabel: 'Dietary:',
+    rsvpAttendingText: 'Attending',
+    rsvpNotAttendingText: 'Not Attending',
+    rsvpBackButton: 'Back',
+    rsvpContinueButton: 'Continue',
+    rsvpConfirmButton: 'Confirm RSVP',
+    rsvpSuccessYes: 'We are absolutely thrilled to celebrate with you.',
+    rsvpSuccessNo: 'You will be dearly missed.',
+    rsvpStepAboutYou: 'About You',
+    rsvpStepDetails: 'Details',
+    rsvpStepWishes: 'Wishes',
     innerTopIcon: 'none',
     iconSize: 100,
     detailsTopIcon: 'none',

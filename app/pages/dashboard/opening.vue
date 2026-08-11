@@ -116,13 +116,33 @@
                 <UFormField label="Main Title">
                   <UInput v-model="form.openingTitle" placeholder="e.g. Walimatul Urus" size="lg" class="w-full" />
                 </UFormField>
+                <button type="button" class="text-xs text-gold-300 hover:text-gold-200 flex items-center gap-1" @click="showTitleStyle = !showTitleStyle">
+                  <UIcon :name="showTitleStyle ? 'i-heroicons-chevron-down' : 'i-heroicons-chevron-right'" class="w-3.5 h-3.5" /> Customize font, size, color &amp; boldness
+                </button>
+                <div v-if="showTitleStyle" class="p-4 rounded-xl bg-[#111827] border border-gray-700 space-y-4">
+                  <TextStyleFields prefix="openingTitle" :form="form" :font-select-items="fontSelectItems" />
+                </div>
+
                 <UFormField label="Guest Greeting">
                   <UInput v-model="form.openingGreeting" placeholder="e.g. Menjemput {guestName} sekeluarga" size="lg" class="w-full" />
                   <template #help><span class="text-xs text-gray-500">Use <code class="text-gold-300">{guestName}</code> anywhere in the sentence - text before and after it both work, e.g. "Menjemput {guestName} sekeluarga".</span></template>
                 </UFormField>
+                <button type="button" class="text-xs text-gold-300 hover:text-gold-200 flex items-center gap-1" @click="showGreetingStyle = !showGreetingStyle">
+                  <UIcon :name="showGreetingStyle ? 'i-heroicons-chevron-down' : 'i-heroicons-chevron-right'" class="w-3.5 h-3.5" /> Customize font, size, color &amp; boldness
+                </button>
+                <div v-if="showGreetingStyle" class="p-4 rounded-xl bg-[#111827] border border-gray-700 space-y-4">
+                  <TextStyleFields prefix="openingGreeting" :form="form" :font-select-items="fontSelectItems" />
+                </div>
+
                 <UFormField label="Action Button Text">
                   <UInput v-model="form.openingActionText" placeholder="e.g. Klik untuk buka" size="lg" class="w-full" />
                 </UFormField>
+                <button type="button" class="text-xs text-gold-300 hover:text-gold-200 flex items-center gap-1" @click="showActionStyle = !showActionStyle">
+                  <UIcon :name="showActionStyle ? 'i-heroicons-chevron-down' : 'i-heroicons-chevron-right'" class="w-3.5 h-3.5" /> Customize font, size, color &amp; boldness
+                </button>
+                <div v-if="showActionStyle" class="p-4 rounded-xl bg-[#111827] border border-gray-700 space-y-4">
+                  <TextStyleFields prefix="openingAction" :form="form" :font-select-items="fontSelectItems" />
+                </div>
               </div>
             </div>
           </div>
@@ -166,7 +186,16 @@ definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
 const { wedding, loading, saving, updateContent } = useMyWedding()
 const { isConfigured: cloudinaryConfigured, uploadImage } = useCloudinary()
-const { themeStyleVars } = useThemes()
+const { themeStyleVars, fontOptions } = useThemes()
+
+const fontSelectItems = [
+  { label: 'Auto (use theme default)', value: '' },
+  ...fontOptions.map((f) => ({ label: f.label, value: f.id }))
+]
+
+const showTitleStyle = ref(false)
+const showGreetingStyle = ref(false)
+const showActionStyle = ref(false)
 const toast = useToast()
 
 const form = reactive<WeddingContent>(createDefaultContent())
@@ -183,7 +212,11 @@ const openingStyles = [
   { label: 'Modern Dark', value: 'modern-dark', icon: 'i-heroicons-moon' },
   { label: 'Minimal Light', value: 'minimal-light', icon: 'i-heroicons-sun' },
   { label: 'Canva (Fade)', value: 'custom', icon: 'i-heroicons-photo' },
-  { label: 'Canva (Split Door)', value: 'custom-split', icon: 'i-heroicons-arrows-right-left' }
+  { label: 'Canva (Split Door)', value: 'custom-split', icon: 'i-heroicons-arrows-right-left' },
+  { label: 'Slide Up', value: 'slide-up', icon: 'i-heroicons-arrow-up' },
+  { label: 'Slide Down', value: 'slide-down', icon: 'i-heroicons-arrow-down' },
+  { label: 'Slide Left', value: 'slide-left', icon: 'i-heroicons-arrow-left' },
+  { label: 'Slide Right', value: 'slide-right', icon: 'i-heroicons-arrow-right' }
 ]
 
 // Dynamically inject custom Google Font stylesheet into the editor for live preview

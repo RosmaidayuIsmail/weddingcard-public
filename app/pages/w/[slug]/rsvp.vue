@@ -83,8 +83,8 @@
                 
                 <template v-if="currentStep === 0">
                   <div class="space-y-8">
-                    <UFormField label="Name(s)" name="name" :error="errors.name">
-                      <UInput v-model="state.name" placeholder="Type your full name" size="xl" class="w-full shadow-inner" variant="outline" />
+                    <UFormField :label="wedding.content.rsvpNameLabel || 'Name(s)'" name="name" :error="errors.name">
+                      <UInput v-model="state.name" :placeholder="wedding.content.rsvpNamePlaceholder || 'Type your full name'" size="xl" class="w-full shadow-inner" variant="outline" />
                     </UFormField>
 
                     <div>
@@ -140,7 +140,7 @@
                       </div>
 
                       <UFormField :label="wedding.content.rsvpDietaryLabel || 'Dietary restrictions (if any)'" name="dietary">
-                        <UInput v-model="state.dietary" placeholder="e.g. Vegetarian, No Seafood" size="lg" class="w-full" />
+                        <UInput v-model="state.dietary" :placeholder="wedding.content.rsvpDietaryPlaceholder || 'e.g. Vegetarian, No Seafood'" size="lg" class="w-full" />
                       </UFormField>
                     </div>
                   </template>
@@ -149,19 +149,19 @@
                 <template v-else-if="currentStep === 2">
                   <div class="space-y-6">
                     <UFormField :label="wedding.content.rsvpWishesLabel || 'Wishes & Blessings'" name="doa" :error="errors.doa">
-                      <p class="italic text-xs mb-2 opacity-70" :style="{ color: 'var(--theme-accent)' }">Write your well wishes for the couple</p>
-                      <UTextarea v-model="state.doa" placeholder="May your marriage be blessed..." :rows="4" class="w-full resize-none custom-scrollbar shadow-inner text-base" />
+                      <p class="italic text-xs mb-2 opacity-70" :style="{ color: 'var(--theme-accent)' }">{{ wedding.content.rsvpWishesSubtitle || 'Write your well wishes for the couple' }}</p>
+                      <UTextarea v-model="state.doa" :placeholder="wedding.content.rsvpWishesPlaceholder || 'May your marriage be blessed...'" :rows="4" class="w-full resize-none custom-scrollbar shadow-inner text-base" />
                     </UFormField>
 
                     <div class="rounded-xl border border-white/10 bg-white/5 p-5 text-sm space-y-2 backdrop-blur-md shadow-inner">
-                      <h4 class="font-semibold text-white mb-3 border-b border-white/10 pb-2">RSVP Summary</h4>
+                      <h4 class="font-semibold text-white mb-3 border-b border-white/10 pb-2">{{ wedding.content.rsvpSummaryTitle || 'RSVP Summary' }}</h4>
                       <div class="grid grid-cols-3 gap-2">
-                        <span class="text-white/50">Name:</span> <span class="col-span-2 font-medium">{{ state.name }}</span>
-                        <span class="text-white/50">Status:</span> <span class="col-span-2 font-medium" :class="state.attending === 'Yes' ? 'text-emerald-400' : 'text-red-400'">{{ state.attending === 'Yes' ? 'Attending' : 'Not Attending' }}</span>
+                        <span class="text-white/50">{{ wedding.content.rsvpSummaryNameLabel || 'Name:' }}</span> <span class="col-span-2 font-medium">{{ state.name }}</span>
+                        <span class="text-white/50">{{ wedding.content.rsvpSummaryStatusLabel || 'Status:' }}</span> <span class="col-span-2 font-medium" :class="state.attending === 'Yes' ? 'text-emerald-400' : 'text-red-400'">{{ state.attending === 'Yes' ? (wedding.content.rsvpAttendingText || 'Attending') : (wedding.content.rsvpNotAttendingText || 'Not Attending') }}</span>
                         <template v-if="state.attending === 'Yes'">
-                          <span class="text-white/50">Guests:</span> <span class="col-span-2">{{ state.guestCount }}</span>
-                          <span class="text-white/50">Special:</span> <span class="col-span-2">{{ state.specialSeating ? 'Yes' : 'No' }}</span>
-                          <span v-if="state.dietary" class="text-white/50">Dietary:</span> <span v-if="state.dietary" class="col-span-2">{{ state.dietary }}</span>
+                          <span class="text-white/50">{{ wedding.content.rsvpSummaryGuestsLabel || 'Guests:' }}</span> <span class="col-span-2">{{ state.guestCount }}</span>
+                          <span class="text-white/50">{{ wedding.content.rsvpSummarySpecialLabel || 'Special:' }}</span> <span class="col-span-2">{{ state.specialSeating ? 'Yes' : 'No' }}</span>
+                          <span v-if="state.dietary" class="text-white/50">{{ wedding.content.rsvpSummaryDietaryLabel || 'Dietary:' }}</span> <span v-if="state.dietary" class="col-span-2">{{ state.dietary }}</span>
                         </template>
                       </div>
                     </div>
@@ -172,11 +172,11 @@
           </div>
 
           <div class="flex items-center justify-between mt-12 pt-6 border-t border-white/10 relative z-20">
-            <UButton v-if="currentStep > 0" variant="ghost" color="neutral" icon="i-heroicons-arrow-left" class="hover:bg-white/10 rounded-full px-4" @click="goBack">Back</UButton>
+            <UButton v-if="currentStep > 0" variant="ghost" color="neutral" icon="i-heroicons-arrow-left" class="hover:bg-white/10 rounded-full px-4" @click="goBack">{{ wedding.content.rsvpBackButton || 'Back' }}</UButton>
             <div v-else></div>
             
-            <UButton v-if="currentStep < steps.length - 1" color="primary" trailing-icon="i-heroicons-arrow-right" class="rounded-full px-8 shadow-md" size="lg" @click="goNext">Continue</UButton>
-            <UButton v-else color="primary" size="lg" icon="i-heroicons-paper-airplane" :loading="submitting" class="rounded-full px-8 shadow-[0_0_20px_-5px_var(--theme-accent)] animate-glow" @click="submitForm">Confirm RSVP</UButton>
+            <UButton v-if="currentStep < steps.length - 1" color="primary" trailing-icon="i-heroicons-arrow-right" class="rounded-full px-8 shadow-md" size="lg" @click="goNext">{{ wedding.content.rsvpContinueButton || 'Continue' }}</UButton>
+            <UButton v-else color="primary" size="lg" icon="i-heroicons-paper-airplane" :loading="submitting" class="rounded-full px-8 shadow-[0_0_20px_-5px_var(--theme-accent)] animate-glow" @click="submitForm">{{ wedding.content.rsvpConfirmButton || 'Confirm RSVP' }}</UButton>
           </div>
         </template>
 
@@ -189,7 +189,7 @@
             <div>
               <h2 class="text-4xl font-display mb-2 drop-shadow-md" :style="{ color: 'var(--theme-ink)' }">Thank you, {{ lastSubmittedName }}!</h2>
               <p class="text-white/80 text-lg font-light max-w-md mx-auto leading-relaxed">
-                Your RSVP has been securely received.{{ lastAttending === 'Yes' ? ' We are absolutely thrilled to celebrate with you.' : ' You will be dearly missed.' }}
+                Your RSVP has been securely received. {{ lastAttending === 'Yes' ? (wedding.content.rsvpSuccessYes || 'We are absolutely thrilled to celebrate with you.') : (wedding.content.rsvpSuccessNo || 'You will be dearly missed.') }}
               </p>
             </div>
             
@@ -242,7 +242,11 @@ useHead({
   })
 })
 
-const steps = ['About You', 'Details', 'Wishes']
+const steps = computed(() => [
+  wedding.value?.content.rsvpStepAboutYou || 'About You',
+  wedding.value?.content.rsvpStepDetails || 'Details',
+  wedding.value?.content.rsvpStepWishes || 'Wishes'
+])
 const currentStep = ref(0)
 const transitionName = ref('slide-left')
 const submitting = ref(false)
@@ -297,7 +301,7 @@ function validateStep(step: number): boolean {
 function goNext() {
   if (!validateStep(currentStep.value)) return
   transitionName.value = 'slide-left'
-  currentStep.value = Math.min(currentStep.value + 1, steps.length - 1)
+  currentStep.value = Math.min(currentStep.value + 1, steps.value.length - 1)
 }
 
 function goBack() {
