@@ -81,7 +81,7 @@ export function useMyWedding() {
     await runTransaction(db, async (transaction) => {
       const existingSlug = await transaction.get(slugRef)
       if (existingSlug.exists()) {
-        throw new Error('That link name is already taken \u2014 try another one')
+        throw new Error('That link name is already taken — try another one')
       }
 
       transaction.set(slugRef, { weddingId: weddingRef.id })
@@ -114,6 +114,35 @@ export function useMyWedding() {
       console.error(error)
       toast.add({ title: 'Could not save changes', color: 'error' })
       throw error
+    } finally {
+      saving.value = false
+    }
+  }
+
+  async function updateSlug(newSlug: string) {
+    if (!db || !wedding.value || !currentUser.value) throw new Error('You need to be signed in first')
+    const cleanSlug = slugify(newSlug)
+    if (!cleanSlug) throw new Error('Please choose a valid link name')
+    if (cleanSlug === wedding.value.slug) return
+
+    const weddingId = wedding.value.id
+    const slugRef = doc(db, 'slugs', cleanSlug)
+    const weddingRef = doc(db, 'weddings', weddingId)
+
+    saving.value = true
+    try {
+      await runTransaction(db, async (transaction) => {
+        const existingSlug = await transaction.get(slugRef)
+        if (existingSlug.exists()) {
+          throw new Error('That link name is already taken — try another one')
+        }
+        // Firestore rules don't allow deleting the old slugs/{slug} doc, so it's
+        // left in place rather than removed - it'll keep quietly pointing to
+        // this same wedding, which means any link already shared with the old
+        // name keeps working instead of breaking.
+        transaction.set(slugRef, { weddingId })
+        transaction.update(weddingRef, { slug: cleanSlug, updatedAt: serverTimestamp() })
+      })
     } finally {
       saving.value = false
     }
@@ -155,6 +184,7 @@ export function useMyWedding() {
     isSlugAvailable,
     createWedding,
     updateContent,
+    updateSlug,
     updateTheme,
     updateFlow,
     setPublished

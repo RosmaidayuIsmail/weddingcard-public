@@ -627,10 +627,31 @@
                 <span class="text-3xl sm:text-4xl transition-all duration-300 drop-shadow-md" 
                       :style="{ 
                         fontFamily: activeFontFamily,
-                        color: form.customAccent || currentTheme.palette.accent 
+                        color: form.nameColor || currentTheme.palette.ink 
                       }">
-                  {{ form.brideName || 'Aisyah' }} <span class="text-[0.6em] mx-1 opacity-80" style="color: #e3b04a;">&amp;</span> {{ form.groomName || 'Danial' }}
+                  {{ form.brideName || 'Aisyah' }} <span class="text-[0.6em] mx-1 opacity-80" :style="{ color: form.customAccent || currentTheme.palette.accent }">&amp;</span> {{ form.groomName || 'Danial' }}
                 </span>
+              </div>
+
+              <div class="pt-4 mt-4 border-t border-gray-800">
+                <h3 class="text-sm font-semibold text-white mb-3">Name Color &amp; Size</h3>
+                <div class="grid sm:grid-cols-2 gap-5">
+                  <div>
+                    <p class="text-xs text-white/50 mb-2">Color <span class="text-white/30">(leave blank to use the theme's default)</span></p>
+                    <div class="flex items-center gap-2">
+                      <input v-model="form.nameColor" type="color" class="w-10 h-10 rounded-lg border border-gray-700 bg-transparent cursor-pointer shrink-0">
+                      <UInput v-model="form.nameColor" placeholder="Theme default" size="lg" class="flex-1" />
+                      <UButton v-if="form.nameColor" size="xs" variant="ghost" color="neutral" icon="i-heroicons-x-mark" @click="form.nameColor = ''" />
+                    </div>
+                  </div>
+                  <div>
+                    <p class="text-xs text-white/50 mb-2">Size</p>
+                    <div class="flex items-center gap-3 h-10">
+                      <input v-model.number="form.nameSize" type="range" min="50" max="200" step="5" class="flex-1 accent-[#e3b04a]">
+                      <span class="text-xs text-white/70 w-10 text-right shrink-0">{{ form.nameSize ?? 100 }}%</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -796,7 +817,7 @@
 
         <!-- Right Column: Live Preview Frame -->
         <div ref="previewColumnRef" class="w-full lg:w-[360px] xl:w-[400px] shrink-0 order-1 lg:order-2">
-        <div class="flex flex-col items-center pb-8 lg:pb-0 sticky top-4 z-30" :style="previewFixedStyle">
+        <div class="flex flex-col items-center pb-8 lg:pb-0 lg:sticky lg:top-4 lg:z-30" :style="previewFixedStyle">
 
           <div class="flex items-center justify-between w-full mb-3 px-2 gap-2">
             <span v-if="savedAt" class="text-xs font-medium text-emerald-400 bg-emerald-400/10 px-2.5 py-1.5 rounded-full flex items-center gap-1 shrink-0 animate-in fade-in zoom-in duration-300">
@@ -863,7 +884,7 @@
 
 <script setup lang="ts">
 import { createDefaultContent, buildShareMessage, autoMonogramText, type WeddingContent } from '~/composables/useWeddingTypes'
-import { onClickOutside, useElementBounding } from '@vueuse/core'
+import { onClickOutside, useElementBounding, useMediaQuery } from '@vueuse/core'
 
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
@@ -881,13 +902,19 @@ const toast = useToast()
 // with `position: fixed`, which anchors straight to the viewport and cannot
 // be broken by any ancestor's overflow/scroll setup. Applied at all screen
 // sizes so mobile behaves the same as desktop - the phone mockup itself
-// shrinks on small screens (see .phone-bezel) so it doesn't dominate the
-// whole viewport when pinned.
+// The preview panel needs to stay visible while the (much taller) form
+// column scrolls, but only on wider screens where there's room for it
+// alongside the form. On mobile the phone mockup is tall relative to the
+// viewport - pinning it there would float it on top of the form fields
+// instead of beside them, causing exactly the overlap this is meant to
+// avoid. So on mobile the preview is left in normal document flow: it
+// appears once at its natural position and the user scrolls past it.
 const previewColumnRef = ref<HTMLElement | null>(null)
+const isDesktop = useMediaQuery('(min-width: 1024px)')
 const columnBounding = useElementBounding(previewColumnRef, { windowResize: true, windowScroll: false })
 
 const previewFixedStyle = computed(() => {
-  if (columnBounding.width.value === 0) return {}
+  if (!isDesktop.value || columnBounding.width.value === 0) return {}
   return {
     position: 'fixed' as const,
     left: `${columnBounding.left.value}px`,

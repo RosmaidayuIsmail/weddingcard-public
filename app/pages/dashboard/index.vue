@@ -44,9 +44,17 @@
           <p class="text-gold-300 text-sm font-semibold tracking-widest uppercase mb-2 flex items-center gap-2">
             <UIcon name="i-heroicons-star" class="w-4 h-4" /> Dashboard Overview
           </p>
-          <h1 class="text-3xl sm:text-4xl font-display font-bold text-white">
+          <h1 v-if="!editingNames" class="text-3xl sm:text-4xl font-display font-bold text-white group cursor-pointer inline-flex items-center gap-2" @click="startEditingNames">
             {{ wedding.content.brideName || 'Your' }} &amp; {{ wedding.content.groomName || 'Wedding' }}
+            <UIcon name="i-heroicons-pencil-square" class="w-4 h-4 opacity-0 group-hover:opacity-50 transition-opacity" />
           </h1>
+          <div v-else class="flex flex-wrap items-center gap-2">
+            <UInput v-model="editBrideName" size="lg" placeholder="Bride's name" class="w-36" />
+            <span class="text-white/50 font-display text-xl">&amp;</span>
+            <UInput v-model="editGroomName" size="lg" placeholder="Groom's name" class="w-36" />
+            <UButton size="sm" color="primary" icon="i-heroicons-check" :loading="savingNames" @click="saveNames">Save</UButton>
+            <UButton size="sm" variant="ghost" color="neutral" icon="i-heroicons-x-mark" @click="editingNames = false" />
+          </div>
           <div class="flex items-center gap-3 mt-4">
             <UBadge :color="wedding.status === 'published' ? 'success' : 'neutral'" variant="subtle" size="md" class="px-3">
               {{ wedding.status === 'published' ? '🟢 Published Live' : '⚪ Draft Mode' }}
@@ -72,13 +80,28 @@
       <div class="rounded-2xl border border-gold-400/20 bg-gradient-to-r from-gold-500/10 to-transparent p-6 flex flex-col sm:flex-row sm:items-center gap-4 justify-between relative overflow-hidden">
         <div class="absolute left-0 top-0 w-1 h-full bg-gold-400"></div>
         <div class="flex-1 overflow-hidden">
-          <p class="text-xs text-white/50 uppercase tracking-widest font-semibold mb-1">Your Shareable Link</p>
-          <!-- Clickable Link fix here -->
-          <a :href="publicUrl" target="_blank" class="text-gold-200 font-medium text-lg tracking-wide hover:underline hover:text-gold-100 transition-colors block truncate">
-            {{ publicUrl }}
-          </a>
+          <div class="flex items-center gap-2 mb-1">
+            <p class="text-xs text-white/50 uppercase tracking-widest font-semibold">Your Shareable Link</p>
+            <button v-if="!editingSlug" type="button" class="text-white/40 hover:text-gold-300 transition-colors" @click="startEditingSlug">
+              <UIcon name="i-heroicons-pencil-square" class="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          <div v-if="!editingSlug">
+            <!-- Clickable Link fix here -->
+            <a :href="publicUrl" target="_blank" class="text-gold-200 font-medium text-lg tracking-wide hover:underline hover:text-gold-100 transition-colors block truncate">
+              {{ publicUrl }}
+            </a>
+          </div>
+          <div v-else class="flex flex-wrap items-center gap-2">
+            <span class="text-white/40 text-sm shrink-0">{{ siteUrlPrefix }}/w/</span>
+            <UInput v-model="editSlugValue" size="md" class="flex-1 min-w-[140px]" />
+            <UButton size="xs" color="primary" icon="i-heroicons-check" :loading="savingSlug" @click="saveSlug">Save</UButton>
+            <UButton size="xs" variant="ghost" color="neutral" icon="i-heroicons-x-mark" @click="editingSlug = false" />
+          </div>
+          <p v-if="editingSlug" class="text-xs text-white/40 mt-1.5">Links already shared with your current name keep working - this just sets the name used for new links.</p>
         </div>
-        <div class="flex gap-3 shrink-0">
+        <div v-if="!editingSlug" class="flex gap-3 shrink-0">
           <UButton size="md" variant="soft" color="neutral" icon="i-heroicons-clipboard-document" class="bg-black/20 hover:bg-black/40 border border-white/10 rounded-full" @click="copyLink">
             {{ copied ? 'Copied!' : 'Copy Link' }}
           </UButton>
@@ -167,12 +190,36 @@
 <script setup lang="ts">
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
-const { wedding, loading, createWedding, isSlugAvailable, setPublished } = useMyWedding()
+const { wedding, loading, createWedding, isSlugAvailable, setPublished, updateContent, updateSlug } = useMyWedding()
 const { totalInvited, totalAttending, totalNotAttending, totalGuestCount } = useGuests(() => wedding.value?.id)
 const toast = useToast()
 const config = useRuntimeConfig()
 
 const brideName = ref('')
+
+const editingNames = ref(false)
+const editBrideName = ref('')
+const editGroomName = ref('')
+const savingNames = ref(false)
+
+function startEditingNames() {
+  if (!wedding.value) return
+  editBrideName.value = wedding.value.content.brideName
+  editGroomName.value = wedding.value.content.groomName
+  editingNames.value = true
+}
+
+async function saveNames() {
+  if (!editBrideName.value.trim() || !editGroomName.value.trim()) return
+  savingNames.value = true
+  try {
+    await updateContent({ brideName: editBrideName.value.trim(), groomName: editGroomName.value.trim() })
+    editingNames.value = false
+  } finally {
+    savingNames.value = false
+  }
+}
+
 const groomName = ref('')
 const slugInput = ref('')
 const slugError = ref('')
@@ -224,6 +271,32 @@ const publicUrl = computed(() => {
   const base = config.public.siteUrl || (import.meta.client ? window.location.origin : '')
   return `${base}/w/${wedding.value.slug}`
 })
+
+const siteUrlPrefix = computed(() => config.public.siteUrl || (import.meta.client ? window.location.origin : ''))
+
+const editingSlug = ref(false)
+const editSlugValue = ref('')
+const savingSlug = ref(false)
+
+function startEditingSlug() {
+  if (!wedding.value) return
+  editSlugValue.value = wedding.value.slug
+  editingSlug.value = true
+}
+
+async function saveSlug() {
+  if (!editSlugValue.value.trim()) return
+  savingSlug.value = true
+  try {
+    await updateSlug(editSlugValue.value.trim())
+    editingSlug.value = false
+    toast.add({ title: 'Link name updated', color: 'success' })
+  } catch (error: any) {
+    toast.add({ title: error?.message || 'Could not update the link name', color: 'error' })
+  } finally {
+    savingSlug.value = false
+  }
+}
 
 async function copyLink() {
   await navigator.clipboard.writeText(publicUrl.value)
