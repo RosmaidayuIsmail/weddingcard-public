@@ -13,12 +13,24 @@
   </div>
 
   <div v-else class="theme-surface text-white relative overflow-hidden" :style="styleVars">
-    <!-- Card frame: on real phones this is simply full width (no visual
-         change), but on wider screens it caps the invitation to the same
-         portrait proportions as the Design Studio's phone preview, so cover
-         photos and opening backgrounds render exactly like they do there
-         instead of being stretched into a wide landscape crop. -->
-    <div class="relative mx-auto w-full max-w-[520px] overflow-hidden sm:my-6 sm:rounded-[2rem] sm:border sm:border-white/10 sm:shadow-2xl">
+    <!-- Ambient backdrop: a heavily blurred, full-bleed copy of the SAME
+         cover photo, so wide desktop screens stay filled with the actual
+         colors/art from the photo instead of empty flat space either side
+         of the card. This is what was missing last round - capping the
+         width alone fixed the crop but left a bare void around it. -->
+    <div v-if="wedding.content.coverPhotoUrl && opened" class="fixed inset-0 z-0 pointer-events-none" aria-hidden="true">
+      <img :src="wedding.content.coverPhotoUrl" alt="" class="w-full h-full object-cover scale-110" style="filter: blur(48px) saturate(1.15) brightness(0.55);">
+      <div class="absolute inset-0" :style="{ background: 'var(--theme-bg-to, #04101f)', opacity: 0.35 }"></div>
+    </div>
+
+    <!-- Content column: on real phones this is simply full width (no visual
+         change). On wider screens it caps the SHARP/foreground copy of the
+         invitation to the same portrait proportions as the Design Studio's
+         phone preview - so cover photos and opening backgrounds render
+         exactly like they do there - while staying frameless (no border,
+         rounding or shadow) so it reads as one continuous hero rather than
+         a phone screenshot pasted onto the desktop page. -->
+    <div class="relative z-10 mx-auto w-full max-w-[520px] overflow-hidden">
       <!-- Decorative background layers live at the card level (not inside the
            hero canvas below) specifically so they visually continue across
            the footer too, instead of stopping abruptly at the hero's edge. -->
