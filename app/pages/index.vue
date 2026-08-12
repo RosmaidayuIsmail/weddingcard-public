@@ -103,7 +103,7 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          <div v-for="theme in themes.slice(0, 3)" :key="theme.id" class="theme-showcase-card group cursor-pointer">
+          <div v-for="theme in allThemes.slice(0, 3)" :key="theme.id" class="theme-showcase-card group cursor-pointer">
             <div class="aspect-[4/3] w-full rounded-t-2xl relative overflow-hidden bg-black/20">
               <div class="absolute inset-0 transition-transform duration-700 group-hover:scale-110" :style="{ background: `linear-gradient(135deg, ${theme.palette.bgFrom}, ${theme.palette.bgTo})` }"></div>
               <!-- Abstract Mockup -->
@@ -155,7 +155,7 @@
 <script setup lang="ts">
 import { useWindowScroll } from '@vueuse/core'
 
-const { themes } = useThemes()
+const { allThemes } = useThemes()
 const { y } = useWindowScroll()
 const scrolled = computed(() => y.value > 20)
 

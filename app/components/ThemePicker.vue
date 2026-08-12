@@ -1,7 +1,7 @@
 <template>
   <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
     <button
-      v-for="theme in themes"
+      v-for="theme in allThemes"
       :key="theme.id"
       type="button"
       class="theme-card group"
@@ -45,7 +45,7 @@
 defineProps<{ modelValue: string }>()
 defineEmits<{ 'update:modelValue': [value: string] }>()
 
-const { themes } = useThemes()
+const { allThemes } = useThemes()
 </script>
 
 <style scoped>

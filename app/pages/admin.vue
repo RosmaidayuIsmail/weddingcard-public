@@ -14,54 +14,66 @@
       <div class="flex items-center justify-between">
         <div>
           <h1 class="text-2xl font-display font-bold text-gold-100">Platform Admin</h1>
-          <p class="text-sm text-white/50">All weddings on WeddingCard</p>
+          <p class="text-sm text-white/50">{{ tab === 'weddings' ? 'All weddings on WeddingCard' : 'Themes, fonts, and text presets available to every couple' }}</p>
         </div>
         <UButton variant="ghost" color="neutral" icon="i-heroicons-arrow-right-on-rectangle" @click="handleLogout">
           Sign out
         </UButton>
       </div>
 
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div class="stat-card">
-          <p class="stat-label">Total Weddings</p>
-          <p class="stat-number">{{ weddings.length }}</p>
-        </div>
-        <div class="stat-card">
-          <p class="stat-label">Published</p>
-          <p class="stat-number text-emerald-300">{{ publishedCount }}</p>
-        </div>
-        <div class="stat-card">
-          <p class="stat-label">Premium Plan</p>
-          <p class="stat-number text-gold-200">{{ premiumCount }}</p>
-        </div>
-        <div class="stat-card">
-          <p class="stat-label">Drafts</p>
-          <p class="stat-number text-white/60">{{ weddings.length - publishedCount }}</p>
-        </div>
+      <div class="flex gap-2 border-b border-white/10">
+        <button type="button" class="tab-btn" :class="{ 'tab-btn-active': tab === 'weddings' }" @click="tab = 'weddings'">
+          <UIcon name="i-heroicons-users" class="w-4 h-4" /> Weddings
+        </button>
+        <button type="button" class="tab-btn" :class="{ 'tab-btn-active': tab === 'catalog' }" @click="tab = 'catalog'">
+          <UIcon name="i-heroicons-swatch" class="w-4 h-4" /> Catalog
+        </button>
       </div>
 
-      <UInput v-model="search" icon="i-heroicons-magnifying-glass" placeholder="Search by names or link name..." class="max-w-sm" />
-
-      <div v-if="loading" class="text-center text-white/50 py-10">Loading...</div>
-      <div v-else-if="filteredWeddings.length === 0" class="text-center text-white/50 py-10">No weddings found.</div>
-      <div v-else class="space-y-2">
-        <div v-for="w in filteredWeddings" :key="w.id" class="wedding-row">
-          <div>
-            <p class="font-medium">{{ w.content.brideName || '\u2014' }} &amp; {{ w.content.groomName || '\u2014' }}</p>
-            <p class="text-xs text-white/50">/w/{{ w.slug }}</p>
+      <!-- WEDDINGS TAB -->
+      <template v-if="tab === 'weddings'">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div class="stat-card">
+            <p class="stat-label">Total Weddings</p>
+            <p class="stat-number">{{ weddings.length }}</p>
           </div>
-          <div class="flex items-center gap-2">
-            <UBadge :color="w.status === 'published' ? 'success' : 'neutral'" variant="subtle">{{ w.status }}</UBadge>
-            <UBadge :color="w.plan === 'premium' ? 'primary' : 'neutral'" variant="subtle">{{ w.plan }}</UBadge>
-            <UButton size="xs" variant="soft" color="neutral" icon="i-heroicons-arrow-top-right-on-square" :to="`/w/${w.slug}`" target="_blank" external>
-              View
-            </UButton>
-            <UButton size="xs" variant="solid" color="primary" icon="i-heroicons-pencil-square" :to="`/admin/wedding/${w.id}`">
-              Manage
-            </UButton>
+          <div class="stat-card">
+            <p class="stat-label">Published</p>
+            <p class="stat-number text-emerald-300">{{ publishedCount }}</p>
+          </div>
+          <div class="stat-card">
+            <p class="stat-label">Premium Plan</p>
+            <p class="stat-number text-gold-200">{{ premiumCount }}</p>
+          </div>
+          <div class="stat-card">
+            <p class="stat-label">Drafts</p>
+            <p class="stat-number text-white/60">{{ weddings.length - publishedCount }}</p>
           </div>
         </div>
-      </div>
+
+        <UInput v-model="search" icon="i-heroicons-magnifying-glass" placeholder="Search by names or link name..." class="max-w-sm" />
+
+        <div v-if="loading" class="text-center text-white/50 py-10">Loading...</div>
+        <div v-else-if="filteredWeddings.length === 0" class="text-center text-white/50 py-10">No weddings found.</div>
+        <div v-else class="space-y-2">
+          <div v-for="w in filteredWeddings" :key="w.id" class="wedding-row">
+            <div>
+              <p class="font-medium">{{ w.content.brideName || '\u2014' }} &amp; {{ w.content.groomName || '\u2014' }}</p>
+              <p class="text-xs text-white/50">/w/{{ w.slug }}</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <UBadge :color="w.status === 'published' ? 'success' : 'neutral'" variant="subtle">{{ w.status }}</UBadge>
+              <UBadge :color="w.plan === 'premium' ? 'primary' : 'neutral'" variant="subtle">{{ w.plan }}</UBadge>
+              <UButton size="xs" variant="soft" color="neutral" icon="i-heroicons-arrow-top-right-on-square" :to="`/w/${w.slug}`" target="_blank" external>
+                View
+              </UButton>
+            </div>
+          </div>
+        </div>
+      </template>
+
+      <!-- CATALOG TAB -->
+      <AdminCatalogManager v-else />
     </div>
   </div>
 </template>
@@ -76,6 +88,8 @@ const { db, isConfigured } = useFirebase()
 const { logOut } = useAuth()
 const { currentUser, profile, authReady } = useAuthState()
 const toast = useToast()
+
+const tab = ref<'weddings' | 'catalog'>('weddings')
 
 const weddings = ref<WeddingDoc[]>([])
 const loading = ref(true)
@@ -155,5 +169,31 @@ useSeoMeta({ title: 'Platform Admin \u2014 WeddingCard', robots: 'noindex, nofol
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.08);
   flex-wrap: wrap;
+}
+
+.tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.65rem 0.25rem;
+  margin-bottom: -1px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.5);
+  border-bottom: 2px solid transparent;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.tab-btn + .tab-btn {
+  margin-left: 1.25rem;
+}
+
+.tab-btn:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.tab-btn-active {
+  color: #f3ddaa;
+  border-bottom-color: #d4a017;
 }
 </style>

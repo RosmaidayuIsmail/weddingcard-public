@@ -55,7 +55,7 @@
       <div>
         <h2 class="font-display text-lg mb-3">Theme pricing</h2>
         <div class="grid sm:grid-cols-2 gap-3">
-          <div v-for="theme in themes" :key="theme.id" class="theme-row">
+          <div v-for="theme in allThemes" :key="theme.id" class="theme-row">
             <span>{{ theme.name }}</span>
             <span class="text-gold-300">{{ theme.price === 0 ? 'Free' : `RM ${theme.price}` }}</span>
           </div>
@@ -69,7 +69,7 @@
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
 const { wedding, loading } = useMyWedding()
-const { themes } = useThemes()
+const { allThemes } = useThemes()
 const toast = useToast()
 
 function showComingSoon() {

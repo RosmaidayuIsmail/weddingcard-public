@@ -891,7 +891,7 @@ definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 const { wedding, loading, saving, updateContent, updateTheme } = useMyWedding()
 const { isConfigured: cloudinaryConfigured, uploadImage } = useCloudinary()
 const { removeBackground, processing: bgRemoving } = useBackgroundRemoval()
-const { getTheme, fontOptions } = useThemes()
+const { getTheme, allFontOptions } = useThemes()
 const toast = useToast()
 
 // The preview panel needs to stay visible while the (much taller) form
@@ -1048,7 +1048,7 @@ const FONT_DEFAULT_SENTINEL = 'default'
 
 const fontSelectItems = computed(() => [
   { label: `Theme default (${currentTheme.value.headingFont})`, value: FONT_DEFAULT_SENTINEL },
-  ...fontOptions.map((f) => ({ label: f.label, value: f.id }))
+  ...allFontOptions.value.map((f) => ({ label: f.label, value: f.id }))
 ])
 
 const fontSelectValue = computed({

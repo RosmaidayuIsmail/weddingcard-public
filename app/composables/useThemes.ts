@@ -196,9 +196,106 @@ export function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`
 }
 
+export interface TextPreset {
+  id: string
+  label: string
+  openingTitle: string
+  openingGreeting: string
+  openingActionText: string
+}
+
+// The two presets that already existed as hardcoded buttons on the Opening
+// Design page - kept as permanent built-ins alongside anything admins add.
+export const builtInTextPresets: TextPreset[] = [
+  { id: 'en', label: 'English', openingTitle: "You're Invited", openingGreeting: 'Dear {guestName}', openingActionText: 'Tap to open' },
+  { id: 'ms', label: 'Bahasa Melayu', openingTitle: 'Walimatul Urus', openingGreeting: 'Menjemput {guestName} sekeluarga', openingActionText: 'Klik untuk buka' }
+]
+
+interface PlatformCatalog {
+  themes: Theme[]
+  fonts: FontOption[]
+  textPresets: TextPreset[]
+}
+
 export function useThemes() {
+  const { db, isConfigured } = useFirebase()
+
+  // Shared across every component that calls useThemes() in this session,
+  // so the catalog is only fetched from Firestore once, not once per call.
+  const customThemes = useState<Theme[]>('catalog-themes', () => [])
+  const customFonts = useState<FontOption[]>('catalog-fonts', () => [])
+  const customTextPresets = useState<TextPreset[]>('catalog-text-presets', () => [])
+  const catalogFetched = useState('catalog-fetched', () => false)
+
+  async function ensureCatalogLoaded() {
+    if (catalogFetched.value || !isConfigured || !db) return
+    catalogFetched.value = true
+    try {
+      const { doc, getDoc } = await import('firebase/firestore')
+      const snap = await getDoc(doc(db, 'platformCatalog', 'catalog'))
+      if (snap.exists()) {
+        const data = snap.data() as Partial<PlatformCatalog>
+        customThemes.value = Array.isArray(data.themes) ? data.themes : []
+        customFonts.value = Array.isArray(data.fonts) ? data.fonts : []
+        customTextPresets.value = Array.isArray(data.textPresets) ? data.textPresets : []
+      }
+    } catch (error) {
+      // Non-fatal: the app still works fine with just the built-in catalog.
+      console.error('Could not load platform catalog', error)
+    }
+  }
+
+  if (import.meta.client) ensureCatalogLoaded()
+
+  async function saveCatalogField<K extends keyof PlatformCatalog>(field: K, value: PlatformCatalog[K]) {
+    if (!db) throw new Error('Firebase is not configured')
+    const { doc, setDoc } = await import('firebase/firestore')
+    await setDoc(doc(db, 'platformCatalog', 'catalog'), { [field]: value }, { merge: true })
+  }
+
+  async function addCustomTheme(theme: Theme) {
+    const next = [...customThemes.value.filter((t) => t.id !== theme.id), theme]
+    await saveCatalogField('themes', next)
+    customThemes.value = next
+  }
+  async function removeCustomTheme(themeId: string) {
+    const next = customThemes.value.filter((t) => t.id !== themeId)
+    await saveCatalogField('themes', next)
+    customThemes.value = next
+  }
+
+  async function addCustomFont(font: FontOption) {
+    const next = [...customFonts.value.filter((f) => f.id !== font.id), font]
+    await saveCatalogField('fonts', next)
+    customFonts.value = next
+  }
+  async function removeCustomFont(fontId: string) {
+    const next = customFonts.value.filter((f) => f.id !== fontId)
+    await saveCatalogField('fonts', next)
+    customFonts.value = next
+  }
+
+  async function addTextPreset(preset: TextPreset) {
+    const next = [...customTextPresets.value.filter((p) => p.id !== preset.id), preset]
+    await saveCatalogField('textPresets', next)
+    customTextPresets.value = next
+  }
+  async function removeTextPreset(presetId: string) {
+    const next = customTextPresets.value.filter((p) => p.id !== presetId)
+    await saveCatalogField('textPresets', next)
+    customTextPresets.value = next
+  }
+
+  // The full, "what should actually render" lists - built-ins plus whatever
+  // admins have added. Every existing call site that destructures the plain
+  // `themes`/`fontOptions` arrays keeps working unchanged (those stay static
+  // exports below); anything that should reflect admin additions uses these.
+  const allThemes = computed(() => [...themes, ...customThemes.value])
+  const allFontOptions = computed(() => [...fontOptions, ...customFonts.value])
+  const allTextPresets = computed(() => [...builtInTextPresets, ...customTextPresets.value])
+
   function getTheme(themeId: string | undefined | null): Theme {
-    return themes.find((theme) => theme.id === themeId) ?? themes.find((theme) => theme.id === DEFAULT_THEME_ID)!
+    return allThemes.value.find((theme) => theme.id === themeId) ?? themes.find((theme) => theme.id === DEFAULT_THEME_ID)!
   }
 
   function themeStyleVars(themeId: string | undefined | null, overrides?: ColorOverrides, fontFamily?: string, textWeight?: string) {
@@ -224,5 +321,19 @@ export function useThemes() {
     }
   }
 
-  return { themes, fontOptions, getTheme, themeStyleVars }
+  return {
+    themes,
+    fontOptions,
+    allThemes,
+    allFontOptions,
+    allTextPresets,
+    getTheme,
+    themeStyleVars,
+    addCustomTheme,
+    removeCustomTheme,
+    addCustomFont,
+    removeCustomFont,
+    addTextPreset,
+    removeTextPreset
+  }
 }

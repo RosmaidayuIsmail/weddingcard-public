@@ -106,11 +106,10 @@
 
             <!-- Language Translation Presets -->
             <div class="pt-6 border-t border-gray-800">
-              <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
                 <h3 class="text-sm font-semibold text-white">Opening Text Settings</h3>
-                <div class="flex bg-gray-900 border border-gray-700 rounded-full p-1">
-                  <button type="button" @click="applyTranslation('en')" class="px-3 py-1 text-xs font-medium rounded-full transition-colors hover:bg-gray-800 hover:text-white text-gray-400">English Preset</button>
-                  <button type="button" @click="applyTranslation('ms')" class="px-3 py-1 text-xs font-medium rounded-full transition-colors hover:bg-gray-800 hover:text-white text-gray-400">Bahasa Melayu</button>
+                <div class="flex flex-wrap bg-gray-900 border border-gray-700 rounded-full p-1 gap-0.5">
+                  <button v-for="preset in allTextPresets" :key="preset.id" type="button" @click="applyTranslation(preset)" class="px-3 py-1 text-xs font-medium rounded-full transition-colors hover:bg-gray-800 hover:text-white text-gray-400">{{ preset.label }}</button>
                 </div>
               </div>
 
@@ -184,16 +183,18 @@
 <script setup lang="ts">
 import { createDefaultContent, type WeddingContent } from '~/composables/useWeddingTypes'
 
+import type { TextPreset } from '~/composables/useThemes'
+
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
 const { wedding, loading, saving, updateContent } = useMyWedding()
 const { isConfigured: cloudinaryConfigured, uploadImage } = useCloudinary()
-const { themeStyleVars, fontOptions } = useThemes()
+const { themeStyleVars, allFontOptions, allTextPresets } = useThemes()
 
-const fontSelectItems = [
+const fontSelectItems = computed(() => [
   { label: 'Auto (use theme default)', value: '' },
-  ...fontOptions.map((f) => ({ label: f.label, value: f.id }))
-]
+  ...allFontOptions.value.map((f) => ({ label: f.label, value: f.id }))
+])
 
 const showTitleStyle = ref(false)
 const showGreetingStyle = ref(false)
@@ -274,16 +275,10 @@ const styleVars = computed(() => {
   )
 })
 
-function applyTranslation(lang: 'en' | 'ms') {
-  if (lang === 'ms') {
-    form.openingTitle = 'Walimatul Urus'
-    form.openingGreeting = 'Menjemput {guestName} sekeluarga'
-    form.openingActionText = 'Klik untuk buka'
-  } else {
-    form.openingTitle = "You're Invited"
-    form.openingGreeting = 'Dear {guestName}'
-    form.openingActionText = 'Tap to open'
-  }
+function applyTranslation(preset: TextPreset) {
+  form.openingTitle = preset.openingTitle
+  form.openingGreeting = preset.openingGreeting
+  form.openingActionText = preset.openingActionText
   toast.add({ title: 'Text presets applied', color: 'success' })
 }
 
