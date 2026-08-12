@@ -207,10 +207,14 @@ const previewOpened = ref(false)
 const openingBgInput = ref<HTMLInputElement | null>(null)
 const openingBgUploading = ref(false)
 
-// The cover picture upload panel now powers three styles: the two Canva
-// backgrounds (where it's required) and Wax Seal (where it's optional -
-// the doors behind the seal fall back to a gradient panel if left blank).
-const showOpeningBgUpload = computed(() => form.openingStyle.includes('custom') || form.openingStyle === 'wax-seal')
+// The cover picture upload panel now powers every style except Classic,
+// Modern Dark and Minimal Light: the two Canva backgrounds (required),
+// Wax Seal (optional - falls back to a gradient panel), and the four
+// Slide styles (optional - falls back to a gradient background).
+const slideStyles = ['slide-up', 'slide-down', 'slide-left', 'slide-right']
+const showOpeningBgUpload = computed(() =>
+  form.openingStyle.includes('custom') || form.openingStyle === 'wax-seal' || slideStyles.includes(form.openingStyle)
+)
 
 const openingBgPanelCopy = computed(() => {
   if (form.openingStyle === 'wax-seal') {
@@ -223,6 +227,12 @@ const openingBgPanelCopy = computed(() => {
     return {
       title: 'Split Door Background',
       description: 'Upload your own vertical design (1080x1920) - it\'s sliced in half and slides open like double doors.'
+    }
+  }
+  if (slideStyles.includes(form.openingStyle)) {
+    return {
+      title: 'Slide Cover Picture (optional)',
+      description: 'Upload a vertical photo (1080x1920) to use as the cover - it travels off-screen with the rest of the cover when tapped. Leave empty to use the default gradient.'
     }
   }
   return {

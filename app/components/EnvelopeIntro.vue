@@ -69,6 +69,19 @@
       </div>
 
       <!-- Classic Envelope Default Background -->
+      <div v-else-if="content.openingStyle === 'classic'" class="absolute inset-0 z-0 bg-gradient-to-br" :style="{ background: `linear-gradient(135deg, var(--theme-bg-from, #0d2a4a) 0%, var(--theme-bg-to, #04101f) 100%)` }"></div>
+
+      <!-- Slide Up / Down / Left / Right: full-bleed picture background
+           (optional) - the slide transition moves the whole overlay as one
+           block, so the picture just travels off-screen along with it,
+           same as Canva (Fade). Falls back to the default gradient. -->
+      <div v-else-if="isSlideStyle && content.openingBgUrl" class="absolute inset-0 z-0">
+        <img :src="content.openingBgUrl" alt="Cover Background" class="w-full h-full object-cover" />
+        <div class="absolute inset-0 bg-black/40"></div>
+      </div>
+
+      <!-- Fallback Gradient Background (Slide styles without a picture, and
+           anything else not covered above) -->
       <div v-else class="absolute inset-0 z-0 bg-gradient-to-br" :style="{ background: `linear-gradient(135deg, var(--theme-bg-from, #0d2a4a) 0%, var(--theme-bg-to, #04101f) 100%)` }"></div>
 
       <!-- Content Container (Fades out smoothly during door split) -->
@@ -166,6 +179,10 @@ const overlayClass = computed(() => {
   if (props.content.openingStyle === 'minimal-light') return 'text-slate-800'
   return 'text-white'
 })
+
+const isSlideStyle = computed(() =>
+  ['slide-up', 'slide-down', 'slide-left', 'slide-right'].includes(props.content.openingStyle)
+)
 
 const textStyleAccent = computed(() => {
   if (props.content.openingStyle === 'minimal-light') return { color: props.content.customAccent || 'var(--theme-accent, #8a6d3b)' }
