@@ -13,135 +13,142 @@
   </div>
 
   <div v-else class="theme-surface text-white relative overflow-hidden" :style="styleVars">
-    <!-- Decorative background layers live at the page level (not inside the
-         hero canvas below) specifically so they visually continue across
-         the footer too, instead of stopping abruptly at the hero's edge. -->
-    <div v-if="wedding.content.coverPhotoUrl && opened" class="absolute inset-0 z-0 transition-opacity duration-1000 animate-in fade-in" :class="wedding.content.hideSystemText ? 'opacity-100' : 'opacity-[0.55]'">
-      <img :src="wedding.content.coverPhotoUrl" alt="Background" class="w-full h-full animate-[pulse_20s_ease-in-out_infinite_alternate]" :class="wedding.content.hideSystemText ? 'object-contain' : 'object-cover scale-105'">
-      <div class="absolute inset-0" :style="{ background: `linear-gradient(to bottom, transparent 0%, var(--theme-bg-to) 90%)` }" />
-    </div>
-    <PetalsBackground v-if="wedding.content.enablePetals !== false" :style-name="wedding.content.petalStyle" />
-    <CardOrnament v-if="opened" :style="wedding.content.ornamentStyle" color="var(--theme-accent)" />
-
-    <!-- HERO CANVAS: every 0-100% position below is relative to THIS box only,
-         same as the editor's preview mockup. Nothing else on the page shares
-         this coordinate space, so nothing can ever collide with it. -->
-    <div class="relative overflow-hidden" :style="{ minHeight: 'max(100vh, 700px)' }">
-      <EnvelopeIntro v-model:opened="opened" :guest-name="guestName" :content="wedding.content" />
-
-      <div v-if="opened" class="absolute top-6 right-6 z-30">
-        <MusicToggle v-if="wedding.content.audioSrc" :src="wedding.content.audioSrc" />
+    <!-- Card frame: on real phones this is simply full width (no visual
+         change), but on wider screens it caps the invitation to the same
+         portrait proportions as the Design Studio's phone preview, so cover
+         photos and opening backgrounds render exactly like they do there
+         instead of being stretched into a wide landscape crop. -->
+    <div class="relative mx-auto w-full max-w-[520px] overflow-hidden sm:my-6 sm:rounded-[2rem] sm:border sm:border-white/10 sm:shadow-2xl">
+      <!-- Decorative background layers live at the card level (not inside the
+           hero canvas below) specifically so they visually continue across
+           the footer too, instead of stopping abruptly at the hero's edge. -->
+      <div v-if="wedding.content.coverPhotoUrl && opened" class="absolute inset-0 z-0 transition-opacity duration-1000 animate-in fade-in" :class="wedding.content.hideSystemText ? 'opacity-100' : 'opacity-[0.55]'">
+        <img :src="wedding.content.coverPhotoUrl" alt="Background" class="w-full h-full animate-[pulse_20s_ease-in-out_infinite_alternate]" :class="wedding.content.hideSystemText ? 'object-contain' : 'object-cover scale-105'">
+        <div class="absolute inset-0" :style="{ background: `linear-gradient(to bottom, transparent 0%, var(--theme-bg-to) 90%)` }" />
       </div>
+      <PetalsBackground v-if="wedding.content.enablePetals !== false" :style-name="wedding.content.petalStyle" />
+      <CardOrnament v-if="opened" :style="wedding.content.ornamentStyle" color="var(--theme-accent)" />
 
-      <div v-if="opened && !wedding.content.hideSystemText" class="absolute inset-0 z-10">
-        <!-- 1. Icon -->
-        <div
-          v-if="wedding.content.innerTopIcon && wedding.content.innerTopIcon !== 'none'"
-          class="absolute flex flex-col items-center justify-center text-center w-full max-w-[92vw] px-4 animate-in fade-in zoom-in delay-100"
-          :style="{ left: `${wedding.content.iconX ?? 50}%`, top: `${wedding.content.iconY ?? 15}%`, transform: 'translate(-50%, -50%)' }"
-        >
-          <p
-            v-if="wedding.content.innerTopIcon === 'bismillah'"
-            class="leading-relaxed"
-            dir="rtl"
-            :style="{
-              color: 'var(--theme-accent)',
-              fontFamily: `'Amiri', 'Traditional Arabic', serif`,
-              fontSize: `clamp(1.25rem, ${3.2 * ((wedding.content.iconSize ?? 100) / 100)}vw, ${1.9 * ((wedding.content.iconSize ?? 100) / 100)}rem)`
-            }"
-          >بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</p>
-          <UIcon v-else-if="wedding.content.innerTopIcon === 'rings'" name="i-heroicons-lifebuoy" :style="{ color: 'var(--theme-accent)', width: `${2 * ((wedding.content.iconSize ?? 100) / 100)}rem`, height: `${2 * ((wedding.content.iconSize ?? 100) / 100)}rem` }" />
-          <UIcon v-else-if="wedding.content.innerTopIcon === 'heart'" name="i-heroicons-heart" :style="{ color: 'var(--theme-accent)', width: `${2 * ((wedding.content.iconSize ?? 100) / 100)}rem`, height: `${2 * ((wedding.content.iconSize ?? 100) / 100)}rem` }" />
-          <img v-else-if="wedding.content.innerTopIcon === 'custom' && wedding.content.customIconUrl" :src="wedding.content.customIconUrl" alt="" class="object-contain drop-shadow" :style="{ width: `${7 * ((wedding.content.iconSize ?? 100) / 100)}rem`, height: 'auto', maxWidth: '90vw', maxHeight: `${7 * ((wedding.content.iconSize ?? 100) / 100)}rem` }">
-          <p v-if="wedding.content.iconSubtitle" class="mt-3 text-xs sm:text-sm text-white/60 italic">{{ wedding.content.iconSubtitle }}</p>
+      <!-- HERO CANVAS: every 0-100% position below is relative to THIS box only,
+           same as the editor's preview mockup. Nothing else on the page shares
+           this coordinate space, so nothing can ever collide with it. -->
+      <div class="relative overflow-hidden" :style="{ minHeight: 'max(100vh, 700px)' }">
+        <EnvelopeIntro v-model:opened="opened" :guest-name="guestName" :content="wedding.content" />
+
+        <div v-if="opened" class="absolute top-6 right-6 z-30">
+          <MusicToggle v-if="wedding.content.audioSrc" :src="wedding.content.audioSrc" />
         </div>
 
-        <!-- 2. Greeting -->
-        <div
-          class="absolute w-full max-w-3xl text-center px-4 flex flex-col items-center transition-all duration-700 animate-in fade-in zoom-in delay-150"
-          :style="{ left: `${wedding.content.greetingX ?? 50}%`, top: `${wedding.content.greetingY ?? 25}%`, transform: 'translate(-50%, -50%)' }"
-        >
-          <h1 class="text-sm sm:text-base tracking-[0.35em] uppercase drop-shadow-md" :style="{ color: 'var(--theme-accent)', fontWeight: 'var(--theme-text-weight)' }">
-            {{ wedding.content.innerGreeting || "You're Invited" }}
-          </h1>
-        </div>
-
-        <!-- 3. Intro -->
-        <div
-          class="absolute w-full max-w-3xl text-center px-4 flex flex-col items-center transition-all duration-700 animate-in fade-in zoom-in delay-300"
-          :style="{ left: `${wedding.content.introX ?? 50}%`, top: `${wedding.content.introY ?? 32}%`, transform: 'translate(-50%, -50%)' }"
-        >
-          <p class="text-base sm:text-lg text-white/80 italic drop-shadow-md" :style="{ fontWeight: 'var(--theme-text-weight)' }">
-            {{ wedding.content.innerIntro || "To the wedding celebration of" }}
-          </p>
-        </div>
-
-        <!-- 4. Names -->
-        <div
-          class="absolute w-full max-w-3xl text-center px-4 flex flex-col items-center transition-all duration-700 animate-in fade-in zoom-in delay-300"
-          :style="{ left: `${wedding.content.namesX ?? 50}%`, top: `${wedding.content.namesY ?? 50}%`, transform: 'translate(-50%, -50%)' }"
-        >
-          <div v-if="wedding.content.namesLayout === 'vertical'" class="flex flex-col items-center gap-0 font-heading drop-shadow-2xl" :style="{ color: 'var(--theme-ink)', fontFamily: 'var(--theme-heading-font)', fontSize: 'clamp(2rem,4.2vw,3rem)', lineHeight: '1.15' }">
-            <span>{{ wedding.content.brideName }}</span>
-            <span class="text-[0.4em] opacity-80 leading-none" style="color: #e3b04a;">&amp;</span>
-            <span>{{ wedding.content.groomName }}</span>
+        <div v-if="opened && !wedding.content.hideSystemText" class="absolute inset-0 z-10">
+          <!-- 1. Icon -->
+          <div
+            v-if="wedding.content.innerTopIcon && wedding.content.innerTopIcon !== 'none'"
+            class="absolute flex flex-col items-center justify-center text-center w-full max-w-[92vw] px-4 animate-in fade-in zoom-in delay-100"
+            :style="{ left: `${wedding.content.iconX ?? 50}%`, top: `${wedding.content.iconY ?? 15}%`, transform: 'translate(-50%, -50%)' }"
+          >
+            <p
+              v-if="wedding.content.innerTopIcon === 'bismillah'"
+              class="leading-relaxed"
+              dir="rtl"
+              :style="{
+                color: 'var(--theme-accent)',
+                fontFamily: `'Amiri', 'Traditional Arabic', serif`,
+                fontSize: `clamp(1.25rem, ${3.2 * ((wedding.content.iconSize ?? 100) / 100)}vw, ${1.9 * ((wedding.content.iconSize ?? 100) / 100)}rem)`
+              }"
+            >بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</p>
+            <UIcon v-else-if="wedding.content.innerTopIcon === 'rings'" name="i-heroicons-lifebuoy" :style="{ color: 'var(--theme-accent)', width: `${2 * ((wedding.content.iconSize ?? 100) / 100)}rem`, height: `${2 * ((wedding.content.iconSize ?? 100) / 100)}rem` }" />
+            <UIcon v-else-if="wedding.content.innerTopIcon === 'heart'" name="i-heroicons-heart" :style="{ color: 'var(--theme-accent)', width: `${2 * ((wedding.content.iconSize ?? 100) / 100)}rem`, height: `${2 * ((wedding.content.iconSize ?? 100) / 100)}rem` }" />
+            <img v-else-if="wedding.content.innerTopIcon === 'custom' && wedding.content.customIconUrl" :src="wedding.content.customIconUrl" alt="" class="object-contain drop-shadow" :style="{ width: `${7 * ((wedding.content.iconSize ?? 100) / 100)}rem`, height: 'auto', maxWidth: '90vw', maxHeight: `${7 * ((wedding.content.iconSize ?? 100) / 100)}rem` }">
+            <p v-if="wedding.content.iconSubtitle" class="mt-3 text-xs sm:text-sm text-white/60 italic">{{ wedding.content.iconSubtitle }}</p>
           </div>
-          <h2 v-else class="drop-shadow-2xl leading-tight" :style="{ color: 'var(--theme-ink)', fontFamily: 'var(--theme-heading-font)', fontSize: 'clamp(3.5rem,8vw,6rem)' }">
-            {{ wedding.content.brideName }} <span class="text-[0.7em] mx-2 opacity-80" style="color: #e3b04a;">&amp;</span> {{ wedding.content.groomName }}
-          </h2>
+
+          <!-- 2. Greeting -->
+          <div
+            class="absolute w-full max-w-3xl text-center px-4 flex flex-col items-center transition-all duration-700 animate-in fade-in zoom-in delay-150"
+            :style="{ left: `${wedding.content.greetingX ?? 50}%`, top: `${wedding.content.greetingY ?? 25}%`, transform: 'translate(-50%, -50%)' }"
+          >
+            <h1 class="text-sm sm:text-base tracking-[0.35em] uppercase drop-shadow-md" :style="{ color: 'var(--theme-accent)', fontWeight: 'var(--theme-text-weight)' }">
+              {{ wedding.content.innerGreeting || "You're Invited" }}
+            </h1>
+          </div>
+
+          <!-- 3. Intro -->
+          <div
+            class="absolute w-full max-w-3xl text-center px-4 flex flex-col items-center transition-all duration-700 animate-in fade-in zoom-in delay-300"
+            :style="{ left: `${wedding.content.introX ?? 50}%`, top: `${wedding.content.introY ?? 32}%`, transform: 'translate(-50%, -50%)' }"
+          >
+            <p class="text-base sm:text-lg text-white/80 italic drop-shadow-md" :style="{ fontWeight: 'var(--theme-text-weight)' }">
+              {{ wedding.content.innerIntro || "To the wedding celebration of" }}
+            </p>
+          </div>
+
+          <!-- 4. Names -->
+          <div
+            class="absolute w-full max-w-3xl text-center px-4 flex flex-col items-center transition-all duration-700 animate-in fade-in zoom-in delay-300"
+            :style="{ left: `${wedding.content.namesX ?? 50}%`, top: `${wedding.content.namesY ?? 50}%`, transform: 'translate(-50%, -50%)' }"
+          >
+            <div v-if="wedding.content.namesLayout === 'vertical'" class="flex flex-col items-center gap-0 font-heading drop-shadow-2xl" :style="{ color: wedding.content.nameColor || 'var(--theme-ink)', fontFamily: 'var(--theme-heading-font)', fontSize: `clamp(${2 * ((wedding.content.nameSize ?? 100) / 100)}rem, ${4.2 * ((wedding.content.nameSize ?? 100) / 100)}vw, ${3 * ((wedding.content.nameSize ?? 100) / 100)}rem)`, lineHeight: '1.15' }">
+              <span>{{ wedding.content.brideName }}</span>
+              <span class="text-[0.4em] opacity-80 leading-none" style="color: #e3b04a;">&amp;</span>
+              <span>{{ wedding.content.groomName }}</span>
+            </div>
+            <h2 v-else class="drop-shadow-2xl leading-tight" :style="{ color: wedding.content.nameColor || 'var(--theme-ink)', fontFamily: 'var(--theme-heading-font)', fontSize: `clamp(${3.5 * ((wedding.content.nameSize ?? 100) / 100)}rem, ${8 * ((wedding.content.nameSize ?? 100) / 100)}vw, ${6 * ((wedding.content.nameSize ?? 100) / 100)}rem)` }">
+              {{ wedding.content.brideName }} <span class="text-[0.7em] mx-2 opacity-80" style="color: #e3b04a;">&amp;</span> {{ wedding.content.groomName }}
+            </h2>
+          </div>
+
+          <!-- 5. Date -->
+          <div
+            class="absolute w-full max-w-3xl text-center px-4 flex flex-col items-center transition-all duration-700 animate-in fade-in zoom-in delay-500"
+            :style="{ left: `${wedding.content.dateX ?? 50}%`, top: `${wedding.content.dateY ?? 70}%`, transform: 'translate(-50%, -50%)' }"
+          >
+            <p class="text-sm sm:text-base font-medium text-white/90 drop-shadow-md">
+              {{ wedding.content.dateLabel }}
+            </p>
+          </div>
+
+          <!-- 6. Venue -->
+          <div
+            class="absolute w-full max-w-md text-center px-4 flex flex-col items-center transition-all duration-700 animate-in fade-in zoom-in delay-500"
+            :style="{ left: `${wedding.content.venueX ?? 50}%`, top: `${wedding.content.venueY ?? 78}%`, transform: 'translate(-50%, -50%)' }"
+          >
+            <p v-if="wedding.content.venueAddress" class="text-xs sm:text-sm text-white/80 italic drop-shadow-md" :style="{ fontWeight: 'var(--theme-text-weight)' }">
+              {{ wedding.content.venueAddress }}
+            </p>
+          </div>
         </div>
 
-        <!-- 5. Date -->
-        <div
-          class="absolute w-full max-w-3xl text-center px-4 flex flex-col items-center transition-all duration-700 animate-in fade-in zoom-in delay-500"
-          :style="{ left: `${wedding.content.dateX ?? 50}%`, top: `${wedding.content.dateY ?? 70}%`, transform: 'translate(-50%, -50%)' }"
-        >
-          <p class="text-sm sm:text-base font-medium text-white/90 drop-shadow-md">
-            {{ wedding.content.dateLabel }}
-          </p>
-        </div>
-
-        <!-- 6. Venue -->
-        <div
-          class="absolute w-full max-w-md text-center px-4 flex flex-col items-center transition-all duration-700 animate-in fade-in zoom-in delay-500"
-          :style="{ left: `${wedding.content.venueX ?? 50}%`, top: `${wedding.content.venueY ?? 78}%`, transform: 'translate(-50%, -50%)' }"
-        >
-          <p v-if="wedding.content.venueAddress" class="text-xs sm:text-sm text-white/80 italic drop-shadow-md" :style="{ fontWeight: 'var(--theme-text-weight)' }">
-            {{ wedding.content.venueAddress }}
-          </p>
+        <!-- A small "scroll for more" cue only makes sense once content is open -->
+        <div v-if="opened" class="absolute bottom-4 inset-x-0 flex justify-center z-10 pointer-events-none animate-bounce opacity-60">
+          <UIcon name="i-heroicons-chevron-down" class="w-6 h-6" :style="{ color: 'var(--theme-accent)' }" />
         </div>
       </div>
 
-      <!-- A small "scroll for more" cue only makes sense once content is open -->
-      <div v-if="opened" class="absolute bottom-4 inset-x-0 flex justify-center z-10 pointer-events-none animate-bounce opacity-60">
-        <UIcon name="i-heroicons-chevron-down" class="w-6 h-6" :style="{ color: 'var(--theme-accent)' }" />
-      </div>
-    </div>
-
-    <!-- FOOTER: normal document flow, always directly below the hero canvas -
-         never overlaps anything above since it's a separate layout region,
-         not absolutely positioned on top of it. -->
-    <div v-if="opened" class="relative z-20 flex flex-col items-center pb-16 pt-12 px-6 bg-gradient-to-b from-transparent to-black/30 animate-in fade-in duration-700">
-      <div v-if="wedding.content.dateISO" class="mb-8">
-        <CountdownTimer :target="wedding.content.dateISO" />
-      </div>
-      <div class="flex flex-col sm:flex-row items-center justify-center gap-4 w-full max-w-lg mx-auto">
-        <UButton
-          :to="detailsLink"
-          size="xl"
-          :color="wedding.content.rsvpEnabled === false ? 'primary' : 'neutral'"
-          :variant="wedding.content.rsvpEnabled === false ? 'solid' : 'soft'"
-          class="w-full sm:w-auto font-medium rounded-full px-8 transition-colors"
-          :class="wedding.content.rsvpEnabled === false ? 'shadow-[0_0_30px_-5px_var(--theme-accent)] animate-glow' : 'bg-white/5 hover:bg-white/10 border border-white/10'"
-        >
-          {{ wedding.content.btnDetails || 'View Details' }}
-        </UButton>
-        <UButton v-if="wedding.content.rsvpEnabled !== false" :to="rsvpLink" size="xl" color="primary" class="w-full sm:w-auto font-semibold rounded-full px-10 shadow-[0_0_30px_-5px_var(--theme-accent)] hover:scale-105 transition-transform animate-glow">
-          {{ wedding.content.btnRsvp || 'RSVP Now' }}
-        </UButton>
-      </div>
-      <div class="mt-6 opacity-80 hover:opacity-100 transition-opacity">
-        <ShareButtons :bride-name="wedding.content.brideName" :groom-name="wedding.content.groomName" :date-label="wedding.content.dateLabel" :share-message="wedding.content.shareMessage" />
+      <!-- FOOTER: normal document flow, always directly below the hero canvas -
+           never overlaps anything above since it's a separate layout region,
+           not absolutely positioned on top of it. -->
+      <div v-if="opened" class="relative z-20 flex flex-col items-center pb-16 pt-12 px-6 bg-gradient-to-b from-transparent to-black/30 animate-in fade-in duration-700">
+        <div v-if="wedding.content.dateISO" class="mb-8">
+          <CountdownTimer :target="wedding.content.dateISO" />
+        </div>
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-4 w-full max-w-lg mx-auto">
+          <UButton
+            :to="detailsLink"
+            size="xl"
+            :color="wedding.content.rsvpEnabled === false ? 'primary' : 'neutral'"
+            :variant="wedding.content.rsvpEnabled === false ? 'solid' : 'soft'"
+            class="w-full sm:w-auto font-medium rounded-full px-8 transition-colors"
+            :class="wedding.content.rsvpEnabled === false ? 'shadow-[0_0_30px_-5px_var(--theme-accent)] animate-glow' : 'bg-white/5 hover:bg-white/10 border border-white/10'"
+          >
+            {{ wedding.content.btnDetails || 'View Details' }}
+          </UButton>
+          <UButton v-if="wedding.content.rsvpEnabled !== false" :to="rsvpLink" size="xl" color="primary" class="w-full sm:w-auto font-semibold rounded-full px-10 shadow-[0_0_30px_-5px_var(--theme-accent)] hover:scale-105 transition-transform animate-glow">
+            {{ wedding.content.btnRsvp || 'RSVP Now' }}
+          </UButton>
+        </div>
+        <div class="mt-6 opacity-80 hover:opacity-100 transition-opacity">
+          <ShareButtons :bride-name="wedding.content.brideName" :groom-name="wedding.content.groomName" :date-label="wedding.content.dateLabel" :share-message="wedding.content.shareMessage" />
+        </div>
       </div>
     </div>
   </div>
@@ -191,7 +198,7 @@ watch(
   (value) => {
     if (!value) return
     useSeoMeta({
-      title: `${value.content.openingTitle || "You're Invited"} — ${value.content.brideName} & ${value.content.groomName}'s Wedding`,
+      title: `${value.content.openingTitle || "You're Invited"} \u2014 ${value.content.brideName} & ${value.content.groomName}'s Wedding`,
       description: value.content.dateLabel
         ? `Join us on ${value.content.dateLabel} as we celebrate our wedding. View the details and RSVP online.`
         : 'View the wedding details and RSVP online.'
