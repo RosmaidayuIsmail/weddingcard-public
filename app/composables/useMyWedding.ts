@@ -22,7 +22,7 @@ export function slugify(input: string) {
     .replace(/^-|-$/g, '')
 }
 
-export function useMyWedding() {
+export function useMyWedding(overrideId?: Ref<string | null | undefined>) {
   const { db, isConfigured } = useFirebase()
   const { currentUser } = useAuth()
   const toast = useToast()
@@ -40,7 +40,31 @@ export function useMyWedding() {
 
   function listen() {
     stop()
-    if (!isConfigured || !db || !currentUser.value) {
+    if (!isConfigured || !db) {
+      loading.value = false
+      return
+    }
+
+    // Admin path: a specific wedding ID was supplied (e.g. from the
+    // /admin/wedding/[id] route), so load exactly that document instead of
+    // "whichever wedding the signed-in user owns". Firestore rules already
+    // grant superadmins read/write on any wedding doc - see firestore.rules.
+    if (overrideId?.value) {
+      loading.value = true
+      unsubscribe = onSnapshot(
+        doc(db, 'weddings', overrideId.value),
+        (snap) => {
+          wedding.value = snap.exists() ? ({ id: snap.id, ...snap.data() } as WeddingDoc) : null
+          loading.value = false
+        },
+        () => {
+          loading.value = false
+        }
+      )
+      return
+    }
+
+    if (!currentUser.value) {
       loading.value = false
       return
     }
@@ -61,7 +85,7 @@ export function useMyWedding() {
     )
   }
 
-  watch(currentUser, () => listen(), { immediate: true })
+  watch([currentUser, () => overrideId?.value], () => listen(), { immediate: true })
   onBeforeUnmount(stop)
 
   async function isSlugAvailable(slug: string) {
@@ -81,7 +105,7 @@ export function useMyWedding() {
     await runTransaction(db, async (transaction) => {
       const existingSlug = await transaction.get(slugRef)
       if (existingSlug.exists()) {
-        throw new Error('That link name is already taken — try another one')
+        throw new Error('That link name is already taken \u2014 try another one')
       }
 
       transaction.set(slugRef, { weddingId: weddingRef.id })
@@ -134,7 +158,7 @@ export function useMyWedding() {
       await runTransaction(db, async (transaction) => {
         const existingSlug = await transaction.get(slugRef)
         if (existingSlug.exists()) {
-          throw new Error('That link name is already taken — try another one')
+          throw new Error('That link name is already taken \u2014 try another one')
         }
         // Firestore rules don't allow deleting the old slugs/{slug} doc, so it's
         // left in place rather than removed - it'll keep quietly pointing to

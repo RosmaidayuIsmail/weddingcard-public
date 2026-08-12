@@ -1,5 +1,15 @@
 <template>
-  <div class="min-h-screen invite-backdrop text-white px-6 py-10">
+  <!-- Gate on the client-side auth check ourselves, in addition to the
+       'superadmin' route middleware. The middleware can't run its check
+       during SSR (Firebase Auth only exists client-side), so without this
+       guard the page below would briefly render its full content on the
+       server before the client redirects an unauthorized visitor away -
+       a flash of the real dashboard, not just a layout glitch. -->
+  <div v-if="!authReady || !currentUser || profile?.role !== 'superadmin'" class="min-h-screen invite-backdrop flex items-center justify-center text-white/60">
+    <UIcon name="i-heroicons-arrow-path" class="w-8 h-8 animate-spin text-gold-400" />
+  </div>
+
+  <div v-else class="min-h-screen invite-backdrop text-white px-6 py-10">
     <div class="max-w-5xl mx-auto space-y-6">
       <div class="flex items-center justify-between">
         <div>
@@ -46,6 +56,9 @@
             <UButton size="xs" variant="soft" color="neutral" icon="i-heroicons-arrow-top-right-on-square" :to="`/w/${w.slug}`" target="_blank" external>
               View
             </UButton>
+            <UButton size="xs" variant="solid" color="primary" icon="i-heroicons-pencil-square" :to="`/admin/wedding/${w.id}`">
+              Manage
+            </UButton>
           </div>
         </div>
       </div>
@@ -61,6 +74,7 @@ definePageMeta({ middleware: 'superadmin' })
 
 const { db, isConfigured } = useFirebase()
 const { logOut } = useAuth()
+const { currentUser, profile, authReady } = useAuthState()
 const toast = useToast()
 
 const weddings = ref<WeddingDoc[]>([])
@@ -84,7 +98,11 @@ async function loadWeddings() {
   }
 }
 
-onMounted(loadWeddings)
+const isAuthorized = computed(() => authReady.value && !!currentUser.value && profile.value?.role === 'superadmin')
+
+watch(isAuthorized, (ok) => {
+  if (ok) loadWeddings()
+}, { immediate: true })
 
 const publishedCount = computed(() => weddings.value.filter((w) => w.status === 'published').length)
 const premiumCount = computed(() => weddings.value.filter((w) => w.plan === 'premium').length)
