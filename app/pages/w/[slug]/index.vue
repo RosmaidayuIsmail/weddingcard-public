@@ -16,8 +16,16 @@
     <!-- Decorative background layers live at the page level (not inside the
          hero canvas below) specifically so they visually continue across
          the footer too, instead of stopping abruptly at the hero's edge. -->
-    <div v-if="wedding.content.coverPhotoUrl && opened" class="absolute inset-0 z-0 transition-opacity duration-1000 animate-in fade-in" :class="wedding.content.hideSystemText ? 'opacity-100' : 'opacity-[0.55]'">
-      <img :src="wedding.content.coverPhotoUrl" alt="Background" class="w-full h-full animate-[pulse_20s_ease-in-out_infinite_alternate]" :class="wedding.content.hideSystemText ? 'object-contain' : 'object-cover scale-105'">
+    <!-- The cover photo is a PORTRAIT image (same one shown in the Design
+         Studio's phone preview). On phone-width screens `object-cover`
+         crops it to fill the screen, which looks right because the screen
+         itself is roughly the same portrait shape. On laptop/desktop-width
+         screens that same crop was blowing the image up and hiding almost
+         all of it - so from the lg: breakpoint up we switch to
+         `object-contain` instead: the complete, sharp, undimmed photo,
+         no blur, no cropping, no width cap on the page itself. -->
+    <div v-if="wedding.content.coverPhotoUrl && opened" class="absolute inset-0 z-0 transition-opacity duration-1000 animate-in fade-in" :class="wedding.content.hideSystemText ? 'opacity-100' : 'opacity-[0.55] lg:opacity-90'">
+      <img :src="wedding.content.coverPhotoUrl" alt="Background" class="w-full h-full animate-[pulse_20s_ease-in-out_infinite_alternate]" :class="wedding.content.hideSystemText ? 'object-contain' : 'object-cover scale-105 lg:object-contain lg:scale-100'">
       <div class="absolute inset-0" :style="{ background: `linear-gradient(to bottom, transparent 0%, var(--theme-bg-to) 90%)` }" />
     </div>
     <PetalsBackground v-if="wedding.content.enablePetals !== false" :style-name="wedding.content.petalStyle" />
@@ -81,12 +89,12 @@
           class="absolute w-full max-w-3xl text-center px-4 flex flex-col items-center transition-all duration-700 animate-in fade-in zoom-in delay-300"
           :style="{ left: `${wedding.content.namesX ?? 50}%`, top: `${wedding.content.namesY ?? 50}%`, transform: 'translate(-50%, -50%)' }"
         >
-          <div v-if="wedding.content.namesLayout === 'vertical'" class="flex flex-col items-center gap-0 font-heading drop-shadow-2xl" :style="{ color: 'var(--theme-ink)', fontFamily: 'var(--theme-heading-font)', fontSize: 'clamp(2rem,4.2vw,3rem)', lineHeight: '1.15' }">
+          <div v-if="wedding.content.namesLayout === 'vertical'" class="flex flex-col items-center gap-0 font-heading drop-shadow-2xl" :style="{ color: wedding.content.nameColor || 'var(--theme-ink)', fontFamily: 'var(--theme-heading-font)', fontSize: `clamp(${2 * ((wedding.content.nameSize ?? 100) / 100)}rem, ${4.2 * ((wedding.content.nameSize ?? 100) / 100)}vw, ${3 * ((wedding.content.nameSize ?? 100) / 100)}rem)`, lineHeight: '1.15' }">
             <span>{{ wedding.content.brideName }}</span>
             <span class="text-[0.4em] opacity-80 leading-none" style="color: #e3b04a;">&amp;</span>
             <span>{{ wedding.content.groomName }}</span>
           </div>
-          <h2 v-else class="drop-shadow-2xl leading-tight" :style="{ color: 'var(--theme-ink)', fontFamily: 'var(--theme-heading-font)', fontSize: 'clamp(3.5rem,8vw,6rem)' }">
+          <h2 v-else class="drop-shadow-2xl leading-tight" :style="{ color: wedding.content.nameColor || 'var(--theme-ink)', fontFamily: 'var(--theme-heading-font)', fontSize: `clamp(${3.5 * ((wedding.content.nameSize ?? 100) / 100)}rem, ${8 * ((wedding.content.nameSize ?? 100) / 100)}vw, ${6 * ((wedding.content.nameSize ?? 100) / 100)}rem)` }">
             {{ wedding.content.brideName }} <span class="text-[0.7em] mx-2 opacity-80" style="color: #e3b04a;">&amp;</span> {{ wedding.content.groomName }}
           </h2>
         </div>
@@ -191,7 +199,7 @@ watch(
   (value) => {
     if (!value) return
     useSeoMeta({
-      title: `${value.content.openingTitle || "You're Invited"} — ${value.content.brideName} & ${value.content.groomName}'s Wedding`,
+      title: `${value.content.openingTitle || "You're Invited"} \u2014 ${value.content.brideName} & ${value.content.groomName}'s Wedding`,
       description: value.content.dateLabel
         ? `Join us on ${value.content.dateLabel} as we celebrate our wedding. View the details and RSVP online.`
         : 'View the wedding details and RSVP online.'
