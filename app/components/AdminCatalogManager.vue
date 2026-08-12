@@ -1,52 +1,80 @@
 <template>
     <div class="space-y-8">
-      <div class="flex gap-2">
+      <div class="flex gap-2 flex-wrap">
         <button v-for="s in sections" :key="s.id" type="button" class="section-btn" :class="{ 'section-btn-active': section === s.id }" @click="section = s.id">
-          {{ s.label }}
+          <UIcon :name="s.icon" class="w-4 h-4" /> {{ s.label }}
         </button>
       </div>
   
       <!-- THEMES -->
-      <div v-if="section === 'themes'" class="space-y-6">
+      <div v-if="section === 'themes'" class="space-y-6 animate-fade-up">
         <div>
-          <h2 class="font-display text-lg mb-1">Custom themes</h2>
-          <p class="text-sm text-white/50 mb-4">These appear alongside the built-in themes in every couple's Design Studio theme picker.</p>
+          <h2 class="font-display text-xl font-semibold text-gold-100">Custom themes</h2>
+          <p class="text-sm text-white/50 mt-1 mb-4">These appear alongside the built-in themes in every couple's Design Studio theme picker.</p>
   
-          <div v-if="customThemes.length === 0" class="text-sm text-white/40 py-4">No custom themes added yet.</div>
+          <div v-if="customThemes.length === 0" class="empty-state">
+            <div class="p-4 rounded-full bg-white/5 ring-1 ring-white/10">
+              <UIcon name="i-heroicons-swatch" class="w-7 h-7" style="color: rgba(227, 176, 74, 0.5);" />
+            </div>
+            <p class="text-white/50 text-sm">No custom themes added yet.</p>
+          </div>
           <div v-else class="grid sm:grid-cols-2 gap-3">
-            <div v-for="theme in customThemes" :key="theme.id" class="catalog-card">
+            <div v-for="theme in customThemes" :key="theme.id" class="catalog-card group">
               <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-lg shrink-0 border border-white/10" :style="{ background: `linear-gradient(135deg, ${theme.palette.bgFrom}, ${theme.palette.bgTo})` }"></div>
+                <div class="w-11 h-11 rounded-xl shrink-0 border border-white/10 shadow-inner" :style="{ background: `linear-gradient(135deg, ${theme.palette.bgFrom}, ${theme.palette.bgTo})` }"></div>
                 <div class="min-w-0 flex-1">
                   <p class="font-medium truncate">{{ theme.name }}</p>
-                  <p class="text-xs text-white/40 truncate">{{ theme.id }} &middot; {{ theme.price === 0 ? 'Free' : `RM ${theme.price}` }}</p>
+                  <p class="text-xs text-white/40 truncate">{{ theme.price === 0 ? 'Free' : `RM ${theme.price}` }} &middot; {{ theme.headingFont }}</p>
                 </div>
-                <UButton size="xs" variant="ghost" color="error" icon="i-heroicons-trash" :loading="removingId === theme.id" @click="removeTheme(theme.id)" />
+                <UButton size="xs" variant="ghost" color="error" icon="i-heroicons-trash" class="opacity-0 group-hover:opacity-100 transition-opacity" :loading="removingId === theme.id" @click="removeTheme(theme.id)" />
               </div>
             </div>
           </div>
         </div>
   
-        <div class="p-5 rounded-xl bg-white/[0.03] border border-white/10 space-y-4">
-          <p class="text-sm font-semibold">Add a new theme</p>
-          <div class="grid sm:grid-cols-2 gap-3">
-            <UInput v-model="themeForm.name" placeholder="Theme name" />
-            <UInput v-model="themeForm.tagline" placeholder="Short tagline" />
-            <UInput v-model.number="themeForm.price" type="number" min="0" placeholder="Price (RM, 0 = free)" />
-            <USelect v-model="themeForm.headingFont" :items="fontSelectItems" placeholder="Heading font" />
+        <div class="form-card">
+          <div class="flex items-center gap-3 mb-1">
+            <div class="p-2 rounded-lg bg-gold-400/10">
+              <UIcon name="i-heroicons-plus" class="w-4 h-4 text-gold-300" />
+            </div>
+            <p class="font-semibold">Add a new theme</p>
           </div>
-          <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+  
+          <div class="grid sm:grid-cols-2 gap-4 mt-4">
+            <div>
+              <label class="field-label">Theme name</label>
+              <UInput v-model="themeForm.name" placeholder="e.g. Coastal Breeze" size="lg" class="w-full" />
+            </div>
+            <div>
+              <label class="field-label">Short tagline</label>
+              <UInput v-model="themeForm.tagline" placeholder="e.g. Airy blues for a beachside wedding" size="lg" class="w-full" />
+            </div>
+            <div>
+              <label class="field-label">Price (RM, 0 = free)</label>
+              <UInput v-model.number="themeForm.price" type="number" min="0" size="lg" class="w-full" />
+            </div>
+            <div>
+              <label class="field-label">Heading font</label>
+              <USelect v-model="themeForm.headingFont" :items="fontSelectItems" size="lg" class="w-full" />
+            </div>
+          </div>
+  
+          <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 mt-4">
             <div v-for="field in colorFields" :key="field.key">
-              <label class="text-xs text-white/50 block mb-1">{{ field.label }}</label>
+              <label class="field-label">{{ field.label }}</label>
               <div class="flex items-center gap-2">
-                <input v-model="themeForm[field.key]" type="color" class="w-8 h-8 rounded border border-white/20 bg-transparent shrink-0" />
+                <input v-model="themeForm[field.key]" type="color" class="w-9 h-9 rounded-lg border border-white/20 bg-transparent shrink-0 cursor-pointer" />
                 <UInput v-model="themeForm[field.key]" size="sm" class="w-full" />
               </div>
             </div>
           </div>
-          <UButton color="primary" icon="i-heroicons-plus" :loading="addingTheme" :disabled="!canAddTheme" @click="submitTheme">
-            Add theme
-          </UButton>
+  
+          <div class="flex items-center gap-3 mt-5">
+            <UButton color="primary" icon="i-heroicons-plus" size="lg" class="font-semibold shadow-lg shadow-gold-500/20" :loading="addingTheme" :disabled="!canAddTheme" @click="submitTheme">
+              Add theme
+            </UButton>
+            <p v-if="!canAddTheme" class="text-xs text-white/30">Give it a name to enable this button.</p>
+          </div>
         </div>
   
         <details class="text-sm text-white/40">
@@ -61,34 +89,57 @@
       </div>
   
       <!-- FONTS -->
-      <div v-if="section === 'fonts'" class="space-y-6">
+      <div v-if="section === 'fonts'" class="space-y-6 animate-fade-up">
         <div>
-          <h2 class="font-display text-lg mb-1">Custom fonts</h2>
-          <p class="text-sm text-white/50 mb-4">Added fonts appear in every font picker (names, titles, monograms). Use the exact Google Fonts family name as the ID so it can be loaded.</p>
+          <h2 class="font-display text-xl font-semibold text-gold-100">Custom fonts</h2>
+          <p class="text-sm text-white/50 mt-1 mb-4">Added fonts appear in every font picker (names, titles, monograms). Use the exact Google Fonts family name as the ID so it can be loaded.</p>
   
-          <div v-if="customFonts.length === 0" class="text-sm text-white/40 py-4">No custom fonts added yet.</div>
+          <div v-if="customFonts.length === 0" class="empty-state">
+            <div class="p-4 rounded-full bg-white/5 ring-1 ring-white/10">
+              <UIcon name="i-heroicons-language" class="w-7 h-7" style="color: rgba(227, 176, 74, 0.5);" />
+            </div>
+            <p class="text-white/50 text-sm">No custom fonts added yet.</p>
+          </div>
           <div v-else class="space-y-2">
-            <div v-for="font in customFonts" :key="font.id" class="catalog-card flex items-center justify-between">
+            <div v-for="font in customFonts" :key="font.id" class="catalog-card group flex items-center justify-between">
               <div>
                 <p class="font-medium">{{ font.label }}</p>
                 <p class="text-xs text-white/40">{{ font.id }} &middot; {{ font.category }}</p>
               </div>
-              <UButton size="xs" variant="ghost" color="error" icon="i-heroicons-trash" :loading="removingId === font.id" @click="removeFont(font.id)" />
+              <UButton size="xs" variant="ghost" color="error" icon="i-heroicons-trash" class="opacity-0 group-hover:opacity-100 transition-opacity" :loading="removingId === font.id" @click="removeFont(font.id)" />
             </div>
           </div>
         </div>
   
-        <div class="p-5 rounded-xl bg-white/[0.03] border border-white/10 space-y-4">
-          <p class="text-sm font-semibold">Add a new font</p>
-          <div class="grid sm:grid-cols-3 gap-3">
-            <UInput v-model="fontForm.id" placeholder="Google Font family name (e.g. Montserrat)" class="sm:col-span-2" />
-            <USelect v-model="fontForm.category" :items="['script', 'serif', 'sans']" placeholder="Category" />
+        <div class="form-card">
+          <div class="flex items-center gap-3 mb-1">
+            <div class="p-2 rounded-lg bg-gold-400/10">
+              <UIcon name="i-heroicons-plus" class="w-4 h-4 text-gold-300" />
+            </div>
+            <p class="font-semibold">Add a new font</p>
           </div>
-          <UInput v-model="fontForm.label" placeholder="Display label (e.g. Montserrat (modern sans))" />
-          <p class="text-xs text-white/40">Loaded automatically via Google Fonts - make sure the family name is published there.</p>
-          <UButton color="primary" icon="i-heroicons-plus" :loading="addingFont" :disabled="!canAddFont" @click="submitFont">
-            Add font
-          </UButton>
+  
+          <div class="grid sm:grid-cols-3 gap-4 mt-4">
+            <div class="sm:col-span-2">
+              <label class="field-label">Google Font family name</label>
+              <UInput v-model="fontForm.id" placeholder="e.g. Montserrat" size="lg" class="w-full" />
+            </div>
+            <div>
+              <label class="field-label">Category</label>
+              <USelect v-model="fontForm.category" :items="['script', 'serif', 'sans']" size="lg" class="w-full" />
+            </div>
+          </div>
+          <div class="mt-4">
+            <label class="field-label">Display label</label>
+            <UInput v-model="fontForm.label" placeholder="e.g. Montserrat (modern sans)" size="lg" class="w-full" />
+          </div>
+          <p class="text-xs text-white/40 mt-3">Loaded automatically via Google Fonts - make sure the family name is published there.</p>
+          <div class="flex items-center gap-3 mt-4">
+            <UButton color="primary" icon="i-heroicons-plus" size="lg" class="font-semibold shadow-lg shadow-gold-500/20" :loading="addingFont" :disabled="!canAddFont" @click="submitFont">
+              Add font
+            </UButton>
+            <p v-if="!canAddFont" class="text-xs text-white/30">Enter a font family name to enable this button.</p>
+          </div>
         </div>
   
         <details class="text-sm text-white/40">
@@ -100,36 +151,65 @@
       </div>
   
       <!-- TEXT PRESETS -->
-      <div v-if="section === 'presets'" class="space-y-6">
+      <div v-if="section === 'presets'" class="space-y-6 animate-fade-up">
         <div>
-          <h2 class="font-display text-lg mb-1">Text presets</h2>
-          <p class="text-sm text-white/50 mb-4">One-click Opening Design text presets, shown as buttons on every couple's Opening Design page. Use <code class="text-gold-300">{guestName}</code> as a placeholder in the greeting.</p>
+          <h2 class="font-display text-xl font-semibold text-gold-100">Text presets</h2>
+          <p class="text-sm text-white/50 mt-1 mb-4">One-click Opening Design text presets, shown as buttons on every couple's Opening Design page. Use <code class="text-gold-300 bg-white/5 px-1.5 py-0.5 rounded">{guestName}</code> as a placeholder in the greeting.</p>
   
-          <div v-if="customPresets.length === 0" class="text-sm text-white/40 py-4">No custom presets added yet.</div>
+          <div v-if="customPresets.length === 0" class="empty-state">
+            <div class="p-4 rounded-full bg-white/5 ring-1 ring-white/10">
+              <UIcon name="i-heroicons-pencil-square" class="w-7 h-7" style="color: rgba(227, 176, 74, 0.5);" />
+            </div>
+            <p class="text-white/50 text-sm">No custom presets added yet.</p>
+          </div>
           <div v-else class="space-y-2">
-            <div v-for="preset in customPresets" :key="preset.id" class="catalog-card">
+            <div v-for="preset in customPresets" :key="preset.id" class="catalog-card group">
               <div class="flex items-start justify-between gap-3">
                 <div class="min-w-0">
                   <p class="font-medium">{{ preset.label }}</p>
-                  <p class="text-xs text-white/40 mt-1">Title: "{{ preset.openingTitle }}"</p>
+                  <p class="text-xs text-white/40 mt-1.5">Title: "{{ preset.openingTitle }}"</p>
                   <p class="text-xs text-white/40">Greeting: "{{ preset.openingGreeting }}"</p>
                   <p class="text-xs text-white/40">Action: "{{ preset.openingActionText }}"</p>
                 </div>
-                <UButton size="xs" variant="ghost" color="error" icon="i-heroicons-trash" :loading="removingId === preset.id" @click="removePreset(preset.id)" />
+                <UButton size="xs" variant="ghost" color="error" icon="i-heroicons-trash" class="opacity-0 group-hover:opacity-100 transition-opacity shrink-0" :loading="removingId === preset.id" @click="removePreset(preset.id)" />
               </div>
             </div>
           </div>
         </div>
   
-        <div class="p-5 rounded-xl bg-white/[0.03] border border-white/10 space-y-4">
-          <p class="text-sm font-semibold">Add a new preset</p>
-          <UInput v-model="presetForm.label" placeholder="Preset name (e.g. Indonesian)" />
-          <UInput v-model="presetForm.openingTitle" placeholder="Opening title (e.g. Walimatul Urus)" />
-          <UInput v-model="presetForm.openingGreeting" placeholder="Greeting - use {guestName} as a placeholder" />
-          <UInput v-model="presetForm.openingActionText" placeholder="Action text (e.g. Tap to open)" />
-          <UButton color="primary" icon="i-heroicons-plus" :loading="addingPreset" :disabled="!canAddPreset" @click="submitPreset">
-            Add preset
-          </UButton>
+        <div class="form-card">
+          <div class="flex items-center gap-3 mb-1">
+            <div class="p-2 rounded-lg bg-gold-400/10">
+              <UIcon name="i-heroicons-plus" class="w-4 h-4 text-gold-300" />
+            </div>
+            <p class="font-semibold">Add a new preset</p>
+          </div>
+  
+          <div class="space-y-4 mt-4">
+            <div>
+              <label class="field-label">Preset name</label>
+              <UInput v-model="presetForm.label" placeholder="e.g. Indonesian" size="lg" class="w-full" />
+            </div>
+            <div>
+              <label class="field-label">Opening title</label>
+              <UInput v-model="presetForm.openingTitle" placeholder="e.g. Walimatul Urus" size="lg" class="w-full" />
+            </div>
+            <div>
+              <label class="field-label">Greeting</label>
+              <UInput v-model="presetForm.openingGreeting" placeholder="Use {guestName} as a placeholder" size="lg" class="w-full" />
+            </div>
+            <div>
+              <label class="field-label">Action text</label>
+              <UInput v-model="presetForm.openingActionText" placeholder="e.g. Tap to open" size="lg" class="w-full" />
+            </div>
+          </div>
+  
+          <div class="flex items-center gap-3 mt-5">
+            <UButton color="primary" icon="i-heroicons-plus" size="lg" class="font-semibold shadow-lg shadow-gold-500/20" :loading="addingPreset" :disabled="!canAddPreset" @click="submitPreset">
+              Add preset
+            </UButton>
+            <p v-if="!canAddPreset" class="text-xs text-white/30">Fill in all four fields to enable this button.</p>
+          </div>
         </div>
   
         <details class="text-sm text-white/40">
@@ -147,16 +227,15 @@
   
   const toast = useToast()
   const {
-    themes, fontOptions, builtInTextPresets: builtIns,
+    themes, fontOptions, builtInTextPresets,
     allThemes, allFontOptions, allTextPresets,
     addCustomTheme, removeCustomTheme, addCustomFont, removeCustomFont, addTextPreset, removeTextPreset
   } = useThemes()
-  const builtInTextPresets = builtIns
   
   const sections = [
-    { id: 'themes' as const, label: 'Themes' },
-    { id: 'fonts' as const, label: 'Fonts' },
-    { id: 'presets' as const, label: 'Text Presets' }
+    { id: 'themes' as const, label: 'Themes', icon: 'i-heroicons-swatch' },
+    { id: 'fonts' as const, label: 'Fonts', icon: 'i-heroicons-language' },
+    { id: 'presets' as const, label: 'Text Presets', icon: 'i-heroicons-pencil-square' }
   ]
   const section = ref<'themes' | 'fonts' | 'presets'>('themes')
   
@@ -324,31 +403,73 @@
   
   <style scoped>
   .section-btn {
-    padding: 0.5rem 1rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.55rem 1.1rem;
     border-radius: 9999px;
     font-size: 0.85rem;
     font-weight: 600;
     color: rgba(255, 255, 255, 0.55);
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.08);
-    transition: all 0.2s ease;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
   
   .section-btn:hover {
     color: white;
     background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.15);
   }
   
   .section-btn-active {
     color: #1f1400;
-    background: #d4a017;
+    background: linear-gradient(135deg, #f3ddaa, #d4a017);
     border-color: #d4a017;
+    box-shadow: 0 4px 14px -4px rgba(212, 160, 23, 0.4);
   }
   
   .catalog-card {
-    border-radius: 0.85rem;
-    padding: 0.9rem 1rem;
+    border-radius: 1rem;
+    padding: 1rem 1.1rem;
     background: rgba(255, 255, 255, 0.02);
     border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+  }
+  
+  .catalog-card:hover {
+    border-color: rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.035);
+    transform: translateY(-1px);
+  }
+  
+  .form-card {
+    border-radius: 1.25rem;
+    padding: 1.5rem;
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.015));
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+  
+  .field-label {
+    display: block;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.4);
+    margin-bottom: 0.4rem;
+  }
+  
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 2.5rem 1rem;
+    border-radius: 1rem;
+    border: 1px dashed rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.015);
   }
   </style>

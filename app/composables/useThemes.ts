@@ -324,6 +324,7 @@ export function useThemes() {
   return {
     themes,
     fontOptions,
+    builtInTextPresets,
     allThemes,
     allFontOptions,
     allTextPresets,

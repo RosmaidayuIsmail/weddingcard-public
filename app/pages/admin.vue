@@ -9,12 +9,24 @@
     <UIcon name="i-heroicons-arrow-path" class="w-8 h-8 animate-spin text-gold-400" />
   </div>
 
-  <div v-else class="min-h-screen invite-backdrop text-white px-6 py-10">
-    <div class="max-w-5xl mx-auto space-y-6">
+  <div v-else class="min-h-screen invite-backdrop text-white px-6 py-10 relative overflow-hidden">
+    <!-- Same soft ambient glow as the dashboard layout, so this doesn't feel
+         visually flatter than the rest of the app. -->
+    <div class="absolute inset-0 overflow-hidden pointer-events-none z-0">
+      <div class="absolute top-0 left-0 w-full h-96 bg-indigo-500/5 blur-[120px] rounded-full mix-blend-screen"></div>
+      <div class="absolute bottom-0 right-0 w-3/4 h-96 bg-gold-500/5 blur-[120px] rounded-full mix-blend-screen"></div>
+    </div>
+
+    <div class="max-w-5xl mx-auto space-y-6 relative z-10">
       <div class="flex items-center justify-between">
         <div>
-          <h1 class="text-2xl font-display font-bold text-gold-100">Platform Admin</h1>
-          <p class="text-sm text-white/50">{{ tab === 'weddings' ? 'All weddings on WeddingCard' : 'Themes, fonts, and text presets available to every couple' }}</p>
+          <h1 class="text-3xl sm:text-4xl font-display font-bold bg-clip-text text-transparent bg-gradient-to-r from-gold-100 via-gold-300 to-gold-500 tracking-tight">
+            Platform Admin
+          </h1>
+          <p class="text-sm text-white/50 mt-1 flex items-center gap-2">
+            <UIcon :name="tab === 'weddings' ? 'i-heroicons-users' : 'i-heroicons-swatch'" class="w-4 h-4" style="color: #e3b04a;" />
+            {{ tab === 'weddings' ? 'All weddings on WeddingCard' : 'Themes, fonts, and text presets available to every couple' }}
+          </p>
         </div>
         <UButton variant="ghost" color="neutral" icon="i-heroicons-arrow-right-on-rectangle" @click="handleLogout">
           Sign out
