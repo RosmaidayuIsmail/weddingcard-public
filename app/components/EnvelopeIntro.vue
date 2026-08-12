@@ -42,16 +42,30 @@
          <div class="absolute top-10 left-10 w-48 h-48 bg-[#93c5fd] rounded-full mix-blend-multiply filter blur-[60px] opacity-40"></div>
       </div>
 
-      <!-- Wax Seal Card (new style) - a solid two-panel card; the seal itself now
-           lives in the content container below so it doesn't fight the title/
-           greeting box for the same central space -->
-      <div v-else-if="content.openingStyle === 'wax-seal'" class="absolute inset-0 z-0 flex" :style="{ background: `linear-gradient(160deg, var(--theme-bg-from, #0d2a4a), var(--theme-bg-via, #142a45) 60%, var(--theme-bg-to, #04101f))` }">
-        <div class="relative w-1/2 h-full door-left flex items-center justify-end pr-1">
-          <div class="w-full h-[68%] rounded-l-2xl border-y-2 border-l-2" :style="{ borderColor: 'var(--theme-accent, #e3b04a)' }"></div>
-        </div>
-        <div class="relative w-1/2 h-full door-right flex items-center justify-start pl-1">
-          <div class="w-full h-[68%] rounded-r-2xl border-y-2 border-r-2" :style="{ borderColor: 'var(--theme-accent, #e3b04a)' }"></div>
-        </div>
+      <!-- Wax Seal Card - same sliding double-door mechanic as Split Door, so
+           it can show the uploaded cover picture sliced in half behind the
+           seal. Falls back to an elegant gradient panel when no picture has
+           been uploaded. The seal itself lives in the content container
+           below so it doesn't fight the title/greeting box for space. -->
+      <div v-else-if="content.openingStyle === 'wax-seal'" class="absolute inset-0 z-0 flex wax-seal-doors">
+        <template v-if="content.openingBgUrl">
+          <div class="relative w-1/2 h-full overflow-hidden door-left">
+            <img :src="content.openingBgUrl" class="absolute top-0 left-0 w-[200%] h-full max-w-none object-cover" />
+            <div class="absolute inset-0 bg-black/45"></div>
+          </div>
+          <div class="relative w-1/2 h-full overflow-hidden door-right">
+            <img :src="content.openingBgUrl" class="absolute top-0 right-0 w-[200%] h-full max-w-none object-cover" />
+            <div class="absolute inset-0 bg-black/45"></div>
+          </div>
+        </template>
+        <template v-else>
+          <div class="relative w-1/2 h-full door-left flex items-center justify-end pr-1" :style="{ background: `linear-gradient(160deg, var(--theme-bg-from, #0d2a4a), var(--theme-bg-via, #142a45) 60%, var(--theme-bg-to, #04101f))` }">
+            <div class="w-full h-[68%] rounded-l-2xl border-y-2 border-l-2" :style="{ borderColor: 'var(--theme-accent, #e3b04a)' }"></div>
+          </div>
+          <div class="relative w-1/2 h-full door-right flex items-center justify-start pl-1" :style="{ background: `linear-gradient(200deg, var(--theme-bg-from, #0d2a4a), var(--theme-bg-via, #142a45) 60%, var(--theme-bg-to, #04101f))` }">
+            <div class="w-full h-[68%] rounded-r-2xl border-y-2 border-r-2" :style="{ borderColor: 'var(--theme-accent, #e3b04a)' }"></div>
+          </div>
+        </template>
       </div>
 
       <!-- Classic Envelope Default Background -->
@@ -76,12 +90,24 @@
           </svg>
         </div>
 
-        <!-- Wax Seal: a real embossed-looking stamp with the couple's initials,
-             sitting cleanly above the title instead of overlapping it -->
+        <!-- Wax Seal: a real pressed-wax blob (irregular border-radius, not a
+             perfect circle) with the couple's initials engraved in it. It's
+             split into two clipped halves along a jagged seam so that on
+             open it visibly cracks and the two pieces fly apart, instead of
+             just shrinking away like a generic badge. -->
         <div v-if="content.openingStyle === 'wax-seal'" class="wax-seal mb-6">
-          <div class="wax-seal-circle" :style="{ background: `radial-gradient(circle at 32% 28%, var(--theme-accent-soft, #f3ddaa) 0%, var(--theme-accent, #d4a017) 55%, var(--theme-accent, #d4a017) 75%, rgba(0,0,0,0.35) 100%)` }">
-            <span class="wax-seal-initials">{{ sealInitials }}</span>
+          <div class="wax-seal-piece wax-seal-piece-left">
+            <div class="wax-seal-blob" :style="waxBlobStyle"></div>
+            <div class="wax-seal-ring"></div>
           </div>
+          <div class="wax-seal-piece wax-seal-piece-right">
+            <div class="wax-seal-blob" :style="waxBlobStyle"></div>
+            <div class="wax-seal-ring"></div>
+          </div>
+          <svg class="wax-seal-crack" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M50,1 L42,14 L58,27 L38,40 L60,53 L40,67 L58,81 L50,99" />
+          </svg>
+          <span class="wax-seal-initials">{{ sealInitials }}</span>
         </div>
 
         <!-- Typography -->
@@ -226,6 +252,12 @@ const sealInitials = computed(() => {
   return `${b}${g ? ' & ' + g : ''}`
 })
 
+// Shared gradient for both wax-seal halves - kept in one place so the two
+// clipped pieces always line up as a single, seamless blob when closed.
+const waxBlobStyle = computed(() => ({
+  background: `radial-gradient(circle at 30% 26%, var(--theme-accent-soft, #f7e3ab) 0%, var(--theme-accent, #d4a017) 55%, var(--theme-accent, #d4a017) 78%, rgba(0,0,0,0.4) 100%)`
+}))
+
 const greetingParts = computed(() => {
   const raw = props.content.openingGreeting || 'Dear'
   if (raw.includes('{guestName}')) {
@@ -327,38 +359,128 @@ const guestBoxStyle = computed(() => {
   opacity: 0;
 }
 
-/* Wax Seal */
+/* Wax Seal: a hand-pressed wax blob (irregular border-radius, not a plain
+   circle) split into two clipped halves along a jagged seam so it can
+   visibly crack apart on open, rather than just shrinking away. */
 .wax-seal {
-  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.45));
+  position: relative;
+  width: 104px;
+  height: 104px;
+  transform: rotate(-3deg);
+  filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.5));
 }
 
-.wax-seal-circle {
-  width: 84px;
-  height: 84px;
-  border-radius: 9999px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.wax-seal-piece {
+  position: absolute;
+  inset: 0;
+}
+
+/* Both halves share the exact same jagged boundary, so together (closed
+   state) they read as one unbroken seal - only on open do they separate
+   along it. Coordinates match the .wax-seal-crack path below 1:1. */
+.wax-seal-piece-left {
+  clip-path: polygon(0% 0%, 50% 0%, 42% 14%, 58% 27%, 38% 40%, 60% 53%, 40% 67%, 58% 81%, 50% 100%, 0% 100%);
+}
+
+.wax-seal-piece-right {
+  clip-path: polygon(100% 0%, 50% 0%, 42% 14%, 58% 27%, 38% 40%, 60% 53%, 40% 67%, 58% 81%, 50% 100%, 100% 100%);
+}
+
+.wax-seal-blob {
+  position: absolute;
+  inset: 8%;
+  border-radius: 42% 58% 63% 37% / 47% 41% 59% 53%;
   box-shadow:
     inset 0 3px 6px rgba(255, 255, 255, 0.35),
-    inset 0 -6px 10px rgba(0, 0, 0, 0.35),
+    inset 0 -8px 14px rgba(0, 0, 0, 0.4),
     0 2px 4px rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(0, 0, 0, 0.25);
 }
 
+.wax-seal-ring {
+  position: absolute;
+  inset: 24%;
+  border-radius: 50%;
+  border: 1px dashed rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+}
+
+/* Hairline crack across the seal - invisible at rest, flashed briefly the
+   moment the seal "breaks" (see .wax-crack-flash below). */
+.wax-seal-crack {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  stroke: rgba(0, 0, 0, 0.6);
+  stroke-width: 2.2;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 .wax-seal-initials {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-family: 'Cormorant Garamond', serif;
   font-weight: 700;
-  font-size: 1.4rem;
+  font-size: 1.5rem;
   letter-spacing: 0.05em;
   color: rgba(0, 0, 0, 0.55);
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
+/* Open sequence: the seal shakes and cracks first, then splits into two
+   pieces that fly apart in opposite directions and fade, while the doors
+   behind it (see .wax-seal-doors below) get a short beat before sliding
+   open - so it reads as "the seal breaks, then the doors swing open"
+   rather than everything happening at once. */
 .split-door-leave-active .wax-seal {
+  animation: wax-seal-shake 0.28s ease;
+}
+.split-door-leave-active .wax-seal-crack {
+  animation: wax-crack-flash 0.4s ease forwards;
+}
+.split-door-leave-active .wax-seal-piece-left {
+  transition: transform 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) 0.08s, opacity 0.3s ease 0.28s;
+  transform: translate(-22px, -14px) rotate(-24deg);
   opacity: 0;
-  transform: scale(0.3) rotate(25deg);
-  transition: opacity 0.4s ease, transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.split-door-leave-active .wax-seal-piece-right {
+  transition: transform 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) 0.11s, opacity 0.3s ease 0.31s;
+  transform: translate(22px, 12px) rotate(20deg);
+  opacity: 0;
+}
+.split-door-leave-active .wax-seal-initials {
+  transition: opacity 0.25s ease 0.1s;
+  opacity: 0;
+}
+
+/* Wax-seal doors specifically (not Split Door) wait a beat for the seal to
+   crack before they start sliding, and the title/guest box/button hold
+   steady until the seal has finished breaking apart instead of fading out
+   underneath it. */
+.split-door-leave-active .wax-seal-doors .door-left,
+.split-door-leave-active .wax-seal-doors .door-right {
+  transition-delay: 0.12s;
+}
+
+@keyframes wax-seal-shake {
+  0% { transform: rotate(-3deg) scale(1); }
+  35% { transform: rotate(-6deg) scale(1.06); }
+  70% { transform: rotate(1deg) scale(0.97); }
+  100% { transform: rotate(-3deg) scale(1); }
+}
+
+@keyframes wax-crack-flash {
+  0% { opacity: 0; }
+  25% { opacity: 1; }
+  60% { opacity: 0.75; }
+  100% { opacity: 0; }
 }
 
 /* 1. Standard Fade Animation */
@@ -401,7 +523,7 @@ const guestBoxStyle = computed(() => {
 
 /* 2. Grand Split Door Animation (also used by Wax Seal) */
 .split-door-leave-active {
-  transition: opacity 1.2s ease;
+  transition: opacity 1.35s ease;
 }
 .split-door-leave-active .door-left {
   transform: translateX(-100%);
@@ -413,8 +535,8 @@ const guestBoxStyle = computed(() => {
 }
 .split-door-leave-active .content-container {
   opacity: 0;
-  transform: scale(1.1);
-  transition: opacity 0.3s ease, transform 0.8s ease-out;
+  transform: scale(1.08);
+  transition: opacity 0.4s ease 0.45s, transform 0.9s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .split-door-leave-to {
   opacity: 0;
@@ -428,6 +550,20 @@ const guestBoxStyle = computed(() => {
   .envelope-classic-leave-active .envelope-inner-card,
   .envelope-classic-leave-active .envelope-body-svg,
   .envelope-classic-leave-active {
+    transition-duration: 0.2s;
+    transition-delay: 0s;
+  }
+
+  .split-door-leave-active .wax-seal,
+  .split-door-leave-active .wax-seal-crack {
+    animation: none;
+  }
+  .split-door-leave-active .wax-seal-piece-left,
+  .split-door-leave-active .wax-seal-piece-right,
+  .split-door-leave-active .wax-seal-initials,
+  .split-door-leave-active .content-container,
+  .split-door-leave-active .door-left,
+  .split-door-leave-active .door-right {
     transition-duration: 0.2s;
     transition-delay: 0s;
   }

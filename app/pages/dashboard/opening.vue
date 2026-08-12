@@ -72,16 +72,18 @@
               </div>
             </div>
 
-            <!-- Custom Canva Cover Upload -->
+            <!-- Cover Picture Upload - powers the Canva backgrounds AND now
+                 the Wax Seal doors, which can slide open over your own
+                 picture instead of a plain gradient, same as Split Door. -->
             <Transition name="fade-down">
-              <div v-if="form.openingStyle.includes('custom')" class="p-5 rounded-xl bg-indigo-900/20 border border-indigo-800 space-y-4">
+              <div v-if="showOpeningBgUpload" class="p-5 rounded-xl bg-indigo-900/20 border border-indigo-800 space-y-4">
                 <div class="flex items-center gap-3">
                   <div class="p-2 rounded-lg bg-indigo-800/40 shrink-0">
                     <UIcon name="i-heroicons-paint-brush" class="w-5 h-5 text-indigo-300" />
                   </div>
                   <div>
-                    <p class="text-sm font-semibold text-white">Custom Canva Background</p>
-                    <p class="text-xs text-gray-400">Upload your own vertical design (1080x1920) to use as the opening background.</p>
+                    <p class="text-sm font-semibold text-white">{{ openingBgPanelCopy.title }}</p>
+                    <p class="text-xs text-gray-400">{{ openingBgPanelCopy.description }}</p>
                   </div>
                 </div>
 
@@ -204,6 +206,30 @@ const previewOpened = ref(false)
 
 const openingBgInput = ref<HTMLInputElement | null>(null)
 const openingBgUploading = ref(false)
+
+// The cover picture upload panel now powers three styles: the two Canva
+// backgrounds (where it's required) and Wax Seal (where it's optional -
+// the doors behind the seal fall back to a gradient panel if left blank).
+const showOpeningBgUpload = computed(() => form.openingStyle.includes('custom') || form.openingStyle === 'wax-seal')
+
+const openingBgPanelCopy = computed(() => {
+  if (form.openingStyle === 'wax-seal') {
+    return {
+      title: 'Wax Seal Door Picture (optional)',
+      description: 'Upload a vertical photo (1080x1920) to show behind the wax seal as it cracks open - the doors slide over it just like Split Door. Leave empty to use the default gradient panels.'
+    }
+  }
+  if (form.openingStyle === 'custom-split') {
+    return {
+      title: 'Split Door Background',
+      description: 'Upload your own vertical design (1080x1920) - it\'s sliced in half and slides open like double doors.'
+    }
+  }
+  return {
+    title: 'Custom Canva Background',
+    description: 'Upload your own vertical design (1080x1920) to use as the opening background.'
+  }
+})
 
 // Restored all 5 layout options
 const openingStyles = [
