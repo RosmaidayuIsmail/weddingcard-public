@@ -40,9 +40,6 @@
             <UButton size="xs" variant="soft" color="neutral" icon="i-heroicons-arrow-top-right-on-square" :to="`/w/${w.slug}`" target="_blank" external>
               View
             </UButton>
-            <UButton size="xs" color="primary" icon="i-heroicons-pencil-square" :to="`/admin/wedding/${w.id}`">
-              Manage
-            </UButton>
           </div>
         </div>
       </div>

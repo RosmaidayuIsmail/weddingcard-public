@@ -61,15 +61,20 @@
 const { logOut } = useAuth()
 const { wedding } = useMyWedding()
 
-const navItems = [
-  { to: '/dashboard', label: 'Overview', icon: 'i-heroicons-home' },
-  { to: '/dashboard/opening', label: 'Opening Design', icon: 'i-heroicons-envelope'},
-  { to: '/dashboard/editor', label: 'Design Studio', icon: 'i-heroicons-paint-brush' },
-  { to : '/dashboard/rsvp-editor', label: 'RSVP Editor', icon: 'i-heroicons-pencil-square'},
-  { to: '/dashboard/guests', label: 'Guest List', icon: 'i-heroicons-users' },
-  { to: '/dashboard/flow', label: 'Day Flow', icon: 'i-heroicons-clock' },
-  { to: '/dashboard/billing', label: 'Billing & Plans', icon: 'i-heroicons-credit-card' }
-]
+const { dashboardSettings } = useThemes()
+const dashboardPages = [
+  { id: 'overview', to: '/dashboard', label: 'Overview', icon: 'i-heroicons-home' },
+  { id: 'opening', to: '/dashboard/opening', label: 'Opening Design', icon: 'i-heroicons-envelope' },
+  { id: 'editor', to: '/dashboard/editor', label: 'Design Studio', icon: 'i-heroicons-paint-brush' },
+  { id: 'rsvp', to: '/dashboard/rsvp-editor', label: 'RSVP Editor', icon: 'i-heroicons-pencil-square' },
+  { id: 'guests', to: '/dashboard/guests', label: 'Guest List', icon: 'i-heroicons-users' },
+  { id: 'flow', to: '/dashboard/flow', label: 'Day Flow', icon: 'i-heroicons-clock' },
+  { id: 'billing', to: '/dashboard/billing', label: 'Billing & Plans', icon: 'i-heroicons-credit-card' }
+] as const
+const navItems = computed(() => dashboardPages.flatMap((page) => {
+  const setting = dashboardSettings.value.navItems.find((item) => item.id === page.id)
+  return setting?.enabled === false ? [] : [{ ...page, label: setting?.label?.trim() || page.label }]
+}))
 
 async function handleLogout() {
   await logOut()

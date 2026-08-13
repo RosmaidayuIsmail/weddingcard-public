@@ -235,6 +235,38 @@ export interface TextPreset {
   openingActionText: string
 }
 
+/** Platform controls for the couple dashboard. Routes and permissions stay
+ * in source code; admin changes only labels and availability. */
+export interface DashboardNavSetting {
+  id: 'overview' | 'opening' | 'editor' | 'rsvp' | 'guests' | 'flow' | 'billing'
+  label: string
+  enabled: boolean
+}
+
+export interface DashboardSettings {
+  navItems: DashboardNavSetting[]
+  overviewEyebrow: string
+  overviewTitle: string
+  createCardTitle: string
+  createCardDescription: string
+}
+
+export const defaultDashboardSettings: DashboardSettings = {
+  navItems: [
+    { id: 'overview', label: 'Overview', enabled: true },
+    { id: 'opening', label: 'Opening Design', enabled: true },
+    { id: 'editor', label: 'Design Studio', enabled: true },
+    { id: 'rsvp', label: 'RSVP Editor', enabled: true },
+    { id: 'guests', label: 'Guest List', enabled: true },
+    { id: 'flow', label: 'Day Flow', enabled: true },
+    { id: 'billing', label: 'Billing & Plans', enabled: true }
+  ],
+  overviewEyebrow: 'Dashboard Overview',
+  overviewTitle: 'Dashboard Overview',
+  createCardTitle: "Let's create your card",
+  createCardDescription: 'You can change everything except your link name later.'
+}
+
 // The two presets that already existed as hardcoded buttons on the Opening
 // Design page - kept as permanent built-ins alongside anything admins add.
 export const builtInTextPresets: TextPreset[] = [
@@ -248,6 +280,7 @@ interface PlatformCatalog {
   textPresets: TextPreset[]
   disabledOpeningStyles: string[]
   starterDefaults: StarterDefaults
+  dashboardSettings: DashboardSettings
 }
 
 export interface OpeningStyle {
@@ -285,6 +318,7 @@ export function useThemes() {
   const customTextPresets = useState<TextPreset[]>('catalog-text-presets', () => [])
   const disabledOpeningStyles = useState<string[]>('catalog-disabled-opening-styles', () => [])
   const starterDefaults = useState<StarterDefaults>('catalog-starter-defaults', () => ({ ...defaultStarterDefaults }))
+  const dashboardSettings = useState<DashboardSettings>('catalog-dashboard-settings', () => structuredClone(defaultDashboardSettings))
   const catalogFetched = useState('catalog-fetched', () => false)
 
   async function ensureCatalogLoaded() {
@@ -300,6 +334,17 @@ export function useThemes() {
         customTextPresets.value = Array.isArray(data.textPresets) ? data.textPresets : []
         disabledOpeningStyles.value = Array.isArray(data.disabledOpeningStyles) ? data.disabledOpeningStyles : []
         starterDefaults.value = data.starterDefaults ? { ...defaultStarterDefaults, ...data.starterDefaults } : { ...defaultStarterDefaults }
+        if (data.dashboardSettings) {
+          const savedItems = Array.isArray(data.dashboardSettings.navItems) ? data.dashboardSettings.navItems : []
+          dashboardSettings.value = {
+            ...defaultDashboardSettings,
+            ...data.dashboardSettings,
+            navItems: defaultDashboardSettings.navItems.map((defaultItem) => {
+              const saved = savedItems.find((item) => item?.id === defaultItem.id)
+              return { ...defaultItem, ...(saved || {}) }
+            })
+          }
+        }
       }
     } catch (error) {
       // Non-fatal: the app still works fine with just the built-in catalog.
@@ -364,6 +409,11 @@ export function useThemes() {
     starterDefaults.value = next
   }
 
+  async function saveDashboardSettings(next: DashboardSettings) {
+    await saveCatalogField('dashboardSettings', next)
+    dashboardSettings.value = next
+  }
+
   // What couples should actually see in the Opening Design picker - the
   // built-in catalog minus whatever admin has turned off.
   const enabledOpeningStyles = computed(() => openingStyleCatalog.filter((s) => !disabledOpeningStyles.value.includes(s.value)))
@@ -413,6 +463,8 @@ export function useThemes() {
     enabledOpeningStyles,
     starterDefaults,
     saveStarterDefaults,
+    dashboardSettings,
+    saveDashboardSettings,
     allThemes,
     allFontOptions,
     allTextPresets,

@@ -9,12 +9,8 @@
     <UIcon name="i-heroicons-arrow-path" class="w-8 h-8 animate-spin text-gold-400" />
   </div>
 
-  <!-- Same shell as the couple dashboard (app/layouts/dashboard.vue): sticky
-       sidebar, ambient background glow, main content column - just with
-       admin-appropriate sections instead of "my wedding" sections. Kept as
-       one page with reactive section-switching (not real sub-routes) so it
-       can never collide with pages/admin/wedding/* the way admin.vue once
-       did as a bare file alongside a same-named folder. -->
+  <!-- Platform controls only: this page controls the user-facing dashboard
+       catalog/defaults, not an individual couple's invitation. -->
   <div v-else class="min-h-screen bg-ink-950 text-white flex flex-col md:flex-row relative">
     <div class="absolute inset-0 overflow-hidden pointer-events-none z-0">
       <div class="absolute top-0 left-0 w-full h-96 bg-indigo-500/5 blur-[120px] rounded-full mix-blend-screen"></div>
@@ -59,7 +55,7 @@
         <p class="text-sm text-white/50 mt-1.5">{{ currentNavItem.description }}</p>
       </div>
 
-      <AdminWeddingsList v-if="section === 'weddings'" />
+      <AdminDashboardControls v-if="section === 'dashboard'" />
       <AdminStarterDefaults v-else-if="section === 'starter-defaults'" />
       <AdminCatalogManager v-else :section="section" />
     </main>
@@ -72,18 +68,18 @@ definePageMeta({ middleware: 'superadmin' })
 const { logOut } = useAuth()
 const { currentUser, profile, authReady } = useAuthState()
 
-type Section = 'weddings' | 'themes' | 'fonts' | 'presets' | 'opening-styles' | 'starter-defaults'
+type Section = 'dashboard' | 'themes' | 'fonts' | 'presets' | 'opening-styles' | 'starter-defaults'
 
 const navItems: { id: Section; label: string; icon: string; description: string }[] = [
-  { id: 'weddings', label: 'Weddings', icon: 'i-heroicons-users', description: 'All weddings on WeddingCard - view status, plan, and the live link.' },
-  { id: 'themes', label: 'Themes', icon: 'i-heroicons-swatch', description: 'Color palettes couples can choose from in the Design Studio.' },
-  { id: 'fonts', label: 'Fonts', icon: 'i-heroicons-language', description: 'Fonts available in every font picker across the app.' },
-  { id: 'presets', label: 'Text Presets & Languages', icon: 'i-heroicons-pencil-square', description: 'One-click opening text presets, shown as language buttons on the Opening Design page.' },
-  { id: 'opening-styles', label: 'Opening Styles', icon: 'i-heroicons-envelope-open', description: 'Choose which opening animations are offered to couples.' },
+  { id: 'dashboard', label: 'User Dashboard', icon: 'i-heroicons-squares-2x2', description: 'Control the labels and enabled pages every user sees in their dashboard.' },
+  { id: 'themes', label: 'Design Studio', icon: 'i-heroicons-swatch', description: 'Themes and palette pricing available in the user Design Studio.' },
+  { id: 'fonts', label: 'Typography', icon: 'i-heroicons-language', description: 'Fonts available in user font pickers across the app.' },
+  { id: 'presets', label: 'Opening Languages', icon: 'i-heroicons-pencil-square', description: 'One-click Opening Design language presets shown to users.' },
+  { id: 'opening-styles', label: 'Opening Styles', icon: 'i-heroicons-envelope-open', description: 'Choose which opening animations users can select.' },
   { id: 'starter-defaults', label: 'Starter Defaults', icon: 'i-heroicons-document-duplicate', description: 'What a brand-new wedding starts with - story text, buttons, petals, ornament, and a starter flow.' }
 ]
 
-const section = ref<Section>('weddings')
+const section = ref<Section>('dashboard')
 const currentNavItem = computed(() => navItems.find((item) => item.id === section.value)!)
 
 async function handleLogout() {

@@ -11,8 +11,8 @@
         <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gold-400/10 border border-gold-400/20 mb-4">
           <UIcon name="i-heroicons-sparkles" class="w-8 h-8 text-gold-300" />
         </div>
-        <h1 class="text-3xl font-display font-bold text-white mb-2">Let's create your card</h1>
-        <p class="text-white/60 text-sm">You can change everything except your link name later.</p>
+        <h1 class="text-3xl font-display font-bold text-white mb-2">{{ dashboardSettings.createCardTitle }}</h1>
+        <p class="text-white/60 text-sm">{{ dashboardSettings.createCardDescription }}</p>
       </div>
 
       <div class="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-8 shadow-2xl space-y-5">
@@ -42,7 +42,7 @@
       <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 bg-white/[0.02] border border-white/5 p-8 rounded-3xl backdrop-blur-md">
         <div>
           <p class="text-gold-300 text-sm font-semibold tracking-widest uppercase mb-2 flex items-center gap-2">
-            <UIcon name="i-heroicons-star" class="w-4 h-4" /> Dashboard Overview
+            <UIcon name="i-heroicons-star" class="w-4 h-4" /> {{ dashboardSettings.overviewEyebrow }}
           </p>
           <h1 v-if="!editingNames" class="text-3xl sm:text-4xl font-display font-bold text-white group cursor-pointer inline-flex items-center gap-2" @click="startEditingNames">
             {{ wedding.content.brideName || 'Your' }} &amp; {{ wedding.content.groomName || 'Wedding' }}
@@ -191,6 +191,7 @@
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
 const { wedding, loading, createWedding, isSlugAvailable, setPublished, updateContent, updateSlug } = useMyWedding()
+const { dashboardSettings } = useThemes()
 const { totalInvited, totalAttending, totalNotAttending, totalGuestCount } = useGuests(() => wedding.value?.id)
 const toast = useToast()
 const config = useRuntimeConfig()
