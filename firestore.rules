@@ -47,6 +47,14 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // Shared, non-personal catalog used by the dashboard pickers. It must be
+    // readable so a saved custom theme/font/preset can render correctly.
+    // Only a superadmin may change it.
+    match /platformCatalog/{catalogId} {
+      allow read: if true;
+      allow create, update, delete: if isSuperAdmin();
+    }
+
     match /weddings/{weddingId} {
       allow read: if resource.data.status == 'published' || isOwner(resource.data) || isSuperAdmin();
       allow create: if isSignedIn() && request.resource.data.ownerUid == request.auth.uid;

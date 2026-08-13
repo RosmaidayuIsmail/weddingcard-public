@@ -108,9 +108,8 @@
               <div class="pt-6 border-t border-gray-800">
                 <div class="flex items-center justify-between mb-4">
                   <h3 class="text-sm font-semibold text-white">Opening Text Settings</h3>
-                  <div class="flex bg-gray-900 border border-gray-700 rounded-full p-1">
-                    <button type="button" @click="applyTranslation('en')" class="px-3 py-1 text-xs font-medium rounded-full transition-colors hover:bg-gray-800 hover:text-white text-gray-400">English Preset</button>
-                    <button type="button" @click="applyTranslation('ms')" class="px-3 py-1 text-xs font-medium rounded-full transition-colors hover:bg-gray-800 hover:text-white text-gray-400">Bahasa Melayu</button>
+                  <div class="flex flex-wrap bg-gray-900 border border-gray-700 rounded-full p-1 gap-0.5">
+                    <button v-for="preset in allTextPresets" :key="preset.id" type="button" @click="applyTranslation(preset)" class="px-3 py-1 text-xs font-medium rounded-full transition-colors hover:bg-gray-800 hover:text-white text-gray-400">{{ preset.label }}</button>
                   </div>
                 </div>
   
@@ -183,17 +182,20 @@
   
   <script setup lang="ts">
   import { createDefaultContent, type WeddingContent } from '~/composables/useWeddingTypes'
+  import type { TextPreset } from '~/composables/useThemes'
   
-  definePageMeta({ layout: 'dashboard', middleware: 'auth' })
+  definePageMeta({ layout: 'admin-wedding', middleware: 'superadmin' })
   
-  const { wedding, loading, saving, updateContent } = useMyWedding()
+  const route = useRoute()
+  const weddingId = computed(() => route.params.id as string)
+  const { wedding, loading, saving, updateContent } = useMyWedding(weddingId)
   const { isConfigured: cloudinaryConfigured, uploadImage } = useCloudinary()
-  const { themeStyleVars, fontOptions } = useThemes()
+  const { themeStyleVars, allFontOptions, allTextPresets, enabledOpeningStyles: openingStyles } = useThemes()
 
-  const fontSelectItems = [
+  const fontSelectItems = computed(() => [
     { label: 'Auto (use theme default)', value: '' },
-    ...fontOptions.map((f) => ({ label: f.label, value: f.id }))
-  ]
+    ...allFontOptions.value.map((f) => ({ label: f.label, value: f.id }))
+  ])
 
   const showTitleStyle = ref(false)
   const showGreetingStyle = ref(false)
@@ -241,20 +243,6 @@
     }
   })
   
-  // Restored all 5 layout options
-  const openingStyles = [
-    { label: 'Classic Envelope', value: 'classic', icon: 'i-heroicons-envelope' },
-    { label: 'Wax Seal', value: 'wax-seal', icon: 'i-heroicons-check-badge' },
-    { label: 'Modern Dark', value: 'modern-dark', icon: 'i-heroicons-moon' },
-    { label: 'Minimal Light', value: 'minimal-light', icon: 'i-heroicons-sun' },
-    { label: 'Canva (Fade)', value: 'custom', icon: 'i-heroicons-photo' },
-    { label: 'Canva (Split Door)', value: 'custom-split', icon: 'i-heroicons-arrows-right-left' },
-    { label: 'Slide Up', value: 'slide-up', icon: 'i-heroicons-arrow-up' },
-    { label: 'Slide Down', value: 'slide-down', icon: 'i-heroicons-arrow-down' },
-    { label: 'Slide Left', value: 'slide-left', icon: 'i-heroicons-arrow-left' },
-    { label: 'Slide Right', value: 'slide-right', icon: 'i-heroicons-arrow-right' }
-  ]
-  
   // Dynamically inject custom Google Font stylesheet into the editor for live preview
   useHead({
     link: computed(() => {
@@ -274,17 +262,11 @@
     )
   })
   
-  function applyTranslation(lang: 'en' | 'ms') {
-    if (lang === 'ms') {
-      form.openingTitle = 'Walimatul Urus'
-      form.openingGreeting = 'Menjemput {guestName} sekeluarga'
-      form.openingActionText = 'Klik untuk buka'
-    } else {
-      form.openingTitle = "You're Invited"
-      form.openingGreeting = 'Dear {guestName}'
-      form.openingActionText = 'Tap to open'
-    }
-    toast.add({ title: 'Text presets applied', color: 'success' })
+  function applyTranslation(preset: TextPreset) {
+    form.openingTitle = preset.openingTitle
+    form.openingGreeting = preset.openingGreeting
+    form.openingActionText = preset.openingActionText
+    toast.add({ title: `${preset.label} preset applied`, color: 'success' })
   }
   
   let initialized = false
@@ -327,7 +309,7 @@
     if (openingBgInput.value) openingBgInput.value.value = ''
   }
   
-  useSeoMeta({ title: 'Opening Design — WeddingCard' })
+  useSeoMeta({ title: 'Opening Design (Admin) — WeddingCard', robots: 'noindex, nofollow' })
   </script>
   
   <style scoped>
