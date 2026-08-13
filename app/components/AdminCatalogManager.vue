@@ -227,15 +227,39 @@
           description="Each style is real animation code, not just data, so this list can't create a brand new one - but you can control exactly which of these couples are allowed to pick from."
         />
   
-        <div class="space-y-2">
-          <div v-for="style in openingStyleCatalog" :key="style.value" class="catalog-card flex items-center justify-between">
-            <div class="flex items-center gap-3">
-              <div class="p-2 rounded-lg" :class="isStyleEnabled(style.value) ? 'bg-gold-400/10' : 'bg-white/5'">
-                <UIcon :name="style.icon" class="w-4 h-4" :style="{ color: isStyleEnabled(style.value) ? '#e3b04a' : 'rgba(255,255,255,0.35)' }" />
-              </div>
-              <p class="font-medium" :class="isStyleEnabled(style.value) ? 'text-white' : 'text-white/40'">{{ style.label }}</p>
+        <div class="grid lg:grid-cols-[1fr_360px] gap-6 items-start">
+          <div class="space-y-2">
+            <div v-for="style in openingStyleCatalog" :key="style.value" class="catalog-card flex items-center justify-between" :class="{ 'catalog-card-previewing': previewStyle === style.value }">
+              <button type="button" class="flex items-center gap-3 min-w-0 text-left" @click="setPreviewStyle(style.value)">
+                <div class="p-2 rounded-lg shrink-0" :class="isStyleEnabled(style.value) ? 'bg-gold-400/10' : 'bg-white/5'">
+                  <UIcon :name="style.icon" class="w-4 h-4" :style="{ color: isStyleEnabled(style.value) ? '#e3b04a' : 'rgba(255,255,255,0.35)' }" />
+                </div>
+                <span class="font-medium truncate" :class="isStyleEnabled(style.value) ? 'text-white' : 'text-white/40'">{{ style.label }}</span>
+                <UIcon v-if="previewStyle === style.value" name="i-heroicons-eye" class="w-4 h-4 text-gold-300 shrink-0" />
+              </button>
+              <USwitch :model-value="isStyleEnabled(style.value)" :loading="togglingStyle === style.value" @update:model-value="(v: boolean) => toggleStyle(style.value, v)" />
             </div>
-            <USwitch :model-value="isStyleEnabled(style.value)" :loading="togglingStyle === style.value" @update:model-value="(v: boolean) => toggleStyle(style.value, v)" />
+          </div>
+  
+          <!-- Live preview: a DEMO card, never a real couple's wedding. Click
+               any style on the left to load it here; tap the phone to see it
+               open, same interaction a couple would have. -->
+          <div class="lg:sticky lg:top-6">
+            <div class="flex items-center justify-between mb-3 px-1">
+              <p class="text-xs font-semibold uppercase tracking-widest text-gold-200/70 flex items-center gap-2">
+                <UIcon name="i-heroicons-device-phone-mobile" class="w-4 h-4" /> Live Preview
+              </p>
+              <button type="button" class="text-xs text-white/40 hover:text-white/70" @click="previewOpened = false">Reset</button>
+            </div>
+            <div class="phone-bezel w-full max-w-[360px] mx-auto shadow-2xl">
+              <div class="phone-notch"></div>
+              <div class="phone-screen relative bg-[#04101f]" :style="previewStyleVars">
+                <EnvelopeIntro v-model:opened="previewOpened" guest-name="Guest Name" :content="previewContent" />
+                <div v-if="previewOpened" class="absolute inset-0 flex items-center justify-center text-white/50 text-sm italic px-6 text-center">
+                  (This is where the couple's own details would appear)
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -244,6 +268,7 @@
   
   <script setup lang="ts">
   import type { Theme, FontOption, TextPreset } from '~/composables/useThemes'
+  import type { WeddingContent } from '~/composables/useWeddingTypes'
   
   const props = defineProps<{ section: 'themes' | 'fonts' | 'presets' | 'opening-styles' }>()
   
@@ -253,7 +278,7 @@
     openingStyleCatalog, disabledOpeningStyles,
     allThemes, allFontOptions, allTextPresets,
     addCustomTheme, removeCustomTheme, addCustomFont, removeCustomFont, addTextPreset, removeTextPreset,
-    setOpeningStyleEnabled
+    setOpeningStyleEnabled, themeStyleVars
   } = useThemes()
   
   const removingId = ref('')
@@ -476,6 +501,27 @@
     }
   }
   
+  // Demo-only preview state - never a real couple's wedding. EnvelopeIntro
+  // just needs enough of a WeddingContent shape to render; everything else
+  // defaults sensibly since it's only ever read, never saved anywhere.
+  const previewStyle = ref(openingStyleCatalog[0]?.value || 'classic')
+  const previewOpened = ref(false)
+  const previewContent = computed(() => ({
+    brideName: 'Aisyah',
+    groomName: 'Danial',
+    openingStyle: previewStyle.value,
+    openingBgUrl: '',
+    openingTitle: "You're Invited",
+    openingGreeting: 'Dear {guestName}',
+    openingActionText: 'Tap to open'
+  }) as WeddingContent)
+  const previewStyleVars = computed(() => themeStyleVars('timeless-gold'))
+  
+  function setPreviewStyle(value: string) {
+    previewStyle.value = value
+    previewOpened.value = false
+  }
+  
   // Reset any in-progress edit when switching sections via the sidebar.
   watch(() => props.section, () => {
     cancelEditTheme()
@@ -526,5 +572,41 @@
     border-radius: 1rem;
     border: 1px dashed rgba(255, 255, 255, 0.12);
     background: rgba(255, 255, 255, 0.015);
+  }
+  
+  .catalog-card-previewing {
+    border-color: rgba(212, 160, 23, 0.4);
+    background: rgba(212, 160, 23, 0.06);
+  }
+  
+  .phone-bezel {
+    position: relative;
+    height: 640px;
+    background: #000;
+    border: 12px solid #1e293b;
+    border-radius: 2.5rem;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), inset 0 0 0 2px rgba(255, 255, 255, 0.05);
+    overflow: hidden;
+    transform: translateZ(0);
+  }
+  
+  .phone-notch {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40%;
+    height: 24px;
+    background: #1e293b;
+    border-bottom-left-radius: 14px;
+    border-bottom-right-radius: 14px;
+    z-index: 50;
+  }
+  
+  .phone-screen {
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
   }
   </style>

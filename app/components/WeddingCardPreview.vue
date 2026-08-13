@@ -54,11 +54,21 @@
            :style="{ left: `${content.namesX ?? 50}%`, top: `${content.namesY ?? 50}%`, transform: 'translate(-50%, -50%)' }"
            @pointerdown="onPointerDown($event, 'names')"
       >
+        <!-- Vertical Layout -->
         <div v-if="content.namesLayout === 'vertical'" class="flex flex-col items-center gap-0 font-heading drop-shadow-lg" :style="{ fontFamily: 'var(--theme-heading-font)', fontSize: 'clamp(1.5rem,6vw,2.4rem)', lineHeight: '1.15' }">
           <span>{{ content.brideName || 'Bride' }}</span>
           <span class="text-[0.4em] text-gold-300 opacity-80 leading-none">&amp;</span>
           <span>{{ content.groomName || 'Groom' }}</span>
         </div>
+        
+        <!-- ADDED: Diagonal Layout -->
+        <div v-else-if="content.namesLayout === 'diagonal'" class="flex flex-col font-heading drop-shadow-lg w-full max-w-[220px]" :style="{ fontFamily: 'var(--theme-heading-font)', fontSize: 'clamp(1.6rem, 7vw, 2.6rem)', lineHeight: '1.1' }">
+          <span class="self-start text-left ml-2">{{ content.brideName || 'Bride' }}</span>
+          <span class="text-[0.5em] text-gold-300 opacity-80 leading-none self-center my-1">&amp;</span>
+          <span class="self-end text-right mr-2">{{ content.groomName || 'Groom' }}</span>
+        </div>
+
+        <!-- Horizontal Layout (Fallback/Default) -->
         <p v-else class="font-heading preview-names drop-shadow-lg whitespace-nowrap" :style="{ fontFamily: 'var(--theme-heading-font)' }">
           {{ content.brideName || 'Bride' }} <span class="text-[0.6em] mx-1 text-gold-300 opacity-80">&amp;</span> {{ content.groomName || 'Groom' }}
         </p>
@@ -113,6 +123,10 @@
             </button>
             <button type="button" class="quick-edit-layout-btn" :class="{ 'quick-edit-layout-btn-active': content.namesLayout === 'vertical' }" @click="content.namesLayout = 'vertical'">
               Stacked
+            </button>
+            <!-- ADDED: Diagonal quick-edit button -->
+            <button type="button" class="quick-edit-layout-btn" :class="{ 'quick-edit-layout-btn-active': content.namesLayout === 'diagonal' }" @click="content.namesLayout = 'diagonal'">
+              Diagonal
             </button>
           </div>
         </template>

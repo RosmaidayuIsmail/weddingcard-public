@@ -80,6 +80,22 @@
         <div class="absolute inset-0 bg-black/40"></div>
       </div>
 
+      <!-- Confetti Burst Background -->
+      <div v-else-if="content.openingStyle === 'confetti-burst'" class="absolute inset-0 z-0 confetti-burst-bg overflow-hidden" :style="{ background: `linear-gradient(135deg, var(--theme-bg-from, #0d2a4a) 0%, var(--theme-bg-to, #04101f) 100%)` }">
+        <!-- Optional uploaded background image -->
+        <img v-if="content.openingBgUrl" :src="content.openingBgUrl" alt="Cover Background" class="absolute inset-0 w-full h-full object-cover opacity-40 mix-blend-overlay" />
+        
+        <!-- Animated Confetti Particles -->
+        <div class="absolute inset-0 pointer-events-none">
+          <div class="confetti-particle bg-pink-400 left-[10%] animate-delay-100"></div>
+          <div class="confetti-particle bg-blue-400 left-[25%] animate-delay-300"></div>
+          <div class="confetti-particle bg-yellow-400 left-[40%] animate-delay-500"></div>
+          <div class="confetti-particle bg-green-400 left-[55%] animate-delay-200"></div>
+          <div class="confetti-particle bg-purple-400 left-[70%] animate-delay-600"></div>
+          <div class="confetti-particle bg-red-400 left-[85%] animate-delay-400"></div>
+        </div>
+      </div>
+
       <!-- Fallback Gradient Background (Slide styles without a picture, and
            anything else not covered above) -->
       <div v-else class="absolute inset-0 z-0 bg-gradient-to-br" :style="{ background: `linear-gradient(135deg, var(--theme-bg-from, #0d2a4a) 0%, var(--theme-bg-to, #04101f) 100%)` }"></div>
@@ -166,6 +182,7 @@ function open() {
 
 // Dynamically sets the transition animation based on the chosen style
 const transitionName = computed(() => {
+  if (props.content.openingStyle === 'confetti-burst') return 'confetti-burst'
   if (props.content.openingStyle === 'custom-split' || props.content.openingStyle === 'wax-seal') return 'split-door'
   if (props.content.openingStyle === 'classic') return 'envelope-classic'
   if (props.content.openingStyle === 'slide-up') return 'slide-up-open'
@@ -559,6 +576,57 @@ const guestBoxStyle = computed(() => {
   opacity: 0;
 }
 
+/* --- Confetti Burst Background Animation --- */
+/* ==========================================================================
+   Confetti Burst: Multi-stage open animation
+   1. Content pops and vanishes
+   2. Background flashes and expands
+   3. Entire overlay fades out
+   ========================================================================== */
+
+/* The main overlay transition - waits for the "pop" to finish before fading out */
+.confetti-burst-leave-active {
+  transition: opacity 0.7s ease 0.5s; 
+}
+
+/* Stage 1: The text and button "pop" towards the user, then shrink and fade */
+.confetti-burst-leave-active .content-container {
+  animation: content-pop-away 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Stage 2: The background flashes and expands outward */
+.confetti-burst-leave-active .confetti-burst-bg {
+  animation: burst-flash-expand 0.8s ease forwards;
+}
+
+/* Stage 3: The whole overlay disappears */
+.confetti-burst-leave-to {
+  opacity: 0;
+}
+
+/* Keyframes for the sequence */
+@keyframes content-pop-away {
+  0% { transform: scale(1); opacity: 1; }
+  40% { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(0.85); opacity: 0; }
+}
+
+@keyframes burst-flash-expand {
+  0% { 
+    transform: scale(1); 
+    filter: brightness(1); 
+  }
+  30% { 
+    transform: scale(1.05); 
+    filter: brightness(1.4); /* Flashes brighter */
+  }
+  100% { 
+    transform: scale(1.15); 
+    filter: brightness(1); 
+    opacity: 0; 
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .envelope-classic-wrap {
     animation: none;
@@ -581,6 +649,18 @@ const guestBoxStyle = computed(() => {
   .split-door-leave-active .content-container,
   .split-door-leave-active .door-left,
   .split-door-leave-active .door-right {
+    transition-duration: 0.2s;
+    transition-delay: 0s;
+  }
+
+  /* ADDED: Disable Confetti pop and flash */
+  .confetti-burst-leave-active .content-container,
+  .confetti-burst-leave-active .confetti-burst-bg {
+    animation: none;
+    transition-duration: 0.2s;
+    transition-delay: 0s;
+  }
+  .confetti-burst-leave-active {
     transition-duration: 0.2s;
     transition-delay: 0s;
   }

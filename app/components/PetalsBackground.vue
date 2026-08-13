@@ -27,6 +27,14 @@
           :fill="`rgba(243, 221, 170, ${0.5 + (i % 5) * 0.08})`"
         />
       </svg>
+      <svg v-else-if="styleName === 'stars'" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path
+          d="M32 2 L40 24 L62 24 L44 38 L52 60 L32 46 L12 60 L20 38 L2 24 L24 24 Z"
+          :fill="`rgba(212, 160, 23, ${0.35 + (i % 5) * 0.06})`"
+          :stroke="`rgba(243, 221, 170, ${0.55 + (i % 5) * 0.06})`"
+          stroke-width="2"
+        />
+      </svg>
       <svg v-else viewBox="0 0 64 96" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path
           d="M32 0C47 32 48 64 32 96C17 64 16 32 32 0Z"

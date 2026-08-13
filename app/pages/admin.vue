@@ -60,6 +60,7 @@
       </div>
 
       <AdminWeddingsList v-if="section === 'weddings'" />
+      <AdminStarterDefaults v-else-if="section === 'starter-defaults'" />
       <AdminCatalogManager v-else :section="section" />
     </main>
   </div>
@@ -71,14 +72,15 @@ definePageMeta({ middleware: 'superadmin' })
 const { logOut } = useAuth()
 const { currentUser, profile, authReady } = useAuthState()
 
-type Section = 'weddings' | 'themes' | 'fonts' | 'presets' | 'opening-styles'
+type Section = 'weddings' | 'themes' | 'fonts' | 'presets' | 'opening-styles' | 'starter-defaults'
 
 const navItems: { id: Section; label: string; icon: string; description: string }[] = [
   { id: 'weddings', label: 'Weddings', icon: 'i-heroicons-users', description: 'All weddings on WeddingCard - view status, plan, and the live link.' },
   { id: 'themes', label: 'Themes', icon: 'i-heroicons-swatch', description: 'Color palettes couples can choose from in the Design Studio.' },
   { id: 'fonts', label: 'Fonts', icon: 'i-heroicons-language', description: 'Fonts available in every font picker across the app.' },
   { id: 'presets', label: 'Text Presets & Languages', icon: 'i-heroicons-pencil-square', description: 'One-click opening text presets, shown as language buttons on the Opening Design page.' },
-  { id: 'opening-styles', label: 'Opening Styles', icon: 'i-heroicons-envelope-open', description: 'Choose which opening animations are offered to couples.' }
+  { id: 'opening-styles', label: 'Opening Styles', icon: 'i-heroicons-envelope-open', description: 'Choose which opening animations are offered to couples.' },
+  { id: 'starter-defaults', label: 'Starter Defaults', icon: 'i-heroicons-document-duplicate', description: 'What a brand-new wedding starts with - story text, buttons, petals, ornament, and a starter flow.' }
 ]
 
 const section = ref<Section>('weddings')

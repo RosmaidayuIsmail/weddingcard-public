@@ -8,6 +8,37 @@ export interface ThemePalette {
   onAccent: string
 }
 
+export interface StarterFlowItem {
+  time: string
+  title: string
+  description: string
+}
+
+// The "shared template" every NEW wedding starts from - not any existing
+// couple's own data. Admin changes here only affect weddings created AFTER
+// the change; nothing already-created is touched.
+export interface StarterDefaults {
+  story: string
+  enablePetals: boolean
+  petalStyle: string
+  ornamentStyle: string
+  textWeight: string
+  btnDetails: string
+  btnRsvp: string
+  flow: StarterFlowItem[]
+}
+
+export const defaultStarterDefaults: StarterDefaults = {
+  story: 'With humble hearts, we joyfully invite you to celebrate our wedding with us.',
+  enablePetals: true,
+  petalStyle: 'petals',
+  ornamentStyle: 'none',
+  textWeight: '300',
+  btnDetails: 'View Details',
+  btnRsvp: 'RSVP Now',
+  flow: []
+}
+
 export interface Theme {
   id: string
   name: string
@@ -216,6 +247,7 @@ interface PlatformCatalog {
   fonts: FontOption[]
   textPresets: TextPreset[]
   disabledOpeningStyles: string[]
+  starterDefaults: StarterDefaults
 }
 
 export interface OpeningStyle {
@@ -239,7 +271,8 @@ export const openingStyleCatalog: OpeningStyle[] = [
   { label: 'Slide Up', value: 'slide-up', icon: 'i-heroicons-arrow-up' },
   { label: 'Slide Down', value: 'slide-down', icon: 'i-heroicons-arrow-down' },
   { label: 'Slide Left', value: 'slide-left', icon: 'i-heroicons-arrow-left' },
-  { label: 'Slide Right', value: 'slide-right', icon: 'i-heroicons-arrow-right' }
+  { label: 'Slide Right', value: 'slide-right', icon: 'i-heroicons-arrow-right' },
+  { label: 'Confetti Burst', value: 'confetti-burst', icon: 'i-heroicons-sparkles' },
 ]
 
 export function useThemes() {
@@ -251,6 +284,7 @@ export function useThemes() {
   const customFonts = useState<FontOption[]>('catalog-fonts', () => [])
   const customTextPresets = useState<TextPreset[]>('catalog-text-presets', () => [])
   const disabledOpeningStyles = useState<string[]>('catalog-disabled-opening-styles', () => [])
+  const starterDefaults = useState<StarterDefaults>('catalog-starter-defaults', () => ({ ...defaultStarterDefaults }))
   const catalogFetched = useState('catalog-fetched', () => false)
 
   async function ensureCatalogLoaded() {
@@ -265,6 +299,7 @@ export function useThemes() {
         customFonts.value = Array.isArray(data.fonts) ? data.fonts : []
         customTextPresets.value = Array.isArray(data.textPresets) ? data.textPresets : []
         disabledOpeningStyles.value = Array.isArray(data.disabledOpeningStyles) ? data.disabledOpeningStyles : []
+        starterDefaults.value = data.starterDefaults ? { ...defaultStarterDefaults, ...data.starterDefaults } : { ...defaultStarterDefaults }
       }
     } catch (error) {
       // Non-fatal: the app still works fine with just the built-in catalog.
@@ -324,6 +359,11 @@ export function useThemes() {
     disabledOpeningStyles.value = next
   }
 
+  async function saveStarterDefaults(next: StarterDefaults) {
+    await saveCatalogField('starterDefaults', next)
+    starterDefaults.value = next
+  }
+
   // What couples should actually see in the Opening Design picker - the
   // built-in catalog minus whatever admin has turned off.
   const enabledOpeningStyles = computed(() => openingStyleCatalog.filter((s) => !disabledOpeningStyles.value.includes(s.value)))
@@ -367,9 +407,12 @@ export function useThemes() {
     themes,
     fontOptions,
     builtInTextPresets,
+    ensureCatalogLoaded,
     openingStyleCatalog,
     disabledOpeningStyles,
     enabledOpeningStyles,
+    starterDefaults,
+    saveStarterDefaults,
     allThemes,
     allFontOptions,
     allTextPresets,

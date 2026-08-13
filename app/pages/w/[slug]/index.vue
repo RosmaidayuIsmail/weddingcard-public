@@ -88,11 +88,21 @@
           class="absolute w-full max-w-3xl text-center px-4 flex flex-col items-center transition-all duration-700 animate-in fade-in zoom-in delay-300"
           :style="{ left: `${wedding.content.namesX ?? 50}%`, top: `${wedding.content.namesY ?? 50}%`, transform: 'translate(-50%, -50%)' }"
         >
+          <!-- Vertical Layout -->
           <div v-if="wedding.content.namesLayout === 'vertical'" class="flex flex-col items-center gap-0 font-heading drop-shadow-2xl" :style="{ color: wedding.content.nameColor || 'var(--theme-ink)', fontFamily: 'var(--theme-heading-font)', fontSize: `clamp(${2 * ((wedding.content.nameSize ?? 100) / 100)}rem, ${4.2 * ((wedding.content.nameSize ?? 100) / 100)}vw, ${3 * ((wedding.content.nameSize ?? 100) / 100)}rem)`, lineHeight: '1.15' }">
             <span>{{ wedding.content.brideName }}</span>
             <span class="text-[0.4em] opacity-80 leading-none" style="color: #e3b04a;">&amp;</span>
             <span>{{ wedding.content.groomName }}</span>
           </div>
+          
+          <!-- ADDED: Diagonal Layout -->
+          <div v-else-if="wedding.content.namesLayout === 'diagonal'" class="flex flex-col font-heading drop-shadow-2xl w-full max-w-xs mx-auto" :style="{ color: wedding.content.nameColor || 'var(--theme-ink)', fontFamily: 'var(--theme-heading-font)', fontSize: `clamp(${2.5 * ((wedding.content.nameSize ?? 100) / 100)}rem, ${5 * ((wedding.content.nameSize ?? 100) / 100)}vw, ${3.5 * ((wedding.content.nameSize ?? 100) / 100)}rem)`, lineHeight: '1.1' }">
+            <span class="self-start text-left ml-4 sm:-ml-8">{{ wedding.content.brideName }}</span>
+            <span class="text-[0.5em] opacity-80 leading-none self-center my-2" style="color: #e3b04a;">&amp;</span>
+            <span class="self-end text-right mr-4 sm:-mr-8">{{ wedding.content.groomName }}</span>
+          </div>
+
+          <!-- Horizontal Layout (Fallback/Default) -->
           <h2 v-else class="drop-shadow-2xl leading-tight" :style="{ color: wedding.content.nameColor || 'var(--theme-ink)', fontFamily: 'var(--theme-heading-font)', fontSize: `clamp(${3.5 * ((wedding.content.nameSize ?? 100) / 100)}rem, ${8 * ((wedding.content.nameSize ?? 100) / 100)}vw, ${6 * ((wedding.content.nameSize ?? 100) / 100)}rem)` }">
             {{ wedding.content.brideName }} <span class="text-[0.7em] mx-2 opacity-80" style="color: #e3b04a;">&amp;</span> {{ wedding.content.groomName }}
           </h2>

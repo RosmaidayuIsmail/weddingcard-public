@@ -99,6 +99,13 @@ export function useMyWedding(overrideId?: Ref<string | null | undefined>) {
     const cleanSlug = slugify(slug)
     if (!cleanSlug) throw new Error('Please choose a valid link name')
 
+    // Pull in whatever "shared template" admin has configured (Platform
+    // Admin > Starter Defaults) - falls back to the plain hardcoded
+    // defaults if the catalog hasn't loaded yet or nothing's been set.
+    const { ensureCatalogLoaded, starterDefaults } = useThemes()
+    await ensureCatalogLoaded()
+    const defaults = starterDefaults.value
+
     const weddingRef = doc(collection(db, 'weddings'))
     const slugRef = doc(db, 'slugs', cleanSlug)
 
@@ -116,8 +123,17 @@ export function useMyWedding(overrideId?: Ref<string | null | undefined>) {
         plan: 'free',
         paymentStatus: 'unpaid',
         status: 'draft',
-        content: createDefaultContent(brideName, groomName),
-        flow: [],
+        content: {
+          ...createDefaultContent(brideName, groomName),
+          story: defaults.story,
+          enablePetals: defaults.enablePetals,
+          petalStyle: defaults.petalStyle,
+          ornamentStyle: defaults.ornamentStyle,
+          textWeight: defaults.textWeight,
+          btnDetails: defaults.btnDetails,
+          btnRsvp: defaults.btnRsvp
+        },
+        flow: defaults.flow.map((item, index) => ({ id: `starter-${index}`, ...item })),
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       })
