@@ -55,7 +55,7 @@
 </template>
 
 <script setup lang="ts">
-const { signIn, signInWithGoogle, isConfigured } = useAuth()
+const { signIn, signInWithGoogle, isConfigured, profile } = useAuth()
 const route = useRoute()
 
 const email = ref('')
@@ -64,12 +64,17 @@ const loading = ref(false)
 const googleLoading = ref(false)
 const errorMessage = ref('')
 
-// If middleware bounced someone here from a protected page (e.g. /admin),
-// send them back there instead of always landing on /dashboard.
+// If middleware bounced someone here from a protected page (e.g. /admin or
+// /dashboard), send them back there - that page's own middleware will still
+// have the final say (e.g. a couple account hitting redirect=/admin gets
+// bounced onward to /dashboard by the superadmin middleware anyway). With no
+// explicit target, default by role: admins land on /admin, couples on
+// /dashboard, never the other one's area.
 const redirectTo = computed(() => {
   const raw = route.query.redirect
   const isSafeInternalPath = typeof raw === 'string' && raw.startsWith('/') && !raw.startsWith('//')
-  return isSafeInternalPath ? raw : '/dashboard'
+  if (isSafeInternalPath) return raw
+  return profile.value?.role === 'superadmin' ? '/admin' : '/dashboard'
 })
 
 async function handleLogin() {

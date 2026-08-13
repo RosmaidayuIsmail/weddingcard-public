@@ -215,7 +215,32 @@ interface PlatformCatalog {
   themes: Theme[]
   fonts: FontOption[]
   textPresets: TextPreset[]
+  disabledOpeningStyles: string[]
 }
+
+export interface OpeningStyle {
+  value: string
+  label: string
+  icon: string
+}
+
+// The full set of opening-style animations that exist in code (each one is
+// real CSS/animation logic in EnvelopeIntro.vue, not just data) - admins
+// can't invent new ones here, but they CAN choose which of these couples
+// are allowed to pick from. Kept here as the one shared source of truth so
+// the admin toggle list and the dashboard's picker can never drift apart.
+export const openingStyleCatalog: OpeningStyle[] = [
+  { label: 'Classic Envelope', value: 'classic', icon: 'i-heroicons-envelope' },
+  { label: 'Wax Seal', value: 'wax-seal', icon: 'i-heroicons-check-badge' },
+  { label: 'Modern Dark', value: 'modern-dark', icon: 'i-heroicons-moon' },
+  { label: 'Minimal Light', value: 'minimal-light', icon: 'i-heroicons-sun' },
+  { label: 'Canva (Fade)', value: 'custom', icon: 'i-heroicons-photo' },
+  { label: 'Canva (Split Door)', value: 'custom-split', icon: 'i-heroicons-arrows-right-left' },
+  { label: 'Slide Up', value: 'slide-up', icon: 'i-heroicons-arrow-up' },
+  { label: 'Slide Down', value: 'slide-down', icon: 'i-heroicons-arrow-down' },
+  { label: 'Slide Left', value: 'slide-left', icon: 'i-heroicons-arrow-left' },
+  { label: 'Slide Right', value: 'slide-right', icon: 'i-heroicons-arrow-right' }
+]
 
 export function useThemes() {
   const { db, isConfigured } = useFirebase()
@@ -225,6 +250,7 @@ export function useThemes() {
   const customThemes = useState<Theme[]>('catalog-themes', () => [])
   const customFonts = useState<FontOption[]>('catalog-fonts', () => [])
   const customTextPresets = useState<TextPreset[]>('catalog-text-presets', () => [])
+  const disabledOpeningStyles = useState<string[]>('catalog-disabled-opening-styles', () => [])
   const catalogFetched = useState('catalog-fetched', () => false)
 
   async function ensureCatalogLoaded() {
@@ -238,6 +264,7 @@ export function useThemes() {
         customThemes.value = Array.isArray(data.themes) ? data.themes : []
         customFonts.value = Array.isArray(data.fonts) ? data.fonts : []
         customTextPresets.value = Array.isArray(data.textPresets) ? data.textPresets : []
+        disabledOpeningStyles.value = Array.isArray(data.disabledOpeningStyles) ? data.disabledOpeningStyles : []
       }
     } catch (error) {
       // Non-fatal: the app still works fine with just the built-in catalog.
@@ -253,6 +280,9 @@ export function useThemes() {
     await setDoc(doc(db, 'platformCatalog', 'catalog'), { [field]: value }, { merge: true })
   }
 
+  // Add AND edit both go through this one function: since it replaces any
+  // existing entry with the same id before adding the new version, calling
+  // it again with an existing id (and changed fields) is how an edit works.
   async function addCustomTheme(theme: Theme) {
     const next = [...customThemes.value.filter((t) => t.id !== theme.id), theme]
     await saveCatalogField('themes', next)
@@ -285,6 +315,18 @@ export function useThemes() {
     await saveCatalogField('textPresets', next)
     customTextPresets.value = next
   }
+
+  async function setOpeningStyleEnabled(styleValue: string, enabled: boolean) {
+    const next = enabled
+      ? disabledOpeningStyles.value.filter((v) => v !== styleValue)
+      : [...disabledOpeningStyles.value.filter((v) => v !== styleValue), styleValue]
+    await saveCatalogField('disabledOpeningStyles', next)
+    disabledOpeningStyles.value = next
+  }
+
+  // What couples should actually see in the Opening Design picker - the
+  // built-in catalog minus whatever admin has turned off.
+  const enabledOpeningStyles = computed(() => openingStyleCatalog.filter((s) => !disabledOpeningStyles.value.includes(s.value)))
 
   // The full, "what should actually render" lists - built-ins plus whatever
   // admins have added. Every existing call site that destructures the plain
@@ -325,6 +367,9 @@ export function useThemes() {
     themes,
     fontOptions,
     builtInTextPresets,
+    openingStyleCatalog,
+    disabledOpeningStyles,
+    enabledOpeningStyles,
     allThemes,
     allFontOptions,
     allTextPresets,
@@ -335,6 +380,7 @@ export function useThemes() {
     addCustomFont,
     removeCustomFont,
     addTextPreset,
-    removeTextPreset
+    removeTextPreset,
+    setOpeningStyleEnabled
   }
 }

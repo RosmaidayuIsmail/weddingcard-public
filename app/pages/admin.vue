@@ -9,137 +9,80 @@
     <UIcon name="i-heroicons-arrow-path" class="w-8 h-8 animate-spin text-gold-400" />
   </div>
 
-  <div v-else class="min-h-screen invite-backdrop text-white px-6 py-10 relative overflow-hidden">
-    <!-- Same soft ambient glow as the dashboard layout, so this doesn't feel
-         visually flatter than the rest of the app. -->
+  <!-- Same shell as the couple dashboard (app/layouts/dashboard.vue): sticky
+       sidebar, ambient background glow, main content column - just with
+       admin-appropriate sections instead of "my wedding" sections. Kept as
+       one page with reactive section-switching (not real sub-routes) so it
+       can never collide with pages/admin/wedding/* the way admin.vue once
+       did as a bare file alongside a same-named folder. -->
+  <div v-else class="min-h-screen bg-ink-950 text-white flex flex-col md:flex-row relative">
     <div class="absolute inset-0 overflow-hidden pointer-events-none z-0">
       <div class="absolute top-0 left-0 w-full h-96 bg-indigo-500/5 blur-[120px] rounded-full mix-blend-screen"></div>
       <div class="absolute bottom-0 right-0 w-3/4 h-96 bg-gold-500/5 blur-[120px] rounded-full mix-blend-screen"></div>
     </div>
 
-    <div class="max-w-5xl mx-auto space-y-6 relative z-10">
-      <div class="flex items-center justify-between">
-        <div>
-          <h1 class="text-3xl sm:text-4xl font-display font-bold bg-clip-text text-transparent bg-gradient-to-r from-gold-100 via-gold-300 to-gold-500 tracking-tight">
-            Platform Admin
-          </h1>
-          <p class="text-sm text-white/50 mt-1 flex items-center gap-2">
-            <UIcon :name="tab === 'weddings' ? 'i-heroicons-users' : 'i-heroicons-swatch'" class="w-4 h-4" style="color: #e3b04a;" />
-            {{ tab === 'weddings' ? 'All weddings on WeddingCard' : 'Themes, fonts, and text presets available to every couple' }}
-          </p>
+    <aside class="relative z-10 md:w-72 md:min-h-screen md:sticky md:top-0 md:h-screen md:overflow-y-auto border-b md:border-b-0 md:border-r border-white/5 bg-ink-900/40 backdrop-blur-xl p-5 flex flex-col">
+      <div class="flex items-center gap-3 px-3 py-4 mb-2">
+        <div class="p-2 rounded-lg bg-white/5 border border-white/10">
+          <UIcon name="i-heroicons-shield-check" class="w-5 h-5 text-gold-300" />
         </div>
-        <UButton variant="ghost" color="neutral" icon="i-heroicons-arrow-right-on-rectangle" @click="handleLogout">
+        <span class="font-display font-semibold text-xl text-gold-100 tracking-wide">Admin</span>
+      </div>
+      <p class="px-3 text-xs text-white/40 mb-6 leading-relaxed">Editing what every couple can choose from - not any one couple's own wedding.</p>
+
+      <nav class="flex md:flex-col gap-2 overflow-x-auto hide-scrollbar md:overflow-visible pb-2 md:pb-0 -mx-5 px-5 md:mx-0 md:px-0">
+        <button
+          v-for="item in navItems"
+          :key="item.id"
+          type="button"
+          class="nav-link group"
+          :class="{ 'nav-link-active': section === item.id }"
+          @click="section = item.id"
+        >
+          <UIcon :name="item.icon" class="w-5 h-5 shrink-0 transition-transform group-hover:scale-110" />
+          <span class="whitespace-nowrap font-medium">{{ item.label }}</span>
+        </button>
+      </nav>
+
+      <div class="mt-auto pt-6">
+        <UButton block variant="ghost" color="neutral" icon="i-heroicons-arrow-right-on-rectangle" class="hover:bg-red-500/10 hover:text-red-400 transition-colors py-2.5 rounded-xl" @click="handleLogout">
           Sign out
         </UButton>
       </div>
+    </aside>
 
-      <div class="flex gap-2 border-b border-white/10">
-        <button type="button" class="tab-btn" :class="{ 'tab-btn-active': tab === 'weddings' }" @click="tab = 'weddings'">
-          <UIcon name="i-heroicons-users" class="w-4 h-4" /> Weddings
-        </button>
-        <button type="button" class="tab-btn" :class="{ 'tab-btn-active': tab === 'catalog' }" @click="tab = 'catalog'">
-          <UIcon name="i-heroicons-swatch" class="w-4 h-4" /> Catalog
-        </button>
+    <main class="relative z-10 flex-1 p-4 md:p-8 lg:p-12 w-full mx-auto max-w-6xl overflow-x-hidden">
+      <div class="mb-8">
+        <h1 class="text-2xl sm:text-3xl font-display font-bold bg-clip-text text-transparent bg-gradient-to-r from-gold-100 via-gold-300 to-gold-500 tracking-tight">
+          {{ currentNavItem.label }}
+        </h1>
+        <p class="text-sm text-white/50 mt-1.5">{{ currentNavItem.description }}</p>
       </div>
 
-      <!-- WEDDINGS TAB -->
-      <template v-if="tab === 'weddings'">
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div class="stat-card">
-            <p class="stat-label">Total Weddings</p>
-            <p class="stat-number">{{ weddings.length }}</p>
-          </div>
-          <div class="stat-card">
-            <p class="stat-label">Published</p>
-            <p class="stat-number text-emerald-300">{{ publishedCount }}</p>
-          </div>
-          <div class="stat-card">
-            <p class="stat-label">Premium Plan</p>
-            <p class="stat-number text-gold-200">{{ premiumCount }}</p>
-          </div>
-          <div class="stat-card">
-            <p class="stat-label">Drafts</p>
-            <p class="stat-number text-white/60">{{ weddings.length - publishedCount }}</p>
-          </div>
-        </div>
-
-        <UInput v-model="search" icon="i-heroicons-magnifying-glass" placeholder="Search by names or link name..." class="max-w-sm" />
-
-        <div v-if="loading" class="text-center text-white/50 py-10">Loading...</div>
-        <div v-else-if="filteredWeddings.length === 0" class="text-center text-white/50 py-10">No weddings found.</div>
-        <div v-else class="space-y-2">
-          <div v-for="w in filteredWeddings" :key="w.id" class="wedding-row">
-            <div>
-              <p class="font-medium">{{ w.content.brideName || '\u2014' }} &amp; {{ w.content.groomName || '\u2014' }}</p>
-              <p class="text-xs text-white/50">/w/{{ w.slug }}</p>
-            </div>
-            <div class="flex items-center gap-2">
-              <UBadge :color="w.status === 'published' ? 'success' : 'neutral'" variant="subtle">{{ w.status }}</UBadge>
-              <UBadge :color="w.plan === 'premium' ? 'primary' : 'neutral'" variant="subtle">{{ w.plan }}</UBadge>
-              <UButton size="xs" variant="soft" color="neutral" icon="i-heroicons-arrow-top-right-on-square" :to="`/w/${w.slug}`" target="_blank" external>
-                View
-              </UButton>
-            </div>
-          </div>
-        </div>
-      </template>
-
-      <!-- CATALOG TAB -->
-      <AdminCatalogManager v-else />
-    </div>
+      <AdminWeddingsList v-if="section === 'weddings'" />
+      <AdminCatalogManager v-else :section="section" />
+    </main>
   </div>
 </template>
 
 <script setup lang="ts">
-import { collection, getDocs } from 'firebase/firestore'
-import type { WeddingDoc } from '~/composables/useWeddingTypes'
-
 definePageMeta({ middleware: 'superadmin' })
 
-const { db, isConfigured } = useFirebase()
 const { logOut } = useAuth()
 const { currentUser, profile, authReady } = useAuthState()
-const toast = useToast()
 
-const tab = ref<'weddings' | 'catalog'>('weddings')
+type Section = 'weddings' | 'themes' | 'fonts' | 'presets' | 'opening-styles'
 
-const weddings = ref<WeddingDoc[]>([])
-const loading = ref(true)
-const search = ref('')
+const navItems: { id: Section; label: string; icon: string; description: string }[] = [
+  { id: 'weddings', label: 'Weddings', icon: 'i-heroicons-users', description: 'All weddings on WeddingCard - view status, plan, and the live link.' },
+  { id: 'themes', label: 'Themes', icon: 'i-heroicons-swatch', description: 'Color palettes couples can choose from in the Design Studio.' },
+  { id: 'fonts', label: 'Fonts', icon: 'i-heroicons-language', description: 'Fonts available in every font picker across the app.' },
+  { id: 'presets', label: 'Text Presets & Languages', icon: 'i-heroicons-pencil-square', description: 'One-click opening text presets, shown as language buttons on the Opening Design page.' },
+  { id: 'opening-styles', label: 'Opening Styles', icon: 'i-heroicons-envelope-open', description: 'Choose which opening animations are offered to couples.' }
+]
 
-async function loadWeddings() {
-  if (!isConfigured || !db) {
-    loading.value = false
-    return
-  }
-  loading.value = true
-  try {
-    const snapshot = await getDocs(collection(db, 'weddings'))
-    weddings.value = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as WeddingDoc)
-  } catch (error) {
-    console.error(error)
-    toast.add({ title: 'Could not load weddings', description: 'Check that your account has the superadmin role in Firestore.', color: 'error' })
-  } finally {
-    loading.value = false
-  }
-}
-
-const isAuthorized = computed(() => authReady.value && !!currentUser.value && profile.value?.role === 'superadmin')
-
-watch(isAuthorized, (ok) => {
-  if (ok) loadWeddings()
-}, { immediate: true })
-
-const publishedCount = computed(() => weddings.value.filter((w) => w.status === 'published').length)
-const premiumCount = computed(() => weddings.value.filter((w) => w.plan === 'premium').length)
-
-const filteredWeddings = computed(() => {
-  const q = search.value.trim().toLowerCase()
-  if (!q) return weddings.value
-  return weddings.value.filter((w) =>
-    [w.content.brideName, w.content.groomName, w.slug].some((field) => field?.toLowerCase().includes(q))
-  )
-})
+const section = ref<Section>('weddings')
+const currentNavItem = computed(() => navItems.find((item) => item.id === section.value)!)
 
 async function handleLogout() {
   await logOut()
@@ -150,62 +93,36 @@ useSeoMeta({ title: 'Platform Admin \u2014 WeddingCard', robots: 'noindex, nofol
 </script>
 
 <style scoped>
-.stat-card {
-  border-radius: 0.85rem;
-  padding: 1rem;
-  text-align: center;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(212, 160, 23, 0.2);
-}
-
-.stat-label {
-  font-size: 0.65rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: rgba(255, 255, 255, 0.55);
-}
-
-.stat-number {
-  margin-top: 0.25rem;
-  font-size: 1.75rem;
-  font-weight: 700;
-}
-
-.wedding-row {
+.nav-link {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
+  gap: 0.75rem;
   padding: 0.75rem 1rem;
   border-radius: 0.75rem;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  flex-wrap: wrap;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.6);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid transparent;
 }
 
-.tab-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.65rem 0.25rem;
-  margin-bottom: -1px;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.5);
-  border-bottom: 2px solid transparent;
-  transition: color 0.2s ease, border-color 0.2s ease;
+.nav-link:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: white;
+  border-color: rgba(255, 255, 255, 0.05);
 }
 
-.tab-btn + .tab-btn {
-  margin-left: 1.25rem;
-}
-
-.tab-btn:hover {
-  color: rgba(255, 255, 255, 0.8);
-}
-
-.tab-btn-active {
+.nav-link-active {
+  background: rgba(212, 160, 23, 0.12);
   color: #f3ddaa;
-  border-bottom-color: #d4a017;
+  border-color: rgba(212, 160, 23, 0.2);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 </style>

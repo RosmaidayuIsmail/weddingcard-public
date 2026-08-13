@@ -5,9 +5,16 @@ export default defineNuxtRouteMiddleware(async (to) => {
   if (import.meta.server) return
 
   await waitForAuthReady()
-  const { currentUser } = useAuthState()
+  const { currentUser, profile } = useAuthState()
 
   if (!currentUser.value) {
     return navigateTo({ path: '/login', query: { redirect: to.fullPath } })
+  }
+
+  // Admin accounts manage the platform catalog, not their own wedding -
+  // keep them out of the couple-facing dashboard entirely, the same way
+  // the 'superadmin' middleware keeps couples out of /admin.
+  if (profile.value?.role === 'superadmin') {
+    return navigateTo('/admin')
   }
 })

@@ -189,7 +189,7 @@ definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
 const { wedding, loading, saving, updateContent } = useMyWedding()
 const { isConfigured: cloudinaryConfigured, uploadImage } = useCloudinary()
-const { themeStyleVars, allFontOptions, allTextPresets } = useThemes()
+const { themeStyleVars, allFontOptions, allTextPresets, enabledOpeningStyles: openingStyles } = useThemes()
 
 const fontSelectItems = computed(() => [
   { label: 'Auto (use theme default)', value: '' },
@@ -241,20 +241,6 @@ const openingBgPanelCopy = computed(() => {
     description: 'Upload your own vertical design (1080x1920) to use as the opening background.'
   }
 })
-
-// Restored all 5 layout options
-const openingStyles = [
-  { label: 'Classic Envelope', value: 'classic', icon: 'i-heroicons-envelope' },
-  { label: 'Wax Seal', value: 'wax-seal', icon: 'i-heroicons-check-badge' },
-  { label: 'Modern Dark', value: 'modern-dark', icon: 'i-heroicons-moon' },
-  { label: 'Minimal Light', value: 'minimal-light', icon: 'i-heroicons-sun' },
-  { label: 'Canva (Fade)', value: 'custom', icon: 'i-heroicons-photo' },
-  { label: 'Canva (Split Door)', value: 'custom-split', icon: 'i-heroicons-arrows-right-left' },
-  { label: 'Slide Up', value: 'slide-up', icon: 'i-heroicons-arrow-up' },
-  { label: 'Slide Down', value: 'slide-down', icon: 'i-heroicons-arrow-down' },
-  { label: 'Slide Left', value: 'slide-left', icon: 'i-heroicons-arrow-left' },
-  { label: 'Slide Right', value: 'slide-right', icon: 'i-heroicons-arrow-right' }
-]
 
 // Dynamically inject custom Google Font stylesheet into the editor for live preview
 useHead({
