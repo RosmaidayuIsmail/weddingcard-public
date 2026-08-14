@@ -1,0 +1,44 @@
+<template>
+  <div class="space-y-6 animate-fade-up">
+    <UAlert icon="i-heroicons-language" color="info" variant="soft" title="Global RSVP languages" description="Create a language preset here. It appears as a one-click option in every user's RSVP Editor; each user can still adjust their own final wording." />
+
+    <div v-if="customPresets.length" class="space-y-2">
+      <div v-for="preset in customPresets" :key="preset.id" class="catalog-row">
+        <span class="font-medium">{{ preset.label }}</span>
+        <div class="ml-auto flex gap-1"><UButton size="xs" variant="ghost" color="neutral" icon="i-heroicons-pencil-square" @click="edit(preset)" /><UButton size="xs" variant="ghost" color="error" icon="i-heroicons-trash" :loading="removing === preset.id" @click="remove(preset.id)" /></div>
+      </div>
+    </div>
+
+    <div class="form-card">
+      <div class="flex items-center gap-3"><h2 class="font-display text-lg">{{ editingId ? `Edit ${form.label || 'language'}` : 'Add RSVP language' }}</h2><UButton v-if="editingId" class="ml-auto" size="xs" variant="ghost" color="neutral" @click="reset">Cancel</UButton></div>
+      <UFormField label="Language name" class="mt-4"><UInput v-model="form.label" placeholder="e.g. Korean, Japanese, Chinese, Indonesian" class="w-full" /></UFormField>
+      <div class="grid sm:grid-cols-2 gap-4 mt-4">
+        <UFormField v-for="field in rsvpTextFields" :key="field.key" :label="field.label"><UInput v-model="form.texts[field.key]" class="w-full" /></UFormField>
+      </div>
+      <UButton class="mt-5" color="primary" :loading="saving" :disabled="!form.label.trim()" @click="save">{{ editingId ? 'Save language' : 'Add language' }}</UButton>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { rsvpTextFields, type RsvpPreset, type RsvpTextKey } from '~/composables/useThemes'
+import { createDefaultContent } from '~/composables/useWeddingTypes'
+const { builtInRsvpPresets, allRsvpPresets, addRsvpPreset, removeRsvpPreset } = useThemes()
+const toast = useToast()
+const empty = () => ({ label: '', texts: Object.fromEntries(rsvpTextFields.map((field) => [field.key, createDefaultContent()[field.key]])) as Record<RsvpTextKey, string> })
+const form = ref(empty())
+const editingId = ref('')
+const saving = ref(false)
+const removing = ref('')
+const customPresets = computed(() => allRsvpPresets.value.filter((preset) => !builtInRsvpPresets.some((builtIn) => builtIn.id === preset.id)))
+function slugify(value: string) { return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') }
+function edit(preset: RsvpPreset) { editingId.value = preset.id; form.value = { label: preset.label, texts: { ...empty().texts, ...preset.texts } } }
+function reset() { editingId.value = ''; form.value = empty() }
+async function save() { saving.value = true; try { const preset: RsvpPreset = { id: editingId.value || `rsvp-${slugify(form.value.label) || Date.now()}`, label: form.value.label.trim(), texts: { ...form.value.texts } }; await addRsvpPreset(preset); toast.add({ title: 'RSVP language saved', color: 'success' }); reset() } catch (error) { console.error(error); toast.add({ title: 'Could not save RSVP language', color: 'error' }) } finally { saving.value = false } }
+async function remove(id: string) { removing.value = id; try { await removeRsvpPreset(id); toast.add({ title: 'RSVP language removed', color: 'success' }) } catch (error) { console.error(error); toast.add({ title: 'Could not remove RSVP language', color: 'error' }) } finally { removing.value = '' } }
+</script>
+
+<style scoped>
+.form-card,.catalog-row { border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); border-radius:1rem; padding:1.25rem; }
+.catalog-row { display:flex; align-items:center; }
+</style>

@@ -1,3 +1,5 @@
+import type { WeddingContent } from './useWeddingTypes'
+
 export interface ThemePalette {
   bgFrom: string
   bgVia: string
@@ -235,6 +237,16 @@ export interface TextPreset {
   openingActionText: string
 }
 
+export const rsvpTextFields = [
+  { key: 'rsvpTitle', label: 'RSVP page title' }, { key: 'rsvpDeadlineText', label: 'Deadline prefix' }, { key: 'rsvpAttendQuestion', label: 'Attendance question' }, { key: 'rsvpAttendYes', label: 'Attending option' }, { key: 'rsvpAttendNo', label: 'Not attending option' }, { key: 'rsvpNameLabel', label: 'Name label' }, { key: 'rsvpNamePlaceholder', label: 'Name placeholder' }, { key: 'rsvpGuestLabel', label: 'Guest count label' }, { key: 'rsvpSeatingLabel', label: 'Special seating question' }, { key: 'rsvpDietaryLabel', label: 'Dietary label' }, { key: 'rsvpDietaryPlaceholder', label: 'Dietary placeholder' }, { key: 'rsvpWishesLabel', label: 'Wishes label' }, { key: 'rsvpWishesSubtitle', label: 'Wishes subtitle' }, { key: 'rsvpWishesPlaceholder', label: 'Wishes placeholder' }, { key: 'rsvpStepAboutYou', label: 'Step 1 label' }, { key: 'rsvpStepDetails', label: 'Step 2 label' }, { key: 'rsvpStepWishes', label: 'Step 3 label' }, { key: 'rsvpSummaryTitle', label: 'Summary title' }, { key: 'rsvpSummaryNameLabel', label: 'Summary name label' }, { key: 'rsvpSummaryStatusLabel', label: 'Summary status label' }, { key: 'rsvpSummaryGuestsLabel', label: 'Summary guests label' }, { key: 'rsvpSummarySpecialLabel', label: 'Summary special-needs label' }, { key: 'rsvpSummaryDietaryLabel', label: 'Summary dietary label' }, { key: 'rsvpAttendingText', label: 'Attending status text' }, { key: 'rsvpNotAttendingText', label: 'Not attending status text' }, { key: 'rsvpBackButton', label: 'Back button' }, { key: 'rsvpContinueButton', label: 'Continue button' }, { key: 'rsvpConfirmButton', label: 'Confirm button' }, { key: 'rsvpSuccessYes', label: 'Attending success text' }, { key: 'rsvpSuccessNo', label: 'Not-attending success text' }
+] as const satisfies ReadonlyArray<{ key: keyof WeddingContent, label: string }>
+export type RsvpTextKey = (typeof rsvpTextFields)[number]['key']
+export interface RsvpPreset { id: string; label: string; texts: Partial<Pick<WeddingContent, RsvpTextKey>> }
+export const builtInRsvpPresets: RsvpPreset[] = [
+  { id: 'en', label: 'English', texts: { rsvpTitle: 'RSVP', rsvpDeadlineText: 'Kindly respond by', rsvpAttendQuestion: 'Will you be attending?', rsvpAttendYes: 'Joyfully Accept', rsvpAttendNo: 'Regretfully Decline', rsvpGuestLabel: 'Number of guests attending', rsvpBackButton: 'Back', rsvpContinueButton: 'Continue', rsvpConfirmButton: 'Confirm RSVP' } },
+  { id: 'ms', label: 'Bahasa Melayu', texts: { rsvpTitle: 'RSVP / Pengesahan', rsvpDeadlineText: 'Sila sahkan kehadiran sebelum', rsvpAttendQuestion: 'Adakah anda akan hadir?', rsvpAttendYes: 'Ya, Akan Hadir', rsvpAttendNo: 'Maaf, Tidak Dapat Hadir', rsvpGuestLabel: 'Jumlah tetamu yang akan hadir', rsvpBackButton: 'Kembali', rsvpContinueButton: 'Seterusnya', rsvpConfirmButton: 'Sahkan RSVP' } }
+]
+
 /** Platform controls for the couple dashboard. Routes and permissions stay
  * in source code; admin changes only labels and availability. */
 export interface DashboardNavSetting {
@@ -281,6 +293,7 @@ interface PlatformCatalog {
   disabledOpeningStyles: string[]
   starterDefaults: StarterDefaults
   dashboardSettings: DashboardSettings
+  rsvpPresets: RsvpPreset[]
 }
 
 export interface OpeningStyle {
@@ -319,6 +332,7 @@ export function useThemes() {
   const disabledOpeningStyles = useState<string[]>('catalog-disabled-opening-styles', () => [])
   const starterDefaults = useState<StarterDefaults>('catalog-starter-defaults', () => ({ ...defaultStarterDefaults }))
   const dashboardSettings = useState<DashboardSettings>('catalog-dashboard-settings', () => structuredClone(defaultDashboardSettings))
+  const customRsvpPresets = useState<RsvpPreset[]>('catalog-rsvp-presets', () => [])
   const catalogFetched = useState('catalog-fetched', () => false)
 
   async function ensureCatalogLoaded() {
@@ -345,6 +359,7 @@ export function useThemes() {
             })
           }
         }
+        customRsvpPresets.value = Array.isArray(data.rsvpPresets) ? data.rsvpPresets : []
       }
     } catch (error) {
       // Non-fatal: the app still works fine with just the built-in catalog.
@@ -413,6 +428,16 @@ export function useThemes() {
     await saveCatalogField('dashboardSettings', next)
     dashboardSettings.value = next
   }
+  async function addRsvpPreset(preset: RsvpPreset) {
+    const next = [...customRsvpPresets.value.filter((item) => item.id !== preset.id), preset]
+    await saveCatalogField('rsvpPresets', next)
+    customRsvpPresets.value = next
+  }
+  async function removeRsvpPreset(id: string) {
+    const next = customRsvpPresets.value.filter((item) => item.id !== id)
+    await saveCatalogField('rsvpPresets', next)
+    customRsvpPresets.value = next
+  }
 
   // What couples should actually see in the Opening Design picker - the
   // built-in catalog minus whatever admin has turned off.
@@ -425,6 +450,7 @@ export function useThemes() {
   const allThemes = computed(() => [...themes, ...customThemes.value])
   const allFontOptions = computed(() => [...fontOptions, ...customFonts.value])
   const allTextPresets = computed(() => [...builtInTextPresets, ...customTextPresets.value])
+  const allRsvpPresets = computed(() => [...builtInRsvpPresets, ...customRsvpPresets.value])
 
   function getTheme(themeId: string | undefined | null): Theme {
     return allThemes.value.find((theme) => theme.id === themeId) ?? themes.find((theme) => theme.id === DEFAULT_THEME_ID)!
@@ -457,6 +483,8 @@ export function useThemes() {
     themes,
     fontOptions,
     builtInTextPresets,
+    builtInRsvpPresets,
+    rsvpTextFields,
     ensureCatalogLoaded,
     openingStyleCatalog,
     disabledOpeningStyles,
@@ -468,6 +496,7 @@ export function useThemes() {
     allThemes,
     allFontOptions,
     allTextPresets,
+    allRsvpPresets,
     getTheme,
     themeStyleVars,
     addCustomTheme,
@@ -476,6 +505,8 @@ export function useThemes() {
     removeCustomFont,
     addTextPreset,
     removeTextPreset,
+    addRsvpPreset,
+    removeRsvpPreset,
     setOpeningStyleEnabled
   }
 }

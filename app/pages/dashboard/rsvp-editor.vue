@@ -52,9 +52,8 @@
             
             <div class="flex items-center justify-between mb-4 border-b border-gray-700 pb-3">
               <h2 class="text-lg font-semibold text-white">RSVP Prompts</h2>
-              <div class="flex bg-gray-900 border border-gray-700 rounded-full p-1">
-                <button type="button" @click="applyTranslation('en')" class="px-3 py-1 text-xs font-medium rounded-full transition-colors hover:bg-gray-800 hover:text-white text-gray-400">English</button>
-                <button type="button" @click="applyTranslation('ms')" class="px-3 py-1 text-xs font-medium rounded-full transition-colors hover:bg-gray-800 hover:text-white text-gray-400">Bahasa Melayu</button>
+              <div class="flex flex-wrap bg-gray-900 border border-gray-700 rounded-full p-1 gap-0.5">
+                <button v-for="preset in allRsvpPresets" :key="preset.id" type="button" @click="applyTranslation(preset)" class="px-3 py-1 text-xs font-medium rounded-full transition-colors hover:bg-gray-800 hover:text-white text-gray-400">{{ preset.label }}</button>
               </div>
             </div>
 
@@ -286,11 +285,12 @@
 
 <script setup lang="ts">
 import { createDefaultContent, type WeddingContent } from '~/composables/useWeddingTypes'
+import type { RsvpPreset } from '~/composables/useThemes'
 
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
 const { wedding, loading, saving, updateContent } = useMyWedding()
-const { themeStyleVars } = useThemes()
+const { themeStyleVars, allRsvpPresets } = useThemes()
 const toast = useToast()
 
 const form = reactive<WeddingContent>(createDefaultContent())
@@ -315,71 +315,9 @@ const styleVars = computed(() => {
   )
 })
 
-function applyTranslation(lang: 'en' | 'ms') {
-  if (lang === 'ms') {
-    form.rsvpTitle = 'RSVP / Pengesahan'
-    form.rsvpDeadlineText = 'Sila sahkan kehadiran sebelum'
-    form.rsvpAttendQuestion = 'Adakah anda akan hadir?'
-    form.rsvpAttendYes = 'Ya, Akan Hadir'
-    form.rsvpAttendNo = 'Maaf, Tidak Dapat Hadir'
-    form.rsvpGuestLabel = 'Jumlah tetamu yang akan hadir'
-    form.rsvpSeatingLabel = 'Adakah anda perlukan tempat duduk khas? (Cth: berkerusi roda)'
-    form.rsvpDietaryLabel = 'Alahan / Pantang larang makanan'
-    form.rsvpWishesLabel = 'Ucapan & Doa'
-    form.rsvpStepAboutYou = 'Tentang Anda'
-    form.rsvpStepDetails = 'Butiran'
-    form.rsvpStepWishes = 'Ucapan'
-    form.rsvpNameLabel = 'Nama'
-    form.rsvpNamePlaceholder = 'Taip nama penuh anda'
-    form.rsvpDietaryPlaceholder = 'Cth: Vegetarian, Tiada Makanan Laut'
-    form.rsvpWishesSubtitle = 'Tuliskan ucapan dan doa anda untuk pasangan pengantin'
-    form.rsvpWishesPlaceholder = 'Semoga perkahwinan kalian diberkati...'
-    form.rsvpSummaryTitle = 'Ringkasan RSVP'
-    form.rsvpSummaryNameLabel = 'Nama:'
-    form.rsvpSummaryStatusLabel = 'Status:'
-    form.rsvpSummaryGuestsLabel = 'Tetamu:'
-    form.rsvpSummarySpecialLabel = 'Keperluan Khas:'
-    form.rsvpSummaryDietaryLabel = 'Alahan Makanan:'
-    form.rsvpAttendingText = 'Akan Hadir'
-    form.rsvpNotAttendingText = 'Tidak Dapat Hadir'
-    form.rsvpBackButton = 'Kembali'
-    form.rsvpContinueButton = 'Seterusnya'
-    form.rsvpConfirmButton = 'Sahkan RSVP'
-    form.rsvpSuccessYes = 'Kami amat teruja untuk meraikan bersama anda.'
-    form.rsvpSuccessNo = 'Kami akan amat merindui kehadiran anda.'
-  } else {
-    form.rsvpTitle = 'RSVP'
-    form.rsvpDeadlineText = 'Kindly respond by'
-    form.rsvpAttendQuestion = 'Will you be attending?'
-    form.rsvpAttendYes = 'Joyfully Accept'
-    form.rsvpAttendNo = 'Regretfully Decline'
-    form.rsvpGuestLabel = 'Number of guests attending'
-    form.rsvpSeatingLabel = 'Do you require special seating? (e.g., wheelchair access)'
-    form.rsvpDietaryLabel = 'Dietary restrictions (if any)'
-    form.rsvpWishesLabel = 'Wishes & Blessings'
-    form.rsvpStepAboutYou = 'About You'
-    form.rsvpStepDetails = 'Details'
-    form.rsvpStepWishes = 'Wishes'
-    form.rsvpNameLabel = 'Name(s)'
-    form.rsvpNamePlaceholder = 'Type your full name'
-    form.rsvpDietaryPlaceholder = 'e.g. Vegetarian, No Seafood'
-    form.rsvpWishesSubtitle = 'Write your well wishes for the couple'
-    form.rsvpWishesPlaceholder = 'May your marriage be blessed...'
-    form.rsvpSummaryTitle = 'RSVP Summary'
-    form.rsvpSummaryNameLabel = 'Name:'
-    form.rsvpSummaryStatusLabel = 'Status:'
-    form.rsvpSummaryGuestsLabel = 'Guests:'
-    form.rsvpSummarySpecialLabel = 'Special:'
-    form.rsvpSummaryDietaryLabel = 'Dietary:'
-    form.rsvpAttendingText = 'Attending'
-    form.rsvpNotAttendingText = 'Not Attending'
-    form.rsvpBackButton = 'Back'
-    form.rsvpContinueButton = 'Continue'
-    form.rsvpConfirmButton = 'Confirm RSVP'
-    form.rsvpSuccessYes = 'We are absolutely thrilled to celebrate with you.'
-    form.rsvpSuccessNo = 'You will be dearly missed.'
-  }
-  toast.add({ title: 'RSVP Text presets applied', color: 'success' })
+function applyTranslation(preset: RsvpPreset) {
+  Object.assign(form, preset.texts)
+  toast.add({ title: `${preset.label} RSVP preset applied`, color: 'success' })
 }
 
 let initialized = false
