@@ -227,6 +227,53 @@
           description="Each style is real animation code, not just data, so this list can't create a brand new one - but you can control exactly which of these couples are allowed to pick from."
         />
   
+        <!-- This is documentation for editing the codebase, NOT a live form -
+             nothing typed here runs anywhere. It exists so a developer (you,
+             or whoever you hire) doesn't have to go dig up docs/adding-new-
+             animations.md separately. -->
+        <div class="dev-guide-card">
+          <button type="button" class="dev-guide-toggle" @click="showDevGuide = !showDevGuide">
+            <UIcon name="i-heroicons-code-bracket" class="w-4 h-4 text-indigo-300" />
+            <span class="font-semibold">How to add a brand new one (for developers)</span>
+            <UIcon :name="showDevGuide ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'" class="w-4 h-4 ml-auto text-white/40" />
+          </button>
+  
+          <div v-if="showDevGuide" class="px-5 pb-5 space-y-6">
+            <p class="text-xs text-white/40 -mt-1">
+              This edits the project's source code and needs a normal deploy to take effect - it isn't something you fill in here on the website. Full copy also lives at <code class="text-gold-300 bg-white/5 px-1 rounded">docs/adding-new-animations.md</code> in the repo.
+            </p>
+  
+            <div>
+              <p class="text-sm font-semibold text-gold-200 mb-3">Adding a new Opening Style animation</p>
+              <div class="space-y-4">
+                <div v-for="step in openingStyleSteps" :key="step.title">
+                  <p class="text-sm font-medium text-white">{{ step.title }}</p>
+                  <p v-if="step.file" class="text-xs font-mono text-indigo-300/80 mt-0.5">{{ step.file }}</p>
+                  <p class="text-xs text-white/50 mt-1.5">{{ step.body }}</p>
+                  <pre v-if="step.code" class="code-block">{{ step.code }}</pre>
+                </div>
+              </div>
+            </div>
+  
+            <div>
+              <p class="text-sm font-semibold text-gold-200 mb-3">Adding a new Falling Petals shape</p>
+              <div class="space-y-4">
+                <div v-for="step in petalSteps" :key="step.title">
+                  <p class="text-sm font-medium text-white">{{ step.title }}</p>
+                  <p class="text-xs font-mono text-indigo-300/80 mt-0.5">{{ step.file }}</p>
+                  <p class="text-xs text-white/50 mt-1.5">{{ step.body }}</p>
+                  <pre class="code-block">{{ step.code }}</pre>
+                </div>
+              </div>
+              <p class="text-xs text-white/40 mt-3">It'll then appear automatically in both the couple's Design Studio picker and the Starter Defaults petal-style dropdown - both read from the same list.</p>
+            </div>
+  
+            <p class="text-xs text-white/40">
+              Same pattern applies to Names Layout Alignment and similar options elsewhere in Design Studio - each is CSS/layout logic, not data, so a new one means adding to the relevant options array plus a matching template branch.
+            </p>
+          </div>
+        </div>
+  
         <div class="grid lg:grid-cols-[1fr_360px] gap-6 items-start">
           <div class="space-y-2">
             <div v-for="style in openingStyleCatalog" :key="style.value" class="catalog-card flex items-center justify-between" :class="{ 'catalog-card-previewing': previewStyle === style.value }">
@@ -522,6 +569,65 @@
     previewOpened.value = false
   }
   
+  // Reference text shown in the "How to add a new one" panel below. Plain
+  // strings rendered inside <pre> tags via {{ }} - Vue escapes these
+  // automatically, so code like "<div v-if=...>" displays as literal text
+  // instead of being parsed as real template markup.
+  const showDevGuide = ref(false)
+  const openingStyleSteps = [
+    {
+      title: '1. Register it in the shared catalog',
+      file: 'app/composables/useThemes.ts',
+      body: "Add one entry to openingStyleCatalog:",
+      code: `export const openingStyleCatalog: OpeningStyle[] = [
+    { label: 'Classic Envelope', value: 'classic', icon: 'i-heroicons-envelope' },
+    // ...existing entries...
+    { label: 'Confetti Burst', value: 'confetti-burst', icon: 'i-heroicons-sparkles' }, // <- new
+  ]`
+    },
+    {
+      title: '2. Add the background/animation markup',
+      file: 'app/components/EnvelopeIntro.vue',
+      body: "Find the v-if/v-else-if chain for the background layer (search for content.openingStyle === 'wax-seal') and add a new branch:",
+      code: `<div v-else-if="content.openingStyle === 'confetti-burst'" class="absolute inset-0 z-0 confetti-burst-bg">
+    <!-- your markup -->
+  </div>`
+    },
+    {
+      title: '3. Add the transition CSS',
+      file: 'app/components/EnvelopeIntro.vue',
+      body: "Inside <style scoped>. Copy the pattern from the Wax Seal implementation (search for wax-seal-shake, wax-crack-flash) - it shows how to sequence a multi-stage animation using CSS keyframes and transition-delay.",
+      code: `.confetti-burst-leave-active {
+    transition: opacity 0.4s ease, transform 0.6s ease;
+  }`
+    },
+    {
+      title: '4. Test it',
+      file: null,
+      body: 'Run the dev server, open Design Studio / Opening Design, pick the new style from the Cover Layout Style grid, and click the phone preview to open it. It will also now appear automatically in this Opening Styles toggle list above.',
+      code: ''
+    }
+  ]
+  const petalSteps = [
+    {
+      title: '1. Add the shape',
+      file: 'app/components/PetalsBackground.vue',
+      body: "Add a v-else-if branch for your styleName alongside the existing 'confetti' / 'hearts' / 'sparkles' ones. The falling motion (speed, drift, rotation) is already generic - you only supply the shape:",
+      code: `<svg v-else-if="styleName === 'stars'" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- your shape -->
+  </svg>`
+    },
+    {
+      title: '2. Add it to the picker',
+      file: 'app/pages/dashboard/editor.vue',
+      body: 'Add one entry to petalStyleOptions:',
+      code: `const petalStyleOptions = [
+    // ...existing entries...
+    { label: 'Stars', value: 'stars', icon: 'i-heroicons-star' },
+  ]`
+    }
+  ]
+  
   // Reset any in-progress edit when switching sections via the sidebar.
   watch(() => props.section, () => {
     cancelEditTheme()
@@ -608,5 +714,43 @@
     height: 100%;
     overflow-y: auto;
     overflow-x: hidden;
+  }
+  
+  .dev-guide-card {
+    border-radius: 1rem;
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    background: rgba(99, 102, 241, 0.04);
+    overflow: hidden;
+  }
+  
+  .dev-guide-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    width: 100%;
+    padding: 1rem 1.25rem;
+    text-align: left;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.85);
+    transition: background 0.2s ease;
+  }
+  
+  .dev-guide-toggle:hover {
+    background: rgba(99, 102, 241, 0.06);
+  }
+  
+  .code-block {
+    margin-top: 0.6rem;
+    padding: 0.85rem 1rem;
+    border-radius: 0.65rem;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 0.75rem;
+    line-height: 1.6;
+    color: #d4e0ff;
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-x: auto;
   }
   </style>
