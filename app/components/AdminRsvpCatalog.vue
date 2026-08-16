@@ -2,6 +2,15 @@
   <div class="space-y-6 animate-fade-up">
     <UAlert icon="i-heroicons-language" color="info" variant="soft" title="Global RSVP languages" description="Create a language preset here. It appears as a one-click option in every user's RSVP Editor; each user can still adjust their own final wording." />
 
+    <div class="explain-card">
+      <p class="font-semibold text-sm text-gold-200 mb-1.5">Where this applies</p>
+      <p class="text-sm text-white/60 leading-relaxed">
+        Each preset here fills in every question, label, and button on a couple's own RSVP page (<code class="text-gold-300 bg-white/5 px-1 rounded">/w/[slug]/rsvp</code>) - the page their guests actually fill in. A couple picks a language preset once from their RSVP Editor, then can hand-edit any individual line afterward without losing the rest.
+      </p>
+      <UButton icon="i-heroicons-eye" variant="soft" color="neutral" size="sm" class="mt-3" @click="showLive = true">View Live</UButton>
+    </div>
+    <AdminLivePreview v-model:open="showLive" mode="rsvp" />
+
     <div v-if="customPresets.length" class="space-y-2">
       <div v-for="preset in customPresets" :key="preset.id" class="catalog-row">
         <span class="font-medium">{{ preset.label }}</span>
@@ -30,6 +39,7 @@ const form = ref(empty())
 const editingId = ref('')
 const saving = ref(false)
 const removing = ref('')
+const showLive = ref(false)
 const customPresets = computed(() => allRsvpPresets.value.filter((preset) => !builtInRsvpPresets.some((builtIn) => builtIn.id === preset.id)))
 function slugify(value: string) { return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') }
 function edit(preset: RsvpPreset) { editingId.value = preset.id; form.value = { label: preset.label, texts: { ...empty().texts, ...preset.texts } } }
@@ -41,4 +51,5 @@ async function remove(id: string) { removing.value = id; try { await removeRsvpP
 <style scoped>
 .form-card,.catalog-row { border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); border-radius:1rem; padding:1.25rem; }
 .catalog-row { display:flex; align-items:center; }
+.explain-card { border-radius: 1rem; padding: 1.1rem 1.25rem; background: rgba(99, 102, 241, 0.05); border: 1px solid rgba(99, 102, 241, 0.16); }
 </style>

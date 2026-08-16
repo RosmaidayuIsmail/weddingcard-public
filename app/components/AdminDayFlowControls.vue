@@ -2,6 +2,15 @@
   <div class="space-y-6 animate-fade-up">
     <UAlert icon="i-heroicons-clock" color="info" variant="soft" title="Global Day Flow controls" description="Quick Start presets appear as one-click template buttons on every user's Day Flow page. Page labels change what every user sees at the top of that page. A user's own timeline is never touched by anything here." />
 
+    <div class="explain-card">
+      <p class="font-semibold text-sm text-gold-200 mb-1.5">Where this applies</p>
+      <p class="text-sm text-white/60 leading-relaxed">
+        This is the couple's own Wedding Day Flow page in their dashboard (<code class="text-gold-300 bg-white/5 px-1 rounded">/dashboard/flow</code>) - a private planning tool, guests never see it. The page title/description are exactly what's shown at the top. Each Quick Start preset is a one-click "fill my timeline with this" button - a couple can still edit, reorder, or delete every item afterward.
+      </p>
+      <UButton icon="i-heroicons-eye" variant="soft" color="neutral" size="sm" class="mt-3" @click="showLive = true">View Live</UButton>
+    </div>
+    <AdminLivePreview v-model:open="showLive" mode="dayflow" />
+
     <div class="form-card space-y-4">
       <h2 class="font-display text-lg">Page labels</h2>
       <UFormField label="Page title"><UInput v-model="labelsForm.pageTitle" class="w-full" /></UFormField>
@@ -72,6 +81,7 @@ const form = ref(empty())
 const editingId = ref('')
 const saving = ref(false)
 const removing = ref('')
+const showLive = ref(false)
 const canSave = computed(() => form.value.label.trim().length > 0 && form.value.items.length > 0)
 
 function slugify(value: string) { return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') }
@@ -141,4 +151,5 @@ void defaultDayFlowSettings
 .field-label { display:block; font-size:.7rem; text-transform:uppercase; letter-spacing:.08em; font-weight:600; color:rgba(255,255,255,.4); }
 .flow-row { display:flex; align-items:center; gap:.5rem; flex-wrap:wrap; }
 .empty-state { padding: 1.5rem 1rem; border-radius: .85rem; border: 1px dashed rgba(255,255,255,.12); text-align:center; }
+.explain-card { border-radius: 1rem; padding: 1.1rem 1.25rem; background: rgba(99, 102, 241, 0.05); border: 1px solid rgba(99, 102, 241, 0.16); }
 </style>

@@ -7,7 +7,16 @@
         title="This only affects new weddings"
         description="Changing anything here changes what a couple sees the moment they create their card. It never touches an existing wedding's own content - they can still change every one of these themselves afterward."
       />
-  
+
+      <div class="explain-card">
+        <p class="font-semibold text-sm text-gold-200 mb-1.5">Where this applies</p>
+        <p class="text-sm text-white/60 leading-relaxed">
+          The moment a couple clicks "Generate Wedding Card" for the very first time, their brand-new wedding is pre-filled with exactly these values - the intro story, button text, whether falling petals start on, which petal shape, text boldness, ornament style, and the starter Day Flow timeline. From that instant on, it's fully theirs: they can change or delete any of it, and future edits here won't touch it. This is the one section that shapes the very first impression a new couple gets.
+        </p>
+        <UButton icon="i-heroicons-eye" variant="soft" color="neutral" size="sm" class="mt-3" @click="showLive = true">View Live</UButton>
+      </div>
+      <AdminLivePreview v-model:open="showLive" mode="design" :overrides="livePreviewOverrides" />
+
       <div class="form-card space-y-5">
         <div>
           <label class="field-label">Default intro story</label>
@@ -121,7 +130,20 @@
   ]
 
   const ornamentOptions = computed(() => ornamentStyleCatalog)
-  
+
+  const showLive = ref(false)
+  // Shows this form's own unsaved edits, not just the last-saved defaults -
+  // so "View Live" reflects whatever is currently on screen, saved or not.
+  const livePreviewOverrides = computed(() => ({
+    story: form.value.story,
+    enablePetals: form.value.enablePetals,
+    petalStyle: form.value.petalStyle,
+    ornamentStyle: form.value.ornamentStyle,
+    textWeight: form.value.textWeight,
+    btnDetails: form.value.btnDetails,
+    btnRsvp: form.value.btnRsvp
+  }))
+
   function addFlowItem() {
     form.value.flow.push({ time: '', title: '', description: '' })
   }
@@ -146,6 +168,13 @@
   </script>
   
   <style scoped>
+  .explain-card {
+    border-radius: 1rem;
+    padding: 1.1rem 1.25rem;
+    background: rgba(99, 102, 241, 0.05);
+    border: 1px solid rgba(99, 102, 241, 0.16);
+  }
+
   .form-card {
     border-radius: 1.25rem;
     padding: 1.5rem;

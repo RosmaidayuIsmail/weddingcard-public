@@ -8,6 +8,37 @@
       description="Whatever you save here renders for every visitor to every wedding card. It runs inside a sandboxed iframe with no access to this site's cookies, Firebase session, or the rest of the page's DOM - so a bad paste can only break its own box, not the app - but it can still call out to the internet and show visitors anything you write. Preview carefully before enabling."
     />
 
+    <div class="explain-card space-y-3">
+      <div>
+        <p class="font-semibold text-sm text-gold-200 mb-1.5">What this is</p>
+        <p class="text-sm text-white/60 leading-relaxed">
+          A single free-form box of HTML/CSS (and JS if your HTML includes a <code class="text-gold-300 bg-white/5 px-1 rounded">&lt;script&gt;</code> tag) that you write once here and it appears on <strong>every</strong> couple's public invitation page (<code class="text-gold-300 bg-white/5 px-1 rounded">/w/[slug]</code>) - the page their guests open. Think of it as a way to add something platform-wide (an announcement banner, a tracking/analytics snippet, a small widget) without touching source code or doing a deploy.
+        </p>
+      </div>
+      <div>
+        <p class="font-semibold text-sm text-gold-200 mb-1.5">For admin (you)</p>
+        <p class="text-sm text-white/60 leading-relaxed">
+          You write HTML/CSS in the two boxes below, choose whether it sits above the opening envelope ("Top") or below the RSVP/Details buttons ("Bottom"), and flip "enabled" on. It saves to one shared setting - there's no per-couple version.
+        </p>
+      </div>
+      <div>
+        <p class="font-semibold text-sm text-gold-200 mb-1.5">For a couple and their guests</p>
+        <p class="text-sm text-white/60 leading-relaxed">
+          Couples don't see this anywhere in their own dashboard and can't turn it off - it's entirely platform-controlled. Their guests, when they open the invitation link, will see and experience whatever you've enabled here as part of the page, exactly as it looks in the preview below.
+        </p>
+      </div>
+      <div>
+        <p class="font-semibold text-sm text-gold-200 mb-1.5">Why it appears / how it's contained</p>
+        <p class="text-sm text-white/60 leading-relaxed">
+          It only appears at all when "enabled" is on and you've saved. When it renders, it's placed inside a sandboxed <code class="text-gold-300 bg-white/5 px-1 rounded">&lt;iframe&gt;</code> - a technique that deliberately walls the code off in its own mini-browser-tab-like box with no access to cookies, Firebase login sessions, guest RSVP data, or the rest of the page. That's what makes it safe to give this much freedom: even a mistake or a bad paste can only break the box itself, never leak data or deface the real app around it.
+        </p>
+      </div>
+      <p class="text-xs text-white/40 flex items-center gap-1.5">
+        <UIcon name="i-heroicons-arrow-down" class="w-3.5 h-3.5" />
+        The "Live preview" panel below is the actual live view - it renders your unsaved draft in the exact same sandboxed box a real visitor gets, live as you type, so a separate View Live button isn't needed here.
+      </p>
+    </div>
+
     <div class="form-card space-y-4">
       <div class="flex items-center justify-between">
         <h2 class="font-display text-lg">Custom Code</h2>
@@ -96,4 +127,5 @@ ${form.value.html}
 .form-card { border-radius: 1.25rem; padding: 1.5rem; background: linear-gradient(160deg, rgba(255,255,255,.035), rgba(255,255,255,.015)); border: 1px solid rgba(255,255,255,.1); }
 .empty-state { padding: 1.5rem 1rem; border-radius: .85rem; border: 1px dashed rgba(255,255,255,.12); text-align:center; }
 .preview-frame { width: 100%; min-height: 220px; border: 1px solid rgba(255,255,255,.1); border-radius: 1rem; background: #04101f; }
+.explain-card { border-radius: 1rem; padding: 1.1rem 1.25rem; background: rgba(99, 102, 241, 0.05); border: 1px solid rgba(99, 102, 241, 0.16); }
 </style>

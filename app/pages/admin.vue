@@ -76,6 +76,7 @@ const { currentUser, profile, authReady } = useAuthState()
 type Section = 'dashboard' | 'themes' | 'fonts' | 'presets' | 'rsvp' | 'opening-styles' | 'design-options' | 'day-flow' | 'guests' | 'custom-code' | 'starter-defaults' | 'weddings'
 
 const navItems: { id: Section; label: string; icon: string; description: string }[] = [
+  { id: 'weddings', label: 'Weddings & Sync', icon: 'i-heroicons-rectangle-stack', description: 'The admin home - every wedding on the platform, plus applying the platform template to weddings that already exist.' },
   { id: 'dashboard', label: 'User Dashboard', icon: 'i-heroicons-squares-2x2', description: 'Control the labels and enabled pages every user sees in their dashboard.' },
   { id: 'themes', label: 'Design Studio', icon: 'i-heroicons-swatch', description: 'Themes and palette pricing available in the user Design Studio.' },
   { id: 'fonts', label: 'Typography', icon: 'i-heroicons-language', description: 'Fonts available in user font pickers across the app.' },
@@ -86,12 +87,29 @@ const navItems: { id: Section; label: string; icon: string; description: string 
   { id: 'day-flow', label: 'Day Flow', icon: 'i-heroicons-clock', description: 'Quick Start timeline presets and page labels for the Day Flow page.' },
   { id: 'guests', label: 'Guest List', icon: 'i-heroicons-users', description: 'Page labels, tier names, and optional columns on the Guest List page.' },
   { id: 'custom-code', label: 'Custom Code', icon: 'i-heroicons-code-bracket-square', description: 'Sandboxed CSS/HTML/JS injected into every live wedding page.' },
-  { id: 'starter-defaults', label: 'Starter Defaults', icon: 'i-heroicons-document-duplicate', description: 'What a brand-new wedding starts with - story text, buttons, petals, ornament, and a starter flow.' },
-  { id: 'weddings', label: 'Weddings & Sync', icon: 'i-heroicons-rectangle-stack', description: 'Read-only list of every wedding, plus applying the platform template to weddings that already exist.' }
+  { id: 'starter-defaults', label: 'Starter Defaults', icon: 'i-heroicons-document-duplicate', description: 'What a brand-new wedding starts with - story text, buttons, petals, ornament, and a starter flow.' }
 ]
 
-const section = ref<Section>('dashboard')
+const section = ref<Section>('weddings')
 const currentNavItem = computed(() => navItems.find((item) => item.id === section.value)!)
+
+// Bug fix: hard-refreshing this page used to leave the sidebar looking
+// "corrupted" (only fixed by logging out and back in). The real cause was
+// the browser trying to restore a stale scroll position from before the
+// reload while this page swaps from a small spinner to the full,
+// much-taller sidebar+content layout - so the sticky sidebar could end up
+// rendered against the wrong scroll offset. A plain client-side
+// navigation (like the one right after logging in) never hits this,
+// because Nuxt always starts a fresh navigation at the top of the page.
+// Forcing scroll-to-top exactly when the real layout appears fixes it for
+// both cases. (See also app/plugins/scroll-restoration.client.ts, which
+// stops the browser from attempting that restoration at all.)
+const ready = computed(() => authReady.value && !!currentUser.value && profile.value?.role === 'superadmin')
+watch(ready, (isReady) => {
+  if (isReady && import.meta.client) {
+    nextTick(() => window.scrollTo(0, 0))
+  }
+}, { immediate: true })
 
 async function handleLogout() {
   await logOut()

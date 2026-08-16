@@ -1,7 +1,16 @@
 <template>
     <div>
+      <AdminLivePreview v-model:open="showLive" :mode="livePreviewMode" />
+
       <!-- THEMES -->
       <div v-if="section === 'themes'" class="space-y-6 animate-fade-up">
+        <div class="explain-card">
+          <p class="font-semibold text-sm text-gold-200 mb-1.5">Where this applies</p>
+          <p class="text-sm text-white/60 leading-relaxed">
+            Every theme here shows up as a pickable card in a couple's own Design Studio (<code class="text-gold-300 bg-white/5 px-1 rounded">/dashboard/editor</code>). The colours become the actual background/accent/text colours of their cover card and details page; the price is what they're charged to unlock it if it isn't free. Removing a theme here doesn't touch any couple already using it - it just stops appearing as a choice for anyone new.
+          </p>
+          <UButton icon="i-heroicons-eye" variant="soft" color="neutral" size="sm" class="mt-3" @click="showLive = true">View Live</UButton>
+        </div>
         <div>
           <div v-if="customThemes.length === 0" class="empty-state">
             <div class="p-4 rounded-full bg-white/5 ring-1 ring-white/10">
@@ -85,6 +94,13 @@
   
       <!-- FONTS -->
       <div v-if="section === 'fonts'" class="space-y-6 animate-fade-up">
+        <div class="explain-card">
+          <p class="font-semibold text-sm text-gold-200 mb-1.5">Where this applies</p>
+          <p class="text-sm text-white/60 leading-relaxed">
+            These are the fonts a couple can pick for their card's heading text (names, titles) in Design Studio, and for the Opening screen's title/greeting text. A font must be a real, published Google Fonts family name - it's loaded automatically, nothing to upload.
+          </p>
+          <UButton icon="i-heroicons-eye" variant="soft" color="neutral" size="sm" class="mt-3" @click="showLive = true">View Live</UButton>
+        </div>
         <div>
           <div v-if="customFonts.length === 0" class="empty-state">
             <div class="p-4 rounded-full bg-white/5 ring-1 ring-white/10">
@@ -148,6 +164,13 @@
   
       <!-- TEXT PRESETS / LANGUAGES -->
       <div v-if="section === 'presets'" class="space-y-6 animate-fade-up">
+        <div class="explain-card">
+          <p class="font-semibold text-sm text-gold-200 mb-1.5">Where this applies</p>
+          <p class="text-sm text-white/60 leading-relaxed">
+            These are the one-click language/wording presets a couple sees on their Opening Design page (<code class="text-gold-300 bg-white/5 px-1 rounded">/dashboard/opening</code>) - clicking one fills in the title, greeting, and "tap to open" action text on their envelope screen. A couple can still hand-edit any of these words afterward; a preset just gives them a fast starting point.
+          </p>
+          <UButton icon="i-heroicons-eye" variant="soft" color="neutral" size="sm" class="mt-3" @click="showLive = true">View Live</UButton>
+        </div>
         <div>
           <p class="text-sm text-white/50 mb-4">Use <code class="text-gold-300 bg-white/5 px-1.5 py-0.5 rounded">{guestName}</code> as a placeholder in the greeting.</p>
   
@@ -219,6 +242,13 @@
   
       <!-- OPENING STYLES -->
       <div v-if="section === 'opening-styles'" class="space-y-6 animate-fade-up">
+        <div class="explain-card">
+          <p class="font-semibold text-sm text-gold-200 mb-1.5">Where this applies</p>
+          <p class="text-sm text-white/60 leading-relaxed">
+            This is the "Cover Layout Style" picker on a couple's Opening Design page - it controls the animation a guest sees the moment they tap to open the invitation (envelope slide, wax seal crack, fade, etc). Turning one off here removes it from that picker for anyone choosing from now on; a couple already using it keeps it until they change it themselves.
+          </p>
+          <UButton icon="i-heroicons-eye" variant="soft" color="neutral" size="sm" class="mt-3" @click="showLive = true">View Live</UButton>
+        </div>
         <UAlert
           icon="i-heroicons-information-circle"
           color="info"
@@ -316,6 +346,13 @@
            above, just without the phone preview (these render inline inside
            the couple's own card layout rather than as a full-screen intro). -->
       <div v-if="section === 'design-options'" class="space-y-8 animate-fade-up">
+        <div class="explain-card">
+          <p class="font-semibold text-sm text-gold-200 mb-1.5">Where this applies</p>
+          <p class="text-sm text-white/60 leading-relaxed">
+            Ornament styles and top icons render directly on a couple's cover card and inner details page (Design Studio's "Ornament Style" and "Top Icon" pickers). Falling particle styles are the animated background pieces (petals, confetti, hearts, etc.) that drift down the screen when a couple turns "Falling petals" on. Turning any of these off here removes it from that couple's picker going forward - it never changes what an existing couple already has selected.
+          </p>
+          <UButton icon="i-heroicons-eye" variant="soft" color="neutral" size="sm" class="mt-3" @click="showLive = true">View Live</UButton>
+        </div>
         <UAlert
           icon="i-heroicons-information-circle"
           color="info"
@@ -413,7 +450,12 @@
   }
   
   const removingId = ref('')
-  
+  const showLive = ref(false)
+  // 'themes'/'fonts'/'design-options' all render on the actual card, so they
+  // share the 'design' preview; 'presets' and 'opening-styles' both affect
+  // the opening/envelope screen, so they share the 'opening' preview.
+  const livePreviewMode = computed(() => (props.section === 'presets' || props.section === 'opening-styles' ? 'opening' : 'design'))
+
   // Anything in allThemes/allFontOptions/allTextPresets that ISN'T in the
   // built-in list must be a custom, admin-added one.
   const customThemes = computed(() => allThemes.value.filter((t) => !themes.some((b) => b.id === t.id)))
@@ -721,6 +763,13 @@
   </script>
   
   <style scoped>
+  .explain-card {
+    border-radius: 1rem;
+    padding: 1.1rem 1.25rem;
+    background: rgba(99, 102, 241, 0.05);
+    border: 1px solid rgba(99, 102, 241, 0.16);
+  }
+
   .section-heading {
     font-size: 0.7rem;
     text-transform: uppercase;

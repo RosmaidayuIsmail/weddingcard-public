@@ -5,9 +5,20 @@
           <UIcon name="i-heroicons-arrow-path-rounded-square" class="w-5 h-5 text-gold-300" />
           <h2 class="font-display text-lg">Apply platform template to existing weddings</h2>
         </div>
-        <p class="text-sm text-white/50">
-          Fills in whatever a wedding is genuinely missing (fields that don't exist on that document at all) using the current Starter Defaults and schema defaults. It never overwrites a field a couple already has, even if that value matches an old default - their own design stays exactly as-is. Catalog-based things (themes, fonts, RSVP/Day Flow presets, Guest List labels, Custom Code) already reach every wedding live and don't need this.
-        </p>
+        <div class="text-sm text-white/50 space-y-3">
+          <p>
+            In plain terms: this is a one-time "catch-up" tool, not an ongoing sync. Most admin changes (themes, fonts, RSVP/Day Flow language presets, Guest List labels, Custom Code) already reach every wedding live, automatically, the instant you save them - this tool has nothing to do with those and you never need it for them.
+          </p>
+          <p>
+            This tool exists only for the handful of settings that get copied onto a wedding once, the moment it's created (from Starter Defaults - story text, buttons, petals, ornament, starter flow). If the app gains a brand-new field like that after a wedding already exists, that older wedding's document simply won't have it at all - not set to a default, just genuinely absent. That's the only situation this fixes.
+          </p>
+          <p>
+            <strong class="text-white/70">Example:</strong> say next month you add a new "hashtag banner" toggle to Starter Defaults. Every wedding created after that automatically gets it. But a wedding created last year has no idea that field exists - it's simply missing from that document. Clicking "Check for missing fields" finds documents like that; "Apply to existing weddings" fills in ONLY the missing field, using today's Starter Defaults as the fallback value.
+          </p>
+          <p>
+            <strong class="text-white/70">What it will never do:</strong> touch a field a couple already has - even if their value happens to match an old default. Their own design, wording, and choices are never overwritten, only genuinely blank slots get filled in.
+          </p>
+        </div>
 
         <div v-if="migrationResult" class="result-box">
           Scanned {{ migrationResult.weddingsScanned }} weddings &middot; updated {{ migrationResult.weddingsUpdated }} &middot; backfilled {{ migrationResult.fieldsBackfilled }} field(s).
