@@ -8,7 +8,14 @@
       </div>
   
       <!-- Sidebar / Topbar -->
-      <aside class="relative z-10 md:w-72 md:min-h-screen md:sticky md:top-0 md:h-screen md:overflow-y-auto border-b md:border-b-0 md:border-r border-white/5 bg-ink-900/40 backdrop-blur-xl p-5 flex flex-col">
+      <!-- Sticky positioning here previously misbehaved the same way it did on
+           /admin: an aside sized off a flex sibling's height can fail to keep
+           its box in sync when that sibling's content grows asynchronously
+           right after first paint (wedding data loading in on mount). Fixed
+           positioning (below) anchors to the viewport directly instead, so it
+           can't happen regardless of load timing - see app/pages/admin.vue
+           for the full writeup. -->
+      <aside class="relative z-20 md:w-72 md:fixed md:inset-y-0 md:left-0 md:h-screen md:overflow-y-auto border-b md:border-b-0 md:border-r border-white/5 bg-ink-900/40 backdrop-blur-xl p-5 flex flex-col">
         <NuxtLink to="/admin" class="flex items-center gap-2 px-3 py-4 mb-2 text-white/60 hover:text-white transition-colors text-sm">
           <UIcon name="i-heroicons-arrow-left" class="w-4 h-4" />
           All weddings
@@ -58,7 +65,7 @@
       </aside>
   
       <!-- Main Content Area -->
-      <main class="relative z-10 flex-1 p-4 md:p-8 lg:p-12 w-full mx-auto max-w-7xl overflow-x-hidden overflow-y-visible">
+      <main class="relative z-10 flex-1 md:ml-72 p-4 md:p-8 lg:p-12 w-full mx-auto max-w-7xl overflow-x-hidden overflow-y-visible">
         <slot />
       </main>
     </div>

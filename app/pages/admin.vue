@@ -17,7 +17,7 @@
       <div class="absolute bottom-0 right-0 w-3/4 h-96 bg-gold-500/5 blur-[120px] rounded-full mix-blend-screen"></div>
     </div>
 
-    <aside class="relative z-10 md:w-72 md:min-h-screen md:sticky md:top-0 md:h-screen md:overflow-y-auto border-b md:border-b-0 md:border-r border-white/5 bg-ink-900/40 backdrop-blur-xl p-5 flex flex-col">
+    <aside class="relative z-20 md:w-72 md:fixed md:inset-y-0 md:left-0 md:h-screen md:overflow-y-auto border-b md:border-b-0 md:border-r border-white/5 bg-ink-900/40 backdrop-blur-xl p-5 flex flex-col">
       <div class="flex items-center gap-3 px-3 py-4 mb-2">
         <div class="p-2 rounded-lg bg-white/5 border border-white/10">
           <UIcon name="i-heroicons-shield-check" class="w-5 h-5 text-gold-300" />
@@ -47,7 +47,7 @@
       </div>
     </aside>
 
-    <main class="relative z-10 flex-1 p-4 md:p-8 lg:p-12 w-full mx-auto max-w-6xl overflow-x-hidden">
+    <main class="relative z-10 flex-1 md:ml-72 p-4 md:p-8 lg:p-12 w-full mx-auto max-w-6xl overflow-x-hidden">
       <div class="mb-8">
         <h1 class="text-2xl sm:text-3xl font-display font-bold bg-clip-text text-transparent bg-gradient-to-r from-gold-100 via-gold-300 to-gold-500 tracking-tight">
           {{ currentNavItem.label }}
@@ -94,16 +94,29 @@ const section = ref<Section>('weddings')
 const currentNavItem = computed(() => navItems.find((item) => item.id === section.value)!)
 
 // Bug fix: hard-refreshing this page used to leave the sidebar looking
-// "corrupted" (only fixed by logging out and back in). The real cause was
-// the browser trying to restore a stale scroll position from before the
-// reload while this page swaps from a small spinner to the full,
-// much-taller sidebar+content layout - so the sticky sidebar could end up
-// rendered against the wrong scroll offset. A plain client-side
-// navigation (like the one right after logging in) never hits this,
-// because Nuxt always starts a fresh navigation at the top of the page.
-// Forcing scroll-to-top exactly when the real layout appears fixes it for
-// both cases. (See also app/plugins/scroll-restoration.client.ts, which
-// stops the browser from attempting that restoration at all.)
+// "corrupted" - its dark panel stopping partway down the page instead of
+// running the full height, only fixed by logging out and back in. The
+// <aside> below used to be `position: sticky` with a fixed `h-screen`
+// height, sized relative to its flex sibling (<main>). That combination is
+// known to misbehave when the sibling's content height changes shortly
+// after the initial paint (exactly what happens here: the Weddings list
+// loads asynchronously right after mount and the page grows taller) -
+// some browsers don't reliably recompute a sticky element's box once its
+// container's height changes out from under it on first load, even though
+// they do on every scroll/resize afterward. A plain client-side navigation
+// (like the one right after logging in) never hits this, because that
+// navigation happens after the async content is already loaded.
+//
+// Fix: the <aside> is now `position: fixed` instead of `sticky` (see its
+// class list below - md:fixed md:inset-y-0 md:left-0 - with <main> given a
+// matching md:ml-72 to leave room for it). A fixed element is anchored to
+// the viewport directly and never depends on a sibling's height at all, so
+// this entire class of bug can't happen regardless of when content loads.
+//
+// Kept as a smaller belt-and-suspenders measure: force scroll-to-top the
+// moment the real layout appears, and stop the browser from trying to
+// restore a stale scroll position on reload at all (see
+// app/plugins/scroll-restoration.client.ts).
 const ready = computed(() => authReady.value && !!currentUser.value && profile.value?.role === 'superadmin')
 watch(ready, (isReady) => {
   if (isReady && import.meta.client) {
