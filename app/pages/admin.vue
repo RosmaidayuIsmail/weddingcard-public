@@ -58,6 +58,10 @@
       <AdminDashboardControls v-if="section === 'dashboard'" />
       <AdminStarterDefaults v-else-if="section === 'starter-defaults'" />
       <AdminRsvpCatalog v-else-if="section === 'rsvp'" />
+      <AdminDayFlowControls v-else-if="section === 'day-flow'" />
+      <AdminGuestListControls v-else-if="section === 'guests'" />
+      <AdminCustomCode v-else-if="section === 'custom-code'" />
+      <AdminWeddingsList v-else-if="section === 'weddings'" />
       <AdminCatalogManager v-else :section="section" />
     </main>
   </div>
@@ -69,16 +73,21 @@ definePageMeta({ middleware: 'superadmin' })
 const { logOut } = useAuth()
 const { currentUser, profile, authReady } = useAuthState()
 
-type Section = 'dashboard' | 'themes' | 'fonts' | 'presets' | 'rsvp' | 'opening-styles' | 'starter-defaults'
+type Section = 'dashboard' | 'themes' | 'fonts' | 'presets' | 'rsvp' | 'opening-styles' | 'design-options' | 'day-flow' | 'guests' | 'custom-code' | 'starter-defaults' | 'weddings'
 
 const navItems: { id: Section; label: string; icon: string; description: string }[] = [
   { id: 'dashboard', label: 'User Dashboard', icon: 'i-heroicons-squares-2x2', description: 'Control the labels and enabled pages every user sees in their dashboard.' },
   { id: 'themes', label: 'Design Studio', icon: 'i-heroicons-swatch', description: 'Themes and palette pricing available in the user Design Studio.' },
   { id: 'fonts', label: 'Typography', icon: 'i-heroicons-language', description: 'Fonts available in user font pickers across the app.' },
+  { id: 'design-options', label: 'Design Options', icon: 'i-heroicons-adjustments-horizontal', description: 'Which ornaments, particle styles, and top icons users can select in Design Studio.' },
   { id: 'presets', label: 'Opening Languages', icon: 'i-heroicons-pencil-square', description: 'One-click Opening Design language presets shown to users.' },
   { id: 'rsvp', label: 'RSVP Languages', icon: 'i-heroicons-chat-bubble-left-right', description: 'RSVP language presets shown to users with every editable prompt.' },
   { id: 'opening-styles', label: 'Opening Styles', icon: 'i-heroicons-envelope-open', description: 'Choose which opening animations users can select.' },
-  { id: 'starter-defaults', label: 'Starter Defaults', icon: 'i-heroicons-document-duplicate', description: 'What a brand-new wedding starts with - story text, buttons, petals, ornament, and a starter flow.' }
+  { id: 'day-flow', label: 'Day Flow', icon: 'i-heroicons-clock', description: 'Quick Start timeline presets and page labels for the Day Flow page.' },
+  { id: 'guests', label: 'Guest List', icon: 'i-heroicons-users', description: 'Page labels, tier names, and optional columns on the Guest List page.' },
+  { id: 'custom-code', label: 'Custom Code', icon: 'i-heroicons-code-bracket-square', description: 'Sandboxed CSS/HTML/JS injected into every live wedding page.' },
+  { id: 'starter-defaults', label: 'Starter Defaults', icon: 'i-heroicons-document-duplicate', description: 'What a brand-new wedding starts with - story text, buttons, petals, ornament, and a starter flow.' },
+  { id: 'weddings', label: 'Weddings & Sync', icon: 'i-heroicons-rectangle-stack', description: 'Read-only list of every wedding, plus applying the platform template to weddings that already exist.' }
 ]
 
 const section = ref<Section>('dashboard')

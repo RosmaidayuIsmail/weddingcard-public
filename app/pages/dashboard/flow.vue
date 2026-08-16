@@ -20,11 +20,11 @@
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 shrink-0 pt-4 lg:pt-0">
         <div>
           <h1 class="text-3xl sm:text-4xl font-display font-bold bg-clip-text text-transparent bg-gradient-to-r from-gold-100 via-gold-300 to-gold-500 tracking-tight">
-            Wedding Day Flow
+            {{ dayFlowSettings.pageTitle }}
           </h1>
           <p class="text-sm text-white/50 mt-1 flex items-center gap-2">
             <UIcon name="i-heroicons-sparkles" class="w-4 h-4" style="color: #e3b04a;" />
-            Lay out your ceremony and reception run-of-show.
+            {{ dayFlowSettings.pageDescription }}
           </p>
         </div>
         
@@ -60,9 +60,9 @@
             </div>
             <p class="text-xs text-gray-400 mb-4">Choose a ready-made template to auto-fill your timeline, then edit it below.</p>
             <div class="flex flex-wrap gap-3">
-              <UButton 
-                v-for="(preset, idx) in presets" 
-                :key="idx"
+              <UButton
+                v-for="preset in allDayFlowPresets"
+                :key="preset.id"
                 variant="soft" 
                 color="gray"
                 class="hover:bg-gray-800 border border-gray-700 transition-colors"
@@ -178,7 +178,7 @@ import type { FlowItem } from '~/composables/useWeddingTypes'
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
 const { wedding, loading, saving, updateFlow } = useMyWedding()
-const { themeStyleVars } = useThemes()
+const { themeStyleVars, allDayFlowPresets, dayFlowSettings } = useThemes()
 const toast = useToast()
 
 const items = ref<FlowItem[]>([])
@@ -206,29 +206,9 @@ useHead({
   })
 })
 
-// Ready-made templates
-const presets = [
-  {
-    label: 'Traditional Nikah & Sanding',
-    items: [
-      { time: '10:00 AM', title: 'Ketibaan Tetamu', description: 'Para tetamu mula hadir.' },
-      { time: '10:30 AM', title: 'Ketibaan Pengantin', description: 'Pengantin tiba berserta rombongan.' },
-      { time: '11:00 AM', title: 'Majlis Akad Nikah', description: 'Upacara akad nikah bermula.' },
-      { time: '1:00 PM', title: 'Jamuan Makan', description: 'Hidangan utama disajikan.' },
-      { time: '2:00 PM', title: 'Sesi Bergambar', description: 'Bersama keluarga dan rakan-rakan.' }
-    ]
-  },
-  {
-    label: 'Modern Evening Reception',
-    items: [
-      { time: '6:30 PM', title: 'Guest Arrival', description: 'Welcome drinks and mingling.' },
-      { time: '7:30 PM', title: 'Grand Entrance', description: 'The couple arrives.' },
-      { time: '8:00 PM', title: 'Dinner Served', description: 'Enjoy the feast.' },
-      { time: '9:00 PM', title: 'Speeches & Toasts', description: 'Words from family and friends.' },
-      { time: '9:30 PM', title: 'Cake Cutting', description: 'Followed by the first dance.' }
-    ]
-  }
-]
+// Ready-made templates now come from the shared platform catalog
+// (app/composables/useThemes.ts) - allDayFlowPresets combines the built-in
+// two with anything admin has added in Platform Admin > Day Flow.
 
 let initialized = false
 watch(

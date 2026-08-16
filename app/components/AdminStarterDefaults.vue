@@ -89,9 +89,9 @@
   
   <script setup lang="ts">
   import { defaultStarterDefaults, type StarterDefaults } from '~/composables/useThemes'
-  
+
   const toast = useToast()
-  const { starterDefaults, saveStarterDefaults } = useThemes()
+  const { starterDefaults, saveStarterDefaults, petalStyleCatalog, ornamentStyleCatalog } = useThemes()
   
   const form = ref<StarterDefaults>(structuredClone(toRaw(starterDefaults.value)))
   
@@ -107,13 +107,11 @@
     set: (v: string) => { form.value.enablePetals = v === 'on' }
   })
   
-  const petalStyleOptions = [
-    { label: 'Petals', value: 'petals' },
-    { label: 'Confetti', value: 'confetti' },
-    { label: 'Hearts', value: 'hearts' },
-    { label: 'Sparkle', value: 'sparkles' }
-  ]
-  
+  // Sourced from the shared platform catalog (app/composables/useThemes.ts)
+  // so this never drifts out of sync with what Design Studio and Design
+  // Options actually offer.
+  const petalStyleOptions = computed(() => petalStyleCatalog.map((o) => ({ label: o.label, value: o.value })))
+
   const textWeightOptions = [
     { label: 'Light', value: '300' },
     { label: 'Regular', value: '400' },
@@ -121,14 +119,8 @@
     { label: 'Semibold', value: '600' },
     { label: 'Bold', value: '700' }
   ]
-  
-  const ornamentOptions = [
-    { label: 'None', value: 'none', icon: 'i-heroicons-no-symbol' },
-    { label: 'Botanical Corners', value: 'botanical-corners', icon: 'i-heroicons-sparkles' },
-    { label: 'Floral Wreath', value: 'floral-wreath', icon: 'i-heroicons-globe-alt' },
-    { label: 'Minimal Arch', value: 'minimal-arch', icon: 'i-heroicons-stop' },
-    { label: 'Art Deco', value: 'geometric-deco', icon: 'i-heroicons-viewfinder-circle' }
-  ]
+
+  const ornamentOptions = computed(() => ornamentStyleCatalog)
   
   function addFlowItem() {
     form.value.flow.push({ time: '', title: '', description: '' })

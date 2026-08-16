@@ -13,6 +13,11 @@
   </div>
 
   <div v-else class="theme-surface text-white relative overflow-hidden" :style="styleVars">
+    <!-- Admin-authored Custom Code (Platform Admin > Custom Code), rendered
+         inside a sandboxed iframe - see CustomCodeBlock.vue for the safety
+         design. Position is admin-configurable; defaults to bottom. -->
+    <CustomCodeBlock v-if="customCode.position === 'top'" class="relative z-20" />
+
     <!-- Decorative background layers live at the page level (not inside the
          hero canvas below) specifically so they visually continue across
          the footer too, instead of stopping abruptly at the hero's edge.
@@ -160,6 +165,8 @@
       <div class="mt-6 opacity-80 hover:opacity-100 transition-opacity">
         <ShareButtons :bride-name="wedding.content.brideName" :groom-name="wedding.content.groomName" :date-label="wedding.content.dateLabel" :share-message="wedding.content.shareMessage" />
       </div>
+
+      <CustomCodeBlock v-if="customCode.position !== 'top'" class="mt-10 w-full max-w-lg mx-auto" />
     </div>
   </div>
 </template>
@@ -169,7 +176,7 @@ const route = useRoute()
 const slug = route.params.slug as string
 
 const { wedding, loading, notFound } = useWeddingBySlug(slug)
-const { themeStyleVars } = useThemes()
+const { themeStyleVars, customCode } = useThemes()
 
 const styleVars = computed(() =>
   themeStyleVars(

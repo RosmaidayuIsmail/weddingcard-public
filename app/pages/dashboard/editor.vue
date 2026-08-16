@@ -900,7 +900,7 @@ definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 const { wedding, loading, saving, updateContent, updateTheme } = useMyWedding()
 const { isConfigured: cloudinaryConfigured, uploadImage } = useCloudinary()
 const { removeBackground, processing: bgRemoving } = useBackgroundRemoval()
-const { getTheme, allFontOptions } = useThemes()
+const { getTheme, allFontOptions, enabledOrnamentStyles, enabledPetalStyles, enabledTopIcons } = useThemes()
 const toast = useToast()
 
 // The preview panel needs to stay visible while the (much taller) form
@@ -985,21 +985,22 @@ const textWeightOptions = [
   { label: 'Bold', value: '700' }
 ]
 
-const petalStyleOptions = [
-  { label: 'Petals', value: 'petals', icon: 'i-heroicons-sparkles' },
-  { label: 'Confetti', value: 'confetti', icon: 'i-heroicons-squares-2x2' },
-  { label: 'Hearts', value: 'hearts', icon: 'i-heroicons-heart' },
-  { label: 'Sparkle', value: 'sparkles', icon: 'i-heroicons-star' },
-  { label: 'Stars', value: 'stars', icon: 'i-heroicons-star' }
-]
+// Sourced from the shared platform catalog (app/composables/useThemes.ts) so
+// admin's Design Options toggles control exactly what appears here. If this
+// wedding's current value was disabled by admin AFTER the couple picked it,
+// it's kept in the list anyway (unshifted back in) so their own picker never
+// looks broken or silently loses their existing selection.
+const petalStyleOptions = computed(() => {
+  const list = enabledPetalStyles.value
+  return list.some((o) => o.value === form.petalStyle) || !form.petalStyle
+    ? list
+    : [{ label: form.petalStyle, value: form.petalStyle, icon: 'i-heroicons-sparkles' }, ...list]
+})
 
-const topIconOptions = ref([
-  { label: 'None', value: 'none' },
-  { label: 'Bismillah (﷽)', value: 'bismillah' },
-  { label: 'Interlocking Rings', value: 'rings' },
-  { label: 'Heart', value: 'heart' },
-  { label: 'Custom Upload', value: 'custom' }
-])
+// Shared by both the Cover page (form.innerTopIcon) and Inner Card page
+// (form.detailsTopIcon) pickers, so this stays the plain enabled list rather
+// than merge-safety keyed to a single field.
+const topIconOptions = computed(() => enabledTopIcons.value)
 
 const currentTheme = computed(() => getTheme(selectedThemeId.value))
 
@@ -1157,13 +1158,12 @@ useHead({
   })
 })
 
-const ornamentOptions = [
-  { label: 'None', value: 'none', icon: 'i-heroicons-no-symbol' },
-  { label: 'Botanical Corners', value: 'botanical-corners', icon: 'i-heroicons-sparkles' },
-  { label: 'Floral Wreath', value: 'floral-wreath', icon: 'i-heroicons-globe-alt' },
-  { label: 'Minimal Arch', value: 'minimal-arch', icon: 'i-heroicons-stop' },
-  { label: 'Art Deco', value: 'geometric-deco', icon: 'i-heroicons-viewfinder-circle' }
-]
+const ornamentOptions = computed(() => {
+  const list = enabledOrnamentStyles.value
+  return list.some((o) => o.value === form.ornamentStyle) || !form.ornamentStyle
+    ? list
+    : [{ label: form.ornamentStyle, value: form.ornamentStyle, icon: 'i-heroicons-sparkles' }, ...list]
+})
 
 function resetColors() {
   form.customBgFrom = ''

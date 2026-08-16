@@ -1,5 +1,30 @@
 <template>
     <div class="space-y-6">
+      <div class="form-card space-y-4">
+        <div class="flex items-center gap-2">
+          <UIcon name="i-heroicons-arrow-path-rounded-square" class="w-5 h-5 text-gold-300" />
+          <h2 class="font-display text-lg">Apply platform template to existing weddings</h2>
+        </div>
+        <p class="text-sm text-white/50">
+          Fills in whatever a wedding is genuinely missing (fields that don't exist on that document at all) using the current Starter Defaults and schema defaults. It never overwrites a field a couple already has, even if that value matches an old default - their own design stays exactly as-is. Catalog-based things (themes, fonts, RSVP/Day Flow presets, Guest List labels, Custom Code) already reach every wedding live and don't need this.
+        </p>
+
+        <div v-if="migrationResult" class="result-box">
+          Scanned {{ migrationResult.weddingsScanned }} weddings &middot; updated {{ migrationResult.weddingsUpdated }} &middot; backfilled {{ migrationResult.fieldsBackfilled }} field(s).
+        </div>
+
+        <div class="flex flex-wrap items-center gap-3">
+          <UButton variant="soft" color="neutral" icon="i-heroicons-magnifying-glass" :loading="checking" @click="checkMissing">Check for missing fields</UButton>
+          <template v-if="missingCount !== null">
+            <span v-if="missingCount === 0" class="text-sm text-emerald-400">Nothing missing - every wedding already has every field.</span>
+            <template v-else>
+              <span class="text-sm text-gold-200">{{ missingCount }} field(s) missing across all weddings.</span>
+              <UButton color="primary" icon="i-heroicons-check" :loading="applying" @click="applyDefaults">Apply to existing weddings</UButton>
+            </template>
+          </template>
+        </div>
+      </div>
+
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div class="stat-card">
           <p class="stat-label">Total Weddings</p>
@@ -52,10 +77,46 @@
   
   const { db, isConfigured } = useFirebase()
   const toast = useToast()
-  
+  const { previewMissingCount, applyPlatformDefaultsToExistingWeddings } = useAdminMigrations()
+
   const weddings = ref<WeddingDoc[]>([])
   const loading = ref(true)
   const search = ref('')
+
+  const checking = ref(false)
+  const applying = ref(false)
+  const missingCount = ref<number | null>(null)
+  const migrationResult = ref<{ weddingsScanned: number; weddingsUpdated: number; fieldsBackfilled: number } | null>(null)
+
+  async function checkMissing() {
+    checking.value = true
+    try {
+      missingCount.value = await previewMissingCount()
+    } catch (error) {
+      console.error(error)
+      toast.add({ title: 'Could not check for missing fields', color: 'error' })
+    } finally {
+      checking.value = false
+    }
+  }
+
+  async function applyDefaults() {
+    if (missingCount.value === null || missingCount.value === 0) return
+    const ok = confirm(`This will backfill ${missingCount.value} missing field(s) across your weddings, using current Starter Defaults for anything genuinely missing. It will NOT change any field a couple already has. Continue?`)
+    if (!ok) return
+    applying.value = true
+    try {
+      migrationResult.value = await applyPlatformDefaultsToExistingWeddings()
+      missingCount.value = 0
+      toast.add({ title: 'Platform template applied', description: `${migrationResult.value.weddingsUpdated} wedding(s) updated.`, color: 'success' })
+      await loadWeddings()
+    } catch (error) {
+      console.error(error)
+      toast.add({ title: 'Could not apply platform template', color: 'error' })
+    } finally {
+      applying.value = false
+    }
+  }
   
   async function loadWeddings() {
     if (!isConfigured || !db) {
@@ -89,6 +150,22 @@
   </script>
   
   <style scoped>
+  .form-card {
+    border-radius: 1.25rem;
+    padding: 1.5rem;
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.015));
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .result-box {
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    background: rgba(16, 185, 129, 0.08);
+    border: 1px solid rgba(16, 185, 129, 0.25);
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.8);
+  }
+
   .stat-card {
     border-radius: 1rem;
     padding: 1.1rem;

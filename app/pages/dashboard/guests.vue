@@ -17,9 +17,9 @@
       <!-- Header -->
       <div>
         <h1 class="text-3xl sm:text-4xl font-display font-bold bg-clip-text text-transparent bg-gradient-to-r from-gold-100 via-gold-300 to-gold-500 tracking-tight">
-          Guest List
+          {{ guestListSettings.pageTitle }}
         </h1>
-        <p class="text-sm text-white/50 mt-2">Manage invitations, RSVPs, and dietary requirements.</p>
+        <p class="text-sm text-white/50 mt-2">{{ guestListSettings.pageDescription }}</p>
       </div>
 
       <!-- Bento Stats -->
@@ -59,7 +59,7 @@
               <UIcon name="i-heroicons-phone" class="text-gray-500 dark:text-gray-400" />
             </template>
           </UInput>
-          <USelect v-model="newGuest.tier" :items="[{ label: 'General', value: 'general' }, { label: 'VIP', value: 'vip' }]" size="lg" class="w-full sm:w-32" />
+          <USelect v-model="newGuest.tier" :items="[{ label: guestListSettings.generalLabel, value: 'general' }, { label: guestListSettings.vipLabel, value: 'vip' }]" size="lg" class="w-full sm:w-32" />
           <UButton color="primary" icon="i-heroicons-plus" size="lg" class="w-full sm:w-auto font-semibold px-6 shadow-md hover:-translate-y-0.5 transition-transform" :loading="adding" @click="handleAdd">Add</UButton>
         </div>
       </div>
@@ -98,7 +98,7 @@
               :title="guest.tier === 'vip' ? 'Click to change to General' : 'Click to mark as VIP'"
               @click="updateGuestTier(guest.id, guest.tier === 'vip' ? 'general' : 'vip')"
             >
-              {{ guest.tier === 'vip' ? 'VIP' : 'Gen' }}
+              {{ guest.tier === 'vip' ? guestListSettings.vipLabel : guestListSettings.generalLabel }}
             </button>
             <div>
               <p class="font-medium text-white/90 group-hover:text-gold-200 transition-colors">{{ guest.name }}</p>
@@ -110,11 +110,11 @@
           </div>
           
           <div class="flex items-center gap-4 flex-1">
-             <div class="hidden md:flex flex-col gap-1 w-40 border-l border-white/10 pl-4">
+             <div v-if="guestListSettings.showSpecialSeating" class="hidden md:flex flex-col gap-1 w-40 border-l border-white/10 pl-4">
                  <p class="text-[0.65rem] uppercase tracking-widest text-white/40 font-semibold">Special Seating</p>
                  <p class="text-sm font-medium" :class="guest.specialSeating ? 'text-amber-400' : 'text-white/30'">{{ guest.specialSeating ? 'Required' : 'No' }}</p>
              </div>
-             <div class="hidden lg:flex flex-col gap-1 flex-1 border-l border-white/10 pl-4">
+             <div v-if="guestListSettings.showDietary" class="hidden lg:flex flex-col gap-1 flex-1 border-l border-white/10 pl-4">
                  <p class="text-[0.65rem] uppercase tracking-widest text-white/40 font-semibold">Dietary Needs</p>
                  <p class="text-sm text-white/70 truncate max-w-[200px]">{{ guest.dietary || '—' }}</p>
              </div>
@@ -189,6 +189,7 @@ const {
   exportCSV
 } = useGuests(() => wedding.value?.id)
 
+const { guestListSettings } = useThemes()
 const toast = useToast()
 const config = useRuntimeConfig()
 const siteUrl = computed(() => config.public.siteUrl || (import.meta.client ? window.location.origin : ''))
@@ -226,11 +227,11 @@ async function handleAdd() {
   }
 }
 
-const tierFilters = [
+const tierFilters = computed(() => [
   { label: 'All Guests', value: 'all' as const },
-  { label: 'VIPs Only', value: 'vip' as const },
-  { label: 'General', value: 'general' as const }
-]
+  { label: `${guestListSettings.value.vipLabel}s Only`, value: 'vip' as const },
+  { label: guestListSettings.value.generalLabel, value: 'general' as const }
+])
 const tierFilter = ref<'all' | 'vip' | 'general'>('all')
 
 const filteredGuests = computed(() => {
@@ -313,8 +314,8 @@ useSeoMeta({ title: 'Guest List — WeddingCard' })
 
 /* Rows */
 .tier-toggle {
-  width: 3.5rem;
-  padding: 0.3rem 0;
+  min-width: 3.5rem;
+  padding: 0.3rem 0.6rem;
   border-radius: 999px;
   font-size: 0.75rem;
   font-weight: 600;
@@ -322,6 +323,7 @@ useSeoMeta({ title: 'Guest List — WeddingCard' })
   border: 1px solid transparent;
   transition: all 0.2s ease;
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .tier-toggle-general {

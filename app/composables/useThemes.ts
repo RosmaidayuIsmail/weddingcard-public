@@ -286,14 +286,114 @@ export const builtInTextPresets: TextPreset[] = [
   { id: 'ms', label: 'Bahasa Melayu', openingTitle: 'Walimatul Urus', openingGreeting: 'Menjemput {guestName} sekeluarga', openingActionText: 'Klik untuk buka' }
 ]
 
+// Global Day Flow "quick start" templates - the two that already existed as
+// hardcoded buttons on the Day Flow page, kept as permanent built-ins
+// alongside anything admins add. Same pattern as builtInTextPresets above.
+export interface FlowPreset {
+  id: string
+  label: string
+  items: StarterFlowItem[]
+}
+
+export const builtInDayFlowPresets: FlowPreset[] = [
+  {
+    id: 'traditional-nikah-sanding',
+    label: 'Traditional Nikah & Sanding',
+    items: [
+      { time: '10:00 AM', title: 'Ketibaan Tetamu', description: 'Para tetamu mula hadir.' },
+      { time: '10:30 AM', title: 'Ketibaan Pengantin', description: 'Pengantin tiba berserta rombongan.' },
+      { time: '11:00 AM', title: 'Majlis Akad Nikah', description: 'Upacara akad nikah bermula.' },
+      { time: '1:00 PM', title: 'Jamuan Makan', description: 'Hidangan utama disajikan.' },
+      { time: '2:00 PM', title: 'Sesi Bergambar', description: 'Bersama keluarga dan rakan-rakan.' }
+    ]
+  },
+  {
+    id: 'modern-evening-reception',
+    label: 'Modern Evening Reception',
+    items: [
+      { time: '6:30 PM', title: 'Guest Arrival', description: 'Welcome drinks and mingling.' },
+      { time: '7:30 PM', title: 'Grand Entrance', description: 'The couple arrives.' },
+      { time: '8:00 PM', title: 'Dinner Served', description: 'Enjoy the feast.' },
+      { time: '9:00 PM', title: 'Speeches & Toasts', description: 'Words from family and friends.' },
+      { time: '9:30 PM', title: 'Cake Cutting', description: 'Followed by the first dance.' }
+    ]
+  }
+]
+
+/** Platform controls for the Day Flow page. Mirrors DashboardSettings'
+ * label-only pattern - the page and its behaviour stay in source code. */
+export interface DayFlowSettings {
+  pageTitle: string
+  pageDescription: string
+}
+
+export const defaultDayFlowSettings: DayFlowSettings = {
+  pageTitle: 'Wedding Day Flow',
+  pageDescription: 'Lay out your ceremony and reception run-of-show.'
+}
+
+/** Platform controls for the Guest List page - labels and which optional
+ * columns are shown. The underlying guest data model is unchanged. */
+export interface GuestListSettings {
+  pageTitle: string
+  pageDescription: string
+  vipLabel: string
+  generalLabel: string
+  showSpecialSeating: boolean
+  showDietary: boolean
+}
+
+export const defaultGuestListSettings: GuestListSettings = {
+  pageTitle: 'Guest List',
+  pageDescription: 'Manage invitations, RSVPs, and dietary requirements.',
+  vipLabel: 'VIP',
+  generalLabel: 'General',
+  showSpecialSeating: true,
+  showDietary: true
+}
+
+/**
+ * Admin-authored CSS/HTML/JS injected onto every live wedding page.
+ *
+ * SAFETY DESIGN: this is rendered inside a sandboxed <iframe> (see
+ * CustomCodeBlock.vue) with `sandbox="allow-scripts"` and NO
+ * `allow-same-origin`. That combination means any script here runs in a
+ * throwaway, opaque-origin document: it CANNOT read this site's cookies,
+ * Firebase session, localStorage, or reach into the parent page's DOM (no
+ * couples' data, no other visitors' data, no way to deface the rest of the
+ * app). It CAN still run animations, fetch its own external resources, and
+ * render arbitrary markup - full creative freedom, contained blast radius.
+ * A broken or malicious paste can only break the sandboxed box itself.
+ */
+export interface CustomCode {
+  enabled: boolean
+  position: 'top' | 'bottom'
+  css: string
+  html: string
+}
+
+export const defaultCustomCode: CustomCode = {
+  enabled: false,
+  position: 'bottom',
+  css: '',
+  html: ''
+}
+
 interface PlatformCatalog {
   themes: Theme[]
   fonts: FontOption[]
   textPresets: TextPreset[]
   disabledOpeningStyles: string[]
+  disabledOrnamentStyles: string[]
+  disabledPetalStyles: string[]
+  disabledTopIcons: string[]
   starterDefaults: StarterDefaults
   dashboardSettings: DashboardSettings
   rsvpPresets: RsvpPreset[]
+  dayFlowPresets: FlowPreset[]
+  dayFlowSettings: DayFlowSettings
+  guestListSettings: GuestListSettings
+  customCode: CustomCode
 }
 
 export interface OpeningStyle {
@@ -321,6 +421,34 @@ export const openingStyleCatalog: OpeningStyle[] = [
   { label: 'Confetti Burst', value: 'confetti-burst', icon: 'i-heroicons-sparkles' },
 ]
 
+// Same "toggle, don't author" pattern as openingStyleCatalog: each of these
+// is real CSS/markup in CardOrnament.vue, PetalsBackground.vue, or the
+// Cover/Inner icon template branches - admin controls which of these every
+// couple is allowed to pick from in their own Design Studio.
+export const ornamentStyleCatalog: OpeningStyle[] = [
+  { label: 'None', value: 'none', icon: 'i-heroicons-no-symbol' },
+  { label: 'Botanical Corners', value: 'botanical-corners', icon: 'i-heroicons-sparkles' },
+  { label: 'Floral Wreath', value: 'floral-wreath', icon: 'i-heroicons-globe-alt' },
+  { label: 'Minimal Arch', value: 'minimal-arch', icon: 'i-heroicons-stop' },
+  { label: 'Art Deco', value: 'geometric-deco', icon: 'i-heroicons-viewfinder-circle' }
+]
+
+export const petalStyleCatalog: OpeningStyle[] = [
+  { label: 'Petals', value: 'petals', icon: 'i-heroicons-sparkles' },
+  { label: 'Confetti', value: 'confetti', icon: 'i-heroicons-squares-2x2' },
+  { label: 'Hearts', value: 'hearts', icon: 'i-heroicons-heart' },
+  { label: 'Sparkle', value: 'sparkles', icon: 'i-heroicons-star' },
+  { label: 'Stars', value: 'stars', icon: 'i-heroicons-star' }
+]
+
+export const topIconCatalog: OpeningStyle[] = [
+  { label: 'None', value: 'none', icon: 'i-heroicons-no-symbol' },
+  { label: 'Bismillah (﷽)', value: 'bismillah', icon: 'i-heroicons-language' },
+  { label: 'Interlocking Rings', value: 'rings', icon: 'i-heroicons-lifebuoy' },
+  { label: 'Heart', value: 'heart', icon: 'i-heroicons-heart' },
+  { label: 'Custom Upload', value: 'custom', icon: 'i-heroicons-arrow-up-tray' }
+]
+
 export function useThemes() {
   const { db, isConfigured } = useFirebase()
 
@@ -330,9 +458,16 @@ export function useThemes() {
   const customFonts = useState<FontOption[]>('catalog-fonts', () => [])
   const customTextPresets = useState<TextPreset[]>('catalog-text-presets', () => [])
   const disabledOpeningStyles = useState<string[]>('catalog-disabled-opening-styles', () => [])
+  const disabledOrnamentStyles = useState<string[]>('catalog-disabled-ornament-styles', () => [])
+  const disabledPetalStyles = useState<string[]>('catalog-disabled-petal-styles', () => [])
+  const disabledTopIcons = useState<string[]>('catalog-disabled-top-icons', () => [])
   const starterDefaults = useState<StarterDefaults>('catalog-starter-defaults', () => ({ ...defaultStarterDefaults }))
   const dashboardSettings = useState<DashboardSettings>('catalog-dashboard-settings', () => structuredClone(defaultDashboardSettings))
   const customRsvpPresets = useState<RsvpPreset[]>('catalog-rsvp-presets', () => [])
+  const customDayFlowPresets = useState<FlowPreset[]>('catalog-day-flow-presets', () => [])
+  const dayFlowSettings = useState<DayFlowSettings>('catalog-day-flow-settings', () => structuredClone(defaultDayFlowSettings))
+  const guestListSettings = useState<GuestListSettings>('catalog-guest-list-settings', () => structuredClone(defaultGuestListSettings))
+  const customCode = useState<CustomCode>('catalog-custom-code', () => structuredClone(defaultCustomCode))
   const catalogFetched = useState('catalog-fetched', () => false)
 
   async function ensureCatalogLoaded() {
@@ -347,6 +482,9 @@ export function useThemes() {
         customFonts.value = Array.isArray(data.fonts) ? data.fonts : []
         customTextPresets.value = Array.isArray(data.textPresets) ? data.textPresets : []
         disabledOpeningStyles.value = Array.isArray(data.disabledOpeningStyles) ? data.disabledOpeningStyles : []
+        disabledOrnamentStyles.value = Array.isArray(data.disabledOrnamentStyles) ? data.disabledOrnamentStyles : []
+        disabledPetalStyles.value = Array.isArray(data.disabledPetalStyles) ? data.disabledPetalStyles : []
+        disabledTopIcons.value = Array.isArray(data.disabledTopIcons) ? data.disabledTopIcons : []
         starterDefaults.value = data.starterDefaults ? { ...defaultStarterDefaults, ...data.starterDefaults } : { ...defaultStarterDefaults }
         if (data.dashboardSettings) {
           const savedItems = Array.isArray(data.dashboardSettings.navItems) ? data.dashboardSettings.navItems : []
@@ -360,6 +498,10 @@ export function useThemes() {
           }
         }
         customRsvpPresets.value = Array.isArray(data.rsvpPresets) ? data.rsvpPresets : []
+        customDayFlowPresets.value = Array.isArray(data.dayFlowPresets) ? data.dayFlowPresets : []
+        dayFlowSettings.value = data.dayFlowSettings ? { ...defaultDayFlowSettings, ...data.dayFlowSettings } : { ...defaultDayFlowSettings }
+        guestListSettings.value = data.guestListSettings ? { ...defaultGuestListSettings, ...data.guestListSettings } : { ...defaultGuestListSettings }
+        customCode.value = data.customCode ? { ...defaultCustomCode, ...data.customCode } : { ...defaultCustomCode }
       }
     } catch (error) {
       // Non-fatal: the app still works fine with just the built-in catalog.
@@ -419,6 +561,53 @@ export function useThemes() {
     disabledOpeningStyles.value = next
   }
 
+  async function setOrnamentStyleEnabled(styleValue: string, enabled: boolean) {
+    const next = enabled
+      ? disabledOrnamentStyles.value.filter((v) => v !== styleValue)
+      : [...disabledOrnamentStyles.value.filter((v) => v !== styleValue), styleValue]
+    await saveCatalogField('disabledOrnamentStyles', next)
+    disabledOrnamentStyles.value = next
+  }
+
+  async function setPetalStyleEnabled(styleValue: string, enabled: boolean) {
+    const next = enabled
+      ? disabledPetalStyles.value.filter((v) => v !== styleValue)
+      : [...disabledPetalStyles.value.filter((v) => v !== styleValue), styleValue]
+    await saveCatalogField('disabledPetalStyles', next)
+    disabledPetalStyles.value = next
+  }
+
+  async function setTopIconEnabled(styleValue: string, enabled: boolean) {
+    const next = enabled
+      ? disabledTopIcons.value.filter((v) => v !== styleValue)
+      : [...disabledTopIcons.value.filter((v) => v !== styleValue), styleValue]
+    await saveCatalogField('disabledTopIcons', next)
+    disabledTopIcons.value = next
+  }
+
+  async function addDayFlowPreset(preset: FlowPreset) {
+    const next = [...customDayFlowPresets.value.filter((p) => p.id !== preset.id), preset]
+    await saveCatalogField('dayFlowPresets', next)
+    customDayFlowPresets.value = next
+  }
+  async function removeDayFlowPreset(id: string) {
+    const next = customDayFlowPresets.value.filter((p) => p.id !== id)
+    await saveCatalogField('dayFlowPresets', next)
+    customDayFlowPresets.value = next
+  }
+  async function saveDayFlowSettings(next: DayFlowSettings) {
+    await saveCatalogField('dayFlowSettings', next)
+    dayFlowSettings.value = next
+  }
+  async function saveGuestListSettings(next: GuestListSettings) {
+    await saveCatalogField('guestListSettings', next)
+    guestListSettings.value = next
+  }
+  async function saveCustomCode(next: CustomCode) {
+    await saveCatalogField('customCode', next)
+    customCode.value = next
+  }
+
   async function saveStarterDefaults(next: StarterDefaults) {
     await saveCatalogField('starterDefaults', next)
     starterDefaults.value = next
@@ -442,6 +631,10 @@ export function useThemes() {
   // What couples should actually see in the Opening Design picker - the
   // built-in catalog minus whatever admin has turned off.
   const enabledOpeningStyles = computed(() => openingStyleCatalog.filter((s) => !disabledOpeningStyles.value.includes(s.value)))
+  const enabledOrnamentStyles = computed(() => ornamentStyleCatalog.filter((s) => !disabledOrnamentStyles.value.includes(s.value)))
+  const enabledPetalStyles = computed(() => petalStyleCatalog.filter((s) => !disabledPetalStyles.value.includes(s.value)))
+  const enabledTopIcons = computed(() => topIconCatalog.filter((s) => !disabledTopIcons.value.includes(s.value)))
+  const allDayFlowPresets = computed(() => [...builtInDayFlowPresets, ...customDayFlowPresets.value])
 
   // The full, "what should actually render" lists - built-ins plus whatever
   // admins have added. Every existing call site that destructures the plain
@@ -507,6 +700,28 @@ export function useThemes() {
     removeTextPreset,
     addRsvpPreset,
     removeRsvpPreset,
-    setOpeningStyleEnabled
+    setOpeningStyleEnabled,
+    ornamentStyleCatalog,
+    petalStyleCatalog,
+    topIconCatalog,
+    disabledOrnamentStyles,
+    disabledPetalStyles,
+    disabledTopIcons,
+    enabledOrnamentStyles,
+    enabledPetalStyles,
+    enabledTopIcons,
+    setOrnamentStyleEnabled,
+    setPetalStyleEnabled,
+    setTopIconEnabled,
+    builtInDayFlowPresets,
+    allDayFlowPresets,
+    addDayFlowPreset,
+    removeDayFlowPreset,
+    dayFlowSettings,
+    saveDayFlowSettings,
+    guestListSettings,
+    saveGuestListSettings,
+    customCode,
+    saveCustomCode
   }
 }

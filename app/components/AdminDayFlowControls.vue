@@ -1,0 +1,144 @@
+<template>
+  <div class="space-y-6 animate-fade-up">
+    <UAlert icon="i-heroicons-clock" color="info" variant="soft" title="Global Day Flow controls" description="Quick Start presets appear as one-click template buttons on every user's Day Flow page. Page labels change what every user sees at the top of that page. A user's own timeline is never touched by anything here." />
+
+    <div class="form-card space-y-4">
+      <h2 class="font-display text-lg">Page labels</h2>
+      <UFormField label="Page title"><UInput v-model="labelsForm.pageTitle" class="w-full" /></UFormField>
+      <UFormField label="Page description"><UInput v-model="labelsForm.pageDescription" class="w-full" /></UFormField>
+      <UButton color="primary" :loading="savingLabels" @click="saveLabels">Save page labels</UButton>
+    </div>
+
+    <div v-if="customPresets.length" class="space-y-2">
+      <div v-for="preset in customPresets" :key="preset.id" class="catalog-row items-start">
+        <div class="min-w-0 flex-1">
+          <p class="font-medium">{{ preset.label }}</p>
+          <p class="text-xs text-white/40 mt-1">{{ preset.items.length }} item(s)</p>
+        </div>
+        <div class="flex gap-1 shrink-0"><UButton size="xs" variant="ghost" color="neutral" icon="i-heroicons-pencil-square" @click="edit(preset)" /><UButton size="xs" variant="ghost" color="error" icon="i-heroicons-trash" :loading="removing === preset.id" @click="remove(preset.id)" /></div>
+      </div>
+    </div>
+
+    <div class="form-card">
+      <div class="flex items-center gap-3">
+        <h2 class="font-display text-lg">{{ editingId ? `Edit ${form.label || 'preset'}` : 'Add Quick Start preset' }}</h2>
+        <UButton v-if="editingId" class="ml-auto" size="xs" variant="ghost" color="neutral" @click="reset">Cancel</UButton>
+      </div>
+      <UFormField label="Preset name" class="mt-4"><UInput v-model="form.label" placeholder="e.g. Chinese Tea Ceremony" class="w-full" /></UFormField>
+
+      <div class="mt-4">
+        <div class="flex items-center justify-between mb-2">
+          <label class="field-label mb-0">Timeline items</label>
+          <UButton size="xs" variant="soft" color="neutral" icon="i-heroicons-plus" @click="form.items.push({ time: '', title: '', description: '' })">Add item</UButton>
+        </div>
+        <div v-if="form.items.length === 0" class="empty-state">
+          <p class="text-white/40 text-sm">No items yet.</p>
+        </div>
+        <div v-else class="space-y-3">
+          <div v-for="(item, index) in form.items" :key="index" class="flow-row">
+            <UInput v-model="item.time" placeholder="4:00 PM" size="sm" class="w-28 shrink-0" />
+            <UInput v-model="item.title" placeholder="Akad Nikah" size="sm" class="flex-1 min-w-[120px]" />
+            <UInput v-model="item.description" placeholder="Short description (optional)" size="sm" class="flex-[2] min-w-[160px]" />
+            <UButton size="xs" variant="ghost" color="error" icon="i-heroicons-trash" @click="form.items.splice(index, 1)" />
+          </div>
+        </div>
+      </div>
+
+      <UButton class="mt-5" color="primary" :loading="saving" :disabled="!canSave" @click="save">{{ editingId ? 'Save preset' : 'Add preset' }}</UButton>
+    </div>
+
+    <details class="text-sm text-white/40">
+      <summary class="cursor-pointer hover:text-white/60">Built-in presets ({{ builtInDayFlowPresets.length }}, not editable here)</summary>
+      <div class="mt-3 flex flex-wrap gap-2">
+        <span v-for="p in builtInDayFlowPresets" :key="p.id" class="px-2.5 py-1 rounded-full bg-white/[0.03] text-xs">{{ p.label }}</span>
+      </div>
+    </details>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { defaultDayFlowSettings, type DayFlowSettings, type FlowPreset } from '~/composables/useThemes'
+
+const toast = useToast()
+const {
+  builtInDayFlowPresets, allDayFlowPresets, addDayFlowPreset, removeDayFlowPreset,
+  dayFlowSettings, saveDayFlowSettings
+} = useThemes()
+
+const customPresets = computed(() => allDayFlowPresets.value.filter((p) => !builtInDayFlowPresets.some((b) => b.id === p.id)))
+
+const empty = () => ({ label: '', items: [] as { time: string; title: string; description: string }[] })
+const form = ref(empty())
+const editingId = ref('')
+const saving = ref(false)
+const removing = ref('')
+const canSave = computed(() => form.value.label.trim().length > 0 && form.value.items.length > 0)
+
+function slugify(value: string) { return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') }
+
+function edit(preset: FlowPreset) {
+  editingId.value = preset.id
+  form.value = { label: preset.label, items: preset.items.map((i) => ({ ...i })) }
+}
+function reset() { editingId.value = ''; form.value = empty() }
+
+async function save() {
+  if (!canSave.value) return
+  saving.value = true
+  try {
+    const preset: FlowPreset = {
+      id: editingId.value || `flow-${slugify(form.value.label) || Date.now()}`,
+      label: form.value.label.trim(),
+      items: form.value.items.map((i) => ({ time: i.time.trim(), title: i.title.trim(), description: i.description.trim() }))
+    }
+    await addDayFlowPreset(preset)
+    toast.add({ title: 'Day Flow preset saved', color: 'success' })
+    reset()
+  } catch (error) {
+    console.error(error)
+    toast.add({ title: 'Could not save preset', color: 'error' })
+  } finally {
+    saving.value = false
+  }
+}
+
+async function remove(id: string) {
+  removing.value = id
+  try {
+    await removeDayFlowPreset(id)
+    if (editingId.value === id) reset()
+    toast.add({ title: 'Preset removed', color: 'success' })
+  } catch (error) {
+    console.error(error)
+    toast.add({ title: 'Could not remove preset', color: 'error' })
+  } finally {
+    removing.value = ''
+  }
+}
+
+// --- Page labels ---
+const labelsForm = ref<DayFlowSettings>(structuredClone(toRaw(dayFlowSettings.value)))
+watch(dayFlowSettings, (v) => { labelsForm.value = structuredClone(toRaw(v)) }, { once: true })
+const savingLabels = ref(false)
+async function saveLabels() {
+  savingLabels.value = true
+  try {
+    await saveDayFlowSettings(structuredClone(toRaw(labelsForm.value)))
+    toast.add({ title: 'Day Flow page labels saved', color: 'success' })
+  } catch (error) {
+    console.error(error)
+    toast.add({ title: 'Could not save page labels', color: 'error' })
+  } finally {
+    savingLabels.value = false
+  }
+}
+void defaultDayFlowSettings
+</script>
+
+<style scoped>
+.form-card,.catalog-row { border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); border-radius:1rem; padding:1.25rem; }
+.catalog-row { display:flex; align-items:center; gap: 1rem; }
+.field-label { display:block; font-size:.7rem; text-transform:uppercase; letter-spacing:.08em; font-weight:600; color:rgba(255,255,255,.4); }
+.flow-row { display:flex; align-items:center; gap:.5rem; flex-wrap:wrap; }
+.empty-state { padding: 1.5rem 1rem; border-radius: .85rem; border: 1px dashed rgba(255,255,255,.12); text-align:center; }
+</style>

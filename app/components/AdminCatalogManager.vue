@@ -310,23 +310,107 @@
           </div>
         </div>
       </div>
+
+      <!-- DESIGN OPTIONS: ornaments, falling-particle styles, and cover/inner
+           top icons - same "toggle, don't author" pattern as Opening Styles
+           above, just without the phone preview (these render inline inside
+           the couple's own card layout rather than as a full-screen intro). -->
+      <div v-if="section === 'design-options'" class="space-y-8 animate-fade-up">
+        <UAlert
+          icon="i-heroicons-information-circle"
+          color="info"
+          variant="soft"
+          title="These can be turned on/off, not authored"
+          description="Each option is real CSS/markup in the codebase, so this can't invent a brand new one - but you control exactly which of these every couple is allowed to pick from in their own Design Studio."
+        />
+
+        <div>
+          <h3 class="section-heading">Ornament styles</h3>
+          <div class="space-y-2">
+            <div v-for="opt in ornamentStyleCatalog" :key="opt.value" class="catalog-card flex items-center justify-between">
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="p-2 rounded-lg shrink-0" :class="isOrnamentEnabled(opt.value) ? 'bg-gold-400/10' : 'bg-white/5'">
+                  <UIcon :name="opt.icon" class="w-4 h-4" :style="{ color: isOrnamentEnabled(opt.value) ? '#e3b04a' : 'rgba(255,255,255,0.35)' }" />
+                </div>
+                <span class="font-medium truncate" :class="isOrnamentEnabled(opt.value) ? 'text-white' : 'text-white/40'">{{ opt.label }}</span>
+              </div>
+              <USwitch :model-value="isOrnamentEnabled(opt.value)" :loading="togglingOrnament === opt.value" @update:model-value="(v: boolean) => toggleOrnament(opt.value, v)" />
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="section-heading">Falling particle styles</h3>
+          <div class="space-y-2">
+            <div v-for="opt in petalStyleCatalog" :key="opt.value" class="catalog-card flex items-center justify-between">
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="p-2 rounded-lg shrink-0" :class="isPetalEnabled(opt.value) ? 'bg-gold-400/10' : 'bg-white/5'">
+                  <UIcon :name="opt.icon" class="w-4 h-4" :style="{ color: isPetalEnabled(opt.value) ? '#e3b04a' : 'rgba(255,255,255,0.35)' }" />
+                </div>
+                <span class="font-medium truncate" :class="isPetalEnabled(opt.value) ? 'text-white' : 'text-white/40'">{{ opt.label }}</span>
+              </div>
+              <USwitch :model-value="isPetalEnabled(opt.value)" :loading="togglingPetal === opt.value" @update:model-value="(v: boolean) => togglePetal(opt.value, v)" />
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="section-heading">Cover &amp; Inner Card top icons</h3>
+          <div class="space-y-2">
+            <div v-for="opt in topIconCatalog" :key="opt.value" class="catalog-card flex items-center justify-between">
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="p-2 rounded-lg shrink-0" :class="isTopIconEnabled(opt.value) ? 'bg-gold-400/10' : 'bg-white/5'">
+                  <UIcon :name="opt.icon" class="w-4 h-4" :style="{ color: isTopIconEnabled(opt.value) ? '#e3b04a' : 'rgba(255,255,255,0.35)' }" />
+                </div>
+                <span class="font-medium truncate" :class="isTopIconEnabled(opt.value) ? 'text-white' : 'text-white/40'">{{ opt.label }}</span>
+              </div>
+              <USwitch :model-value="isTopIconEnabled(opt.value)" :loading="togglingTopIcon === opt.value" @update:model-value="(v: boolean) => toggleTopIcon(opt.value, v)" />
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </template>
-  
+
   <script setup lang="ts">
   import type { Theme, FontOption, TextPreset } from '~/composables/useThemes'
   import type { WeddingContent } from '~/composables/useWeddingTypes'
   
-  const props = defineProps<{ section: 'themes' | 'fonts' | 'presets' | 'opening-styles' }>()
-  
+  const props = defineProps<{ section: 'themes' | 'fonts' | 'presets' | 'opening-styles' | 'design-options' }>()
+
   const toast = useToast()
   const {
     themes, fontOptions, builtInTextPresets,
     openingStyleCatalog, disabledOpeningStyles,
+    ornamentStyleCatalog, petalStyleCatalog, topIconCatalog,
+    disabledOrnamentStyles, disabledPetalStyles, disabledTopIcons,
+    setOrnamentStyleEnabled, setPetalStyleEnabled, setTopIconEnabled,
     allThemes, allFontOptions, allTextPresets,
     addCustomTheme, removeCustomTheme, addCustomFont, removeCustomFont, addTextPreset, removeTextPreset,
     setOpeningStyleEnabled, themeStyleVars
   } = useThemes()
+
+  // --- Design Options (ornaments / petals / top icons) ---
+  const togglingOrnament = ref('')
+  function isOrnamentEnabled(value: string) { return !disabledOrnamentStyles.value.includes(value) }
+  async function toggleOrnament(value: string, enabled: boolean) {
+    togglingOrnament.value = value
+    try { await setOrnamentStyleEnabled(value, enabled) } catch (error) { console.error(error); toast.add({ title: 'Could not update that ornament style', color: 'error' }) } finally { togglingOrnament.value = '' }
+  }
+
+  const togglingPetal = ref('')
+  function isPetalEnabled(value: string) { return !disabledPetalStyles.value.includes(value) }
+  async function togglePetal(value: string, enabled: boolean) {
+    togglingPetal.value = value
+    try { await setPetalStyleEnabled(value, enabled) } catch (error) { console.error(error); toast.add({ title: 'Could not update that petal style', color: 'error' }) } finally { togglingPetal.value = '' }
+  }
+
+  const togglingTopIcon = ref('')
+  function isTopIconEnabled(value: string) { return !disabledTopIcons.value.includes(value) }
+  async function toggleTopIcon(value: string, enabled: boolean) {
+    togglingTopIcon.value = value
+    try { await setTopIconEnabled(value, enabled) } catch (error) { console.error(error); toast.add({ title: 'Could not update that icon', color: 'error' }) } finally { togglingTopIcon.value = '' }
+  }
   
   const removingId = ref('')
   
@@ -637,6 +721,15 @@
   </script>
   
   <style scoped>
+  .section-heading {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+    color: rgba(227, 176, 74, 0.7);
+    margin-bottom: 0.75rem;
+  }
+
   .catalog-card {
     border-radius: 1rem;
     padding: 1rem 1.1rem;
