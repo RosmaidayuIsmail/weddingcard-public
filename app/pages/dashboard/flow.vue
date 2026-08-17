@@ -177,7 +177,12 @@ import type { FlowItem } from '~/composables/useWeddingTypes'
 
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
-const { wedding, loading, saving, updateFlow } = useMyWedding()
+// overrideWeddingId is only ever set when this exact page component is
+// reused inside /admin/wedding/[id]/flow.vue, so a superadmin edits one
+// specific wedding instead of "whichever wedding the signed-in account
+// owns". Couples hitting this route directly never pass it.
+const props = defineProps<{ overrideWeddingId?: string | null }>()
+const { wedding, loading, saving, updateFlow } = useMyWedding(toRef(props, 'overrideWeddingId'))
 const { themeStyleVars, allDayFlowPresets, dayFlowSettings } = useThemes()
 const toast = useToast()
 

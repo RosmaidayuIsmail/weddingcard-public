@@ -897,7 +897,13 @@ import { onClickOutside, useElementBounding, useMediaQuery } from '@vueuse/core'
 
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
-const { wedding, loading, saving, updateContent, updateTheme } = useMyWedding()
+// overrideWeddingId is only ever set when this exact page component is
+// reused inside /admin/wedding/[id]/editor.vue (see that file) so a
+// superadmin edits one specific wedding instead of "whichever wedding the
+// signed-in account owns". Couples hitting this route directly never pass
+// it, so useMyWedding() falls back to its normal own-wedding lookup.
+const props = defineProps<{ overrideWeddingId?: string | null }>()
+const { wedding, loading, saving, updateContent, updateTheme } = useMyWedding(toRef(props, 'overrideWeddingId'))
 const { isConfigured: cloudinaryConfigured, uploadImage } = useCloudinary()
 const { removeBackground, processing: bgRemoving } = useBackgroundRemoval()
 const { getTheme, allFontOptions, enabledOrnamentStyles, enabledPetalStyles, enabledTopIcons } = useThemes()

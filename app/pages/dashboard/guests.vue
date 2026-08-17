@@ -173,7 +173,12 @@ import type { GuestDoc } from '~/composables/useWeddingTypes'
 
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
-const { wedding, loading: weddingLoading } = useMyWedding()
+// overrideWeddingId is only ever set when this exact page component is
+// reused inside /admin/wedding/[id]/guests.vue, so a superadmin edits one
+// specific wedding instead of "whichever wedding the signed-in account
+// owns". Couples hitting this route directly never pass it.
+const props = defineProps<{ overrideWeddingId?: string | null }>()
+const { wedding, loading: weddingLoading } = useMyWedding(toRef(props, 'overrideWeddingId'))
 const {
   guests,
   loading,

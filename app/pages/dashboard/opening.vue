@@ -187,7 +187,12 @@ import type { TextPreset } from '~/composables/useThemes'
 
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
-const { wedding, loading, saving, updateContent } = useMyWedding()
+// overrideWeddingId is only ever set when this exact page component is
+// reused inside /admin/wedding/[id]/opening.vue, so a superadmin edits one
+// specific wedding instead of "whichever wedding the signed-in account
+// owns". Couples hitting this route directly never pass it.
+const props = defineProps<{ overrideWeddingId?: string | null }>()
+const { wedding, loading, saving, updateContent } = useMyWedding(toRef(props, 'overrideWeddingId'))
 const { isConfigured: cloudinaryConfigured, uploadImage } = useCloudinary()
 const { themeStyleVars, allFontOptions, allTextPresets, enabledOpeningStyles: openingStyles } = useThemes()
 
