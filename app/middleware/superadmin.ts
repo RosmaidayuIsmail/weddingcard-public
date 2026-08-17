@@ -12,9 +12,10 @@ export default defineNuxtRouteMiddleware(async (to) => {
     return navigateTo('/dashboard')
   }
 
-  // Admin is now platform-level only. Do not expose the legacy per-wedding
-  // admin routes, even to a superadmin; all supported controls live at /admin.
-  if (to.path.startsWith('/admin/wedding/')) {
-    return navigateTo('/admin')
-  }
+  // /admin/wedding/[id]/* is how a superadmin opens and edits one specific
+  // wedding - their own included, if their account also owns one. The
+  // couple-facing /dashboard is intentionally off-limits to superadmin
+  // accounts (see middleware/auth.ts), so this is the only in-app way for
+  // a superadmin to manage a wedding's own content. Reachable via the
+  // "Manage" button on each row in Weddings & Sync (AdminWeddingsList.vue).
 })

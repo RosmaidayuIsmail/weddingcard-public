@@ -71,8 +71,12 @@
             <p class="text-xs text-white/50">/w/{{ w.slug }}</p>
           </div>
           <div class="flex items-center gap-2">
+            <UBadge v-if="w.ownerUid === currentUser?.uid" color="warning" variant="subtle">Yours</UBadge>
             <UBadge :color="w.status === 'published' ? 'success' : 'neutral'" variant="subtle">{{ w.status }}</UBadge>
             <UBadge :color="w.plan === 'premium' ? 'primary' : 'neutral'" variant="subtle">{{ w.plan }}</UBadge>
+            <UButton size="xs" variant="soft" color="primary" icon="i-heroicons-pencil-square" :to="`/admin/wedding/${w.id}`">
+              Manage
+            </UButton>
             <UButton size="xs" variant="soft" color="neutral" icon="i-heroicons-arrow-top-right-on-square" :to="`/w/${w.slug}`" target="_blank" external>
               View
             </UButton>
@@ -89,6 +93,7 @@
   const { db, isConfigured } = useFirebase()
   const toast = useToast()
   const { previewMissingCount, applyPlatformDefaultsToExistingWeddings } = useAdminMigrations()
+  const { currentUser } = useAuthState()
 
   const weddings = ref<WeddingDoc[]>([])
   const loading = ref(true)
