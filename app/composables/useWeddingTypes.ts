@@ -101,6 +101,9 @@ export interface WeddingContent {
   rsvpAttendNo: string
   rsvpGuestLabel: string
   rsvpSeatingLabel: string
+  /** Simple "Yes"/"No" toggle labels for the special-seating question */
+  rsvpSeatingYesLabel: string
+  rsvpSeatingNoLabel: string
   rsvpDietaryLabel: string
   rsvpWishesLabel: string
   /** Additional RSVP text - all translatable so a Malay (or any language) card can be fully localized */
@@ -280,6 +283,8 @@ export function createDefaultContent(brideName = '', groomName = ''): WeddingCon
     rsvpAttendNo: 'Regretfully Decline',
     rsvpGuestLabel: 'Number of guests attending',
     rsvpSeatingLabel: 'Do you require special seating? (e.g., wheelchair access)',
+    rsvpSeatingYesLabel: 'Yes',
+    rsvpSeatingNoLabel: 'No',
     rsvpDietaryLabel: 'Dietary restrictions (if any)',
     rsvpWishesLabel: 'Wishes & Blessings',
     rsvpNameLabel: 'Name(s)',

@@ -20,10 +20,16 @@
     </div>
   </div>
 
-  <section v-else class="min-h-screen theme-surface text-white flex items-center justify-center px-4 py-12 relative overflow-x-hidden bg-[#04101f]" :style="styleVars">
-    <!-- FIXED: Added Missing Cover Photo and Ornaments to Live RSVP Page -->
-    <div class="absolute inset-0 z-0 bg-gradient-to-b" :style="{ background: `linear-gradient(160deg, var(--theme-bg-from), var(--theme-bg-via), var(--theme-bg-to))` }"></div>
-    
+  <section v-else class="min-h-screen theme-surface text-white flex items-center justify-center px-4 py-12 relative overflow-x-hidden" :style="styleVars">
+    <!-- The .theme-surface class (main.css) paints the gradient directly on
+         this section, which grows to fit all content (step form, then the
+         much-taller Thank You + Wishes Wall screen). An absolutely-positioned
+         overlay div was used here before, sized via inset:0 to the section's
+         computed height - on some mobile browsers that computed height can
+         momentarily desync from the real scrollable content height (e.g. as
+         the address bar collapses/expands), which briefly revealed a plain
+         dark background below the fold. Painting the gradient straight on
+         the growing section itself removes that failure mode entirely. -->
     <div v-if="wedding.content.coverPhotoUrl" class="absolute inset-0 z-0 opacity-40 transition-opacity duration-1000 animate-in fade-in pointer-events-none">
       <img :src="wedding.content.coverPhotoUrl" alt="Background" class="w-full h-full object-cover" />
       <div class="absolute inset-0" :style="{ background: `linear-gradient(to bottom, transparent, var(--theme-bg-to))` }"></div>
@@ -130,10 +136,10 @@
                         <p class="text-sm text-white/80 mb-3 font-medium">{{ wedding.content.rsvpSeatingLabel || 'Do you require special seating? (e.g., wheelchair access)' }}</p>
                         <div class="grid grid-cols-2 gap-4">
                           <label class="option-card-small" :class="{ 'option-card-active': state.specialSeating === true }">
-                            <input v-model="state.specialSeating" type="radio" :value="true" class="sr-only"> Yes
+                            <input v-model="state.specialSeating" type="radio" :value="true" class="sr-only"> {{ wedding.content.rsvpSeatingYesLabel || 'Yes' }}
                           </label>
                           <label class="option-card-small" :class="{ 'option-card-active': state.specialSeating === false }">
-                            <input v-model="state.specialSeating" type="radio" :value="false" class="sr-only"> No
+                            <input v-model="state.specialSeating" type="radio" :value="false" class="sr-only"> {{ wedding.content.rsvpSeatingNoLabel || 'No' }}
                           </label>
                         </div>
                         <p v-if="errors.specialSeating" class="mt-2 text-sm text-red-400 animate-in fade-in">{{ errors.specialSeating }}</p>
@@ -175,8 +181,8 @@
             <UButton v-if="currentStep > 0" variant="ghost" color="neutral" icon="i-heroicons-arrow-left" class="hover:bg-white/10 rounded-full px-4" @click="goBack">{{ wedding.content.rsvpBackButton || 'Back' }}</UButton>
             <div v-else></div>
             
-            <UButton v-if="currentStep < steps.length - 1" color="primary" trailing-icon="i-heroicons-arrow-right" class="rounded-full px-8 shadow-md" size="lg" @click="goNext">{{ wedding.content.rsvpContinueButton || 'Continue' }}</UButton>
-            <UButton v-else color="primary" size="lg" icon="i-heroicons-paper-airplane" :loading="submitting" class="rounded-full px-8 shadow-[0_0_20px_-5px_var(--theme-accent)] animate-glow" @click="submitForm">{{ wedding.content.rsvpConfirmButton || 'Confirm RSVP' }}</UButton>
+            <UButton v-if="currentStep < steps.length - 1" trailing-icon="i-heroicons-arrow-right" class="rounded-full px-8 shadow-md accent-btn" size="lg" @click="goNext">{{ wedding.content.rsvpContinueButton || 'Continue' }}</UButton>
+            <UButton v-else size="lg" icon="i-heroicons-paper-airplane" :loading="submitting" class="rounded-full px-8 shadow-[0_0_20px_-5px_var(--theme-accent)] animate-glow accent-btn" @click="submitForm">{{ wedding.content.rsvpConfirmButton || 'Confirm RSVP' }}</UButton>
           </div>
         </template>
 
@@ -395,6 +401,21 @@ watch(
 </script>
 
 <style scoped>
+/* The Continue / Confirm RSVP buttons previously used UButton's
+   color="primary", which is a fixed brand color (gold, from
+   app.config.ts) - so a couple using any theme other than the gold one
+   (e.g. Lavender Dusk) saw a mismatched gold/orange button instead of
+   their own theme's accent color. Forcing the theme accent here via
+   !important makes these buttons match the couple's chosen theme exactly,
+   same as every other accent-colored element on this page. */
+.accent-btn {
+  background-color: var(--theme-accent, #d4a017) !important;
+  color: var(--theme-on-accent, #1f1400) !important;
+}
+.accent-btn:hover {
+  filter: brightness(1.08);
+}
+
 .step-dot {
   width: 2.25rem;
   height: 2.25rem;

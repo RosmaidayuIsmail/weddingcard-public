@@ -127,6 +127,15 @@
               </UFormField>
 
               <div class="grid grid-cols-2 gap-4">
+                <UFormField label="Seating 'Yes' Option">
+                  <UInput v-model="form.rsvpSeatingYesLabel" placeholder="Yes" class="w-full" />
+                </UFormField>
+                <UFormField label="Seating 'No' Option">
+                  <UInput v-model="form.rsvpSeatingNoLabel" placeholder="No" class="w-full" />
+                </UFormField>
+              </div>
+
+              <div class="grid grid-cols-2 gap-4">
                 <UFormField label="Dietary Restrictions Label">
                   <UInput v-model="form.rsvpDietaryLabel" placeholder="e.g. Dietary restrictions (if any)" class="w-full" />
                 </UFormField>
@@ -258,18 +267,25 @@
           <div class="phone-bezel w-full max-w-[360px] shadow-2xl shrink-0">
             <div class="phone-notch z-50"></div>
             <!-- Scaled RSVP Mockup inside the phone - mirrors the real app/pages/w/[slug]/rsvp.vue markup and classes -->
-            <div class="phone-screen hide-scrollbar relative bg-[#04101f] text-white overflow-y-auto" :style="styleVars">
-               <div class="absolute inset-0 z-0 bg-gradient-to-b" :style="{ background: `linear-gradient(160deg, var(--theme-bg-from), var(--theme-bg-via), var(--theme-bg-to))` }"></div>
+            <div class="phone-screen hide-scrollbar relative text-white overflow-y-auto">
+               <!-- The background lives on this inner wrapper (auto height,
+                    grows with content) instead of an absolutely-positioned
+                    overlay pinned to the phone-bezel's fixed 720px box - an
+                    overlay there would only cover the first 720px and leave
+                    a plain gap once the Thank You + Wishes Wall content
+                    makes the scrollable area taller than that. Using the
+                    same .theme-surface class as the real live page keeps
+                    the two visually identical too. -->
+               <div class="relative min-h-full theme-surface" :style="styleVars">
+                 <div v-if="form.coverPhotoUrl" class="absolute inset-0 z-0 opacity-40 pointer-events-none">
+                   <img :src="form.coverPhotoUrl" class="w-full h-full object-cover" />
+                   <div class="absolute inset-0" :style="{ background: `linear-gradient(to bottom, transparent, var(--theme-bg-to))` }"></div>
+                 </div>
 
-               <div v-if="form.coverPhotoUrl" class="absolute inset-0 z-0 opacity-40 pointer-events-none">
-                 <img :src="form.coverPhotoUrl" class="w-full h-full object-cover" />
-                 <div class="absolute inset-0" :style="{ background: `linear-gradient(to bottom, transparent, var(--theme-bg-to))` }"></div>
-               </div>
+                 <PetalsBackground v-if="form.enablePetals !== false" :style-name="form.petalStyle" class="z-0 pointer-events-none" :count="12" />
+                 <CardOrnament v-if="form.ornamentStyle" :style="form.ornamentStyle" color="var(--theme-accent)" class="z-0 pointer-events-none" />
 
-               <PetalsBackground v-if="form.enablePetals !== false" :style-name="form.petalStyle" class="z-0 pointer-events-none" :count="12" />
-               <CardOrnament v-if="form.ornamentStyle" :style="form.ornamentStyle" color="var(--theme-accent)" class="z-0 pointer-events-none" />
-
-               <div class="relative z-10 px-4 py-10 flex flex-col min-h-full">
+                 <div class="relative z-10 px-4 py-10 flex flex-col">
 
                   <div class="flex justify-center mb-4">
                     <span class="preview-back-btn">
@@ -336,8 +352,8 @@
                           <div>
                             <p class="text-xs text-white/80 mb-2 font-medium">{{ form.rsvpSeatingLabel || 'Do you require special seating? (e.g., wheelchair access)' }}</p>
                             <div class="grid grid-cols-2 gap-2">
-                              <button type="button" class="preview-option-card-small" :class="{ 'preview-option-card-active': previewState.specialSeating === true }" @click="previewState.specialSeating = true">Yes</button>
-                              <button type="button" class="preview-option-card-small" :class="{ 'preview-option-card-active': previewState.specialSeating === false }" @click="previewState.specialSeating = false">No</button>
+                              <button type="button" class="preview-option-card-small" :class="{ 'preview-option-card-active': previewState.specialSeating === true }" @click="previewState.specialSeating = true">{{ form.rsvpSeatingYesLabel || 'Yes' }}</button>
+                              <button type="button" class="preview-option-card-small" :class="{ 'preview-option-card-active': previewState.specialSeating === false }" @click="previewState.specialSeating = false">{{ form.rsvpSeatingNoLabel || 'No' }}</button>
                             </div>
                           </div>
                           <UFormField :label="form.rsvpDietaryLabel || 'Dietary restrictions (if any)'">
@@ -402,6 +418,7 @@
                       </div>
                     </template>
                   </div>
+                 </div>
                </div>
             </div>
           </div>
@@ -515,6 +532,8 @@ watch(
     if (!form.rsvpAttendNo) form.rsvpAttendNo = 'Regretfully Decline'
     if (!form.rsvpGuestLabel) form.rsvpGuestLabel = 'Number of guests attending'
     if (!form.rsvpSeatingLabel) form.rsvpSeatingLabel = 'Do you require special seating? (e.g., wheelchair access)'
+    if (!form.rsvpSeatingYesLabel) form.rsvpSeatingYesLabel = 'Yes'
+    if (!form.rsvpSeatingNoLabel) form.rsvpSeatingNoLabel = 'No'
     if (!form.rsvpDietaryLabel) form.rsvpDietaryLabel = 'Dietary restrictions (if any)'
     if (!form.rsvpWishesLabel) form.rsvpWishesLabel = 'Wishes & Blessings'
     if (!form.rsvpReturnButton) form.rsvpReturnButton = 'Return to Invitation'
