@@ -125,6 +125,20 @@ export interface WeddingContent {
   rsvpStepAboutYou: string
   rsvpStepDetails: string
   rsvpStepWishes: string
+  /** "Return to Invitation" button shown at the top of the RSVP page */
+  rsvpReturnButton: string
+  /** Sympathy message shown when a guest declines - supports the {name} token */
+  rsvpDeclineMessage: string
+  /** Thank-you screen title after a successful submission - supports the {name} token */
+  rsvpThankYouTitle: string
+  /** Thank-you screen intro sentence, shown before the attending/not-attending success text */
+  rsvpThankYouIntro: string
+  /** "Submit another response" button on the thank-you screen */
+  rsvpSubmitAnotherButton: string
+  /** Heading shown above the Wishes & Blessings wall on the thank-you screen */
+  rsvpWishesWallTitle: string
+  /** Message shown on the Wishes & Blessings wall when no one has left a wish yet */
+  rsvpWishesEmptyText: string
   innerTopIcon: string
   /** Percentage scale for the icon, 50-200, default 100 */
   iconSize: number
@@ -289,6 +303,13 @@ export function createDefaultContent(brideName = '', groomName = ''): WeddingCon
     rsvpStepAboutYou: 'About You',
     rsvpStepDetails: 'Details',
     rsvpStepWishes: 'Wishes',
+    rsvpReturnButton: 'Return to Invitation',
+    rsvpDeclineMessage: "We'll miss you, {name}! Feel free to leave us a wish on the next step.",
+    rsvpThankYouTitle: 'Thank you, {name}!',
+    rsvpThankYouIntro: 'Your RSVP has been securely received.',
+    rsvpSubmitAnotherButton: 'Submit another response',
+    rsvpWishesWallTitle: 'Wishes & Blessings',
+    rsvpWishesEmptyText: 'Be the first to leave a wish 💛',
     innerTopIcon: 'none',
     iconSize: 100,
     detailsTopIcon: 'none',
@@ -317,6 +338,14 @@ export function autoMonogramText(brideName: string, groomName: string): string {
   if (!b) return g
   if (!g) return b
   return `${b} & ${g}`
+}
+
+/**
+ * Fills the {name} token used in RSVP guest-facing messages (the decline
+ * sympathy line and the thank-you title) with the guest's own name.
+ */
+export function fillNameToken(template: string, name: string): string {
+  return (template || '').replace(/\{name\}/g, name || 'friend')
 }
 
 export function buildShareMessage(

@@ -1,7 +1,7 @@
 <template>
   <div>
     <h3 class="text-center font-display text-xl text-gold-100 mb-4">
-      Wishes &amp; Blessings
+      {{ title }}
     </h3>
 
     <div v-if="wishes.length" class="grid gap-3 sm:grid-cols-2">
@@ -16,13 +16,17 @@
     </div>
 
     <p v-else class="text-center text-sm text-white/60 italic">
-      Be the first to leave a wish 💛
+      {{ emptyText }}
     </p>
   </div>
 </template>
 
 <script setup lang="ts">
-const props = withDefaults(defineProps<{ weddingId: string; maxCount?: number }>(), { maxCount: 9 })
+const props = withDefaults(defineProps<{ weddingId: string; maxCount?: number; title?: string; emptyText?: string }>(), {
+  maxCount: 9,
+  title: 'Wishes & Blessings',
+  emptyText: 'Be the first to leave a wish 💛'
+})
 const { wishes } = useWishes(props.weddingId, props.maxCount)
 </script>
 

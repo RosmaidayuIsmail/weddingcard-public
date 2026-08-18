@@ -65,13 +65,17 @@
               <UFormField label="Deadline Prefix">
                 <UInput v-model="form.rsvpDeadlineText" placeholder="e.g. Kindly respond by" class="w-full" />
               </UFormField>
-              
+
+              <UFormField label="'Return to Invitation' Button">
+                <UInput v-model="form.rsvpReturnButton" placeholder="e.g. Return to Invitation" class="w-full" />
+              </UFormField>
+
               <div class="h-px bg-white/10 my-4 w-full"></div>
 
               <UFormField label="Attendance Question">
                 <UInput v-model="form.rsvpAttendQuestion" placeholder="e.g. Will you be attending?" class="w-full" />
               </UFormField>
-              
+
               <div class="grid grid-cols-2 gap-4">
                 <UFormField label="'Yes' Option Label">
                   <UInput v-model="form.rsvpAttendYes" placeholder="e.g. Joyfully Accept" class="w-full" />
@@ -80,6 +84,10 @@
                   <UInput v-model="form.rsvpAttendNo" placeholder="e.g. Regretfully Decline" class="w-full" />
                 </UFormField>
               </div>
+
+              <UFormField label="If Guest Declines - Sympathy Message" hint="Use {name} where the guest's own name should appear">
+                <UTextarea v-model="form.rsvpDeclineMessage" :rows="2" placeholder="We'll miss you, {name}! Feel free to leave us a wish on the next step." class="w-full" />
+              </UFormField>
 
               <div class="h-px bg-white/10 my-4 w-full"></div>
 
@@ -139,6 +147,15 @@
                 <UInput v-model="form.rsvpWishesPlaceholder" placeholder="e.g. May your marriage be blessed..." class="w-full" />
               </UFormField>
 
+              <div class="grid grid-cols-2 gap-4">
+                <UFormField label="Wishes Wall Heading" hint="Shown above the wall of wishes on the thank-you page">
+                  <UInput v-model="form.rsvpWishesWallTitle" placeholder="e.g. Wishes & Blessings" class="w-full" />
+                </UFormField>
+                <UFormField label="Wishes Wall Empty Text">
+                  <UInput v-model="form.rsvpWishesEmptyText" placeholder="e.g. Be the first to leave a wish" class="w-full" />
+                </UFormField>
+              </div>
+
               <div class="h-px bg-white/10 my-4 w-full"></div>
 
               <h3 class="text-sm font-semibold text-white mb-1">Summary Screen</h3>
@@ -195,13 +212,26 @@
               <UFormField label="If Not Attending">
                 <UInput v-model="form.rsvpSuccessNo" placeholder="You will be dearly missed." class="w-full" />
               </UFormField>
+
+              <div class="h-px bg-white/10 my-4 w-full"></div>
+
+              <h3 class="text-sm font-semibold text-white mb-1">Thank You Screen</h3>
+              <UFormField label="Thank You Title" hint="Use {name} where the guest's own name should appear">
+                <UInput v-model="form.rsvpThankYouTitle" placeholder="e.g. Thank you, {name}!" class="w-full" />
+              </UFormField>
+              <UFormField label="Thank You Intro Sentence">
+                <UInput v-model="form.rsvpThankYouIntro" placeholder="e.g. Your RSVP has been securely received." class="w-full" />
+              </UFormField>
+              <UFormField label="'Submit Another Response' Button">
+                <UInput v-model="form.rsvpSubmitAnotherButton" placeholder="e.g. Submit another response" class="w-full" />
+              </UFormField>
             </div>
           </div>
         </div>
 
         <!-- Right Column: Live Mobile Preview of the RSVP -->
         <div class="w-full lg:w-[360px] xl:w-[400px] shrink-0 flex flex-col items-center pb-8 lg:pb-0 overflow-y-auto hide-scrollbar order-1 lg:order-2">
-          <div class="flex items-center justify-between w-full mb-4 px-2">
+          <div class="flex items-center justify-between w-full mb-3 px-2">
             <p class="text-xs font-semibold uppercase tracking-widest text-gold-200/70 flex items-center gap-2">
               <UIcon name="i-heroicons-device-phone-mobile" class="w-4 h-4" /> Live Preview
             </p>
@@ -209,25 +239,46 @@
               Open Live <UIcon name="i-heroicons-arrow-top-right-on-square" class="ml-1 w-3 h-3"/>
             </UButton>
           </div>
-          
+
+          <!-- 4-page toggle, same pattern as Design Studio's Cover/Details switch -->
+          <div class="flex flex-wrap items-center justify-center gap-1.5 w-full mb-4 px-2">
+            <button
+              v-for="(tab, index) in previewTabs"
+              :key="tab.key"
+              type="button"
+              class="preview-tab"
+              :class="{ 'preview-tab-active': previewStep === index }"
+              @click="goToPreviewStep(index)"
+            >
+              {{ tab.label }}
+            </button>
+          </div>
+
           <!-- Smartphone Mockup Wrapper -->
           <div class="phone-bezel w-full max-w-[360px] shadow-2xl shrink-0">
             <div class="phone-notch z-50"></div>
-            <!-- Scaled RSVP Mockup inside the phone -->
+            <!-- Scaled RSVP Mockup inside the phone - mirrors the real app/pages/w/[slug]/rsvp.vue markup and classes -->
             <div class="phone-screen hide-scrollbar relative bg-[#04101f] text-white overflow-y-auto" :style="styleVars">
                <div class="absolute inset-0 z-0 bg-gradient-to-b" :style="{ background: `linear-gradient(160deg, var(--theme-bg-from), var(--theme-bg-via), var(--theme-bg-to))` }"></div>
-               
-               <!-- FIXED: Added Missing Cover Photo and Ornaments to RSVP Preview -->
+
                <div v-if="form.coverPhotoUrl" class="absolute inset-0 z-0 opacity-40 pointer-events-none">
                  <img :src="form.coverPhotoUrl" class="w-full h-full object-cover" />
                  <div class="absolute inset-0" :style="{ background: `linear-gradient(to bottom, transparent, var(--theme-bg-to))` }"></div>
                </div>
+
+               <PetalsBackground v-if="form.enablePetals !== false" :style-name="form.petalStyle" class="z-0 pointer-events-none" :count="12" />
                <CardOrnament v-if="form.ornamentStyle" :style="form.ornamentStyle" color="var(--theme-accent)" class="z-0 pointer-events-none" />
 
-               <div class="relative z-10 px-4 py-12 flex flex-col min-h-full">
-                  
-                  <div class="text-center space-y-3 mb-6 mt-4">
-                    <!-- FIXED: Injected custom Google Font styling directly into the header -->
+               <div class="relative z-10 px-4 py-10 flex flex-col min-h-full">
+
+                  <div class="flex justify-center mb-4">
+                    <span class="preview-back-btn">
+                      <UIcon name="i-heroicons-arrow-left" class="w-3 h-3" />
+                      {{ form.rsvpReturnButton || 'Return to Invitation' }}
+                    </span>
+                  </div>
+
+                  <div class="text-center space-y-2 mb-6">
                     <h1 class="text-3xl font-bold tracking-wide drop-shadow-md" :style="{ color: 'var(--theme-ink)', fontFamily: 'var(--theme-heading-font)' }">
                       {{ form.rsvpTitle || 'RSVP' }}
                     </h1>
@@ -237,41 +288,119 @@
                     </p>
                   </div>
 
-                  <!-- Mock Form Card -->
-                  <div class="rounded-[1.5rem] border bg-ink-900/40 backdrop-blur-xl shadow-xl px-4 py-6" :style="{ borderColor: 'var(--theme-accent-soft)' }">
-                    <div class="space-y-6">
-                      <div>
-                        <p class="text-xs text-white/80 mb-2 font-medium">{{ form.rsvpAttendQuestion || 'Will you be attending?' }}</p>
-                        <div class="grid grid-cols-2 gap-2">
-                          <label class="p-3 rounded-lg border border-white/15 bg-white/5 text-center text-xs text-white/80">
-                            <UIcon name="i-heroicons-check-circle" class="w-4 h-4 mb-1" />
-                            <br/>{{ form.rsvpAttendYes || 'Joyfully Accept' }}
-                          </label>
-                          <label class="p-3 rounded-lg border border-white/15 bg-white/5 text-center text-xs text-white/80">
-                            <UIcon name="i-heroicons-x-circle" class="w-4 h-4 mb-1" />
-                            <br/>{{ form.rsvpAttendNo || 'Regretfully Decline' }}
-                          </label>
+                  <div class="rounded-[1.5rem] border bg-ink-900/40 backdrop-blur-xl shadow-xl px-4 py-6 flex-1" :style="{ borderColor: 'var(--theme-accent-soft)' }">
+
+                    <template v-if="previewStep < 3">
+                      <div class="flex items-center justify-center gap-2 mb-6">
+                        <template v-for="(label, index) in previewSteps" :key="label">
+                          <div class="flex items-center gap-1.5">
+                            <div class="preview-step-dot" :class="{ 'preview-step-dot-active': index <= previewStep }">
+                              <UIcon v-if="index < previewStep" name="i-heroicons-check" class="w-3 h-3" />
+                              <span v-else>{{ index + 1 }}</span>
+                            </div>
+                          </div>
+                          <div v-if="index < previewSteps.length - 1" class="w-4 h-px" :class="index < previewStep ? 'bg-gold-400/50' : 'bg-white/10'" />
+                        </template>
+                      </div>
+
+                      <!-- Step 1: About You -->
+                      <div v-if="previewStep === 0" class="space-y-5 animate-in fade-in duration-300">
+                        <UFormField :label="form.rsvpNameLabel || 'Name(s)'">
+                          <UInput v-model="previewState.name" :placeholder="form.rsvpNamePlaceholder || 'Type your full name'" size="sm" class="w-full" />
+                        </UFormField>
+                        <div>
+                          <p class="text-xs text-white/80 mb-2 font-medium">{{ form.rsvpAttendQuestion || 'Will you be attending?' }}</p>
+                          <div class="grid grid-cols-2 gap-2">
+                            <button type="button" class="preview-option-card" :class="{ 'preview-option-card-active': previewState.attending === 'Yes' }" @click="previewState.attending = 'Yes'">
+                              <UIcon name="i-heroicons-check-circle" class="w-4 h-4 mb-1" />
+                              <span>{{ form.rsvpAttendYes || 'Joyfully Accept' }}</span>
+                            </button>
+                            <button type="button" class="preview-option-card" :class="{ 'preview-option-card-active': previewState.attending === 'No' }" @click="previewState.attending = 'No'">
+                              <UIcon name="i-heroicons-x-circle" class="w-4 h-4 mb-1" />
+                              <span>{{ form.rsvpAttendNo || 'Regretfully Decline' }}</span>
+                            </button>
+                          </div>
                         </div>
                       </div>
 
-                      <div class="h-px bg-white/10"></div>
-
-                      <UFormField :label="form.rsvpGuestLabel || 'Number of guests attending'">
-                        <UInput placeholder="1" size="sm" class="w-20" />
-                      </UFormField>
-
-                      <div>
-                        <p class="text-xs text-white/80 mb-2 font-medium">{{ form.rsvpSeatingLabel || 'Do you require special seating?' }}</p>
-                        <div class="grid grid-cols-2 gap-2">
-                          <label class="p-2 rounded-lg border border-white/15 bg-white/5 text-center text-xs">Yes</label>
-                          <label class="p-2 rounded-lg border border-white/15 bg-white/5 text-center text-xs">No</label>
+                      <!-- Step 2: Details (or decline message) -->
+                      <div v-else-if="previewStep === 1" class="animate-in fade-in duration-300">
+                        <div v-if="previewState.attending === 'No'" class="flex flex-col items-center justify-center text-center space-y-3 py-8">
+                          <UIcon name="i-heroicons-envelope-open" class="w-8 h-8 text-white/30" />
+                          <p class="text-white/80 italic text-sm">{{ fillNameToken(form.rsvpDeclineMessage || "We'll miss you, {name}! Feel free to leave us a wish on the next step.", previewState.name) }}</p>
+                        </div>
+                        <div v-else class="space-y-5">
+                          <UFormField :label="form.rsvpGuestLabel || 'Number of guests attending'">
+                            <UInputNumber v-model="previewState.guestCount" :min="1" :max="10" size="sm" class="w-24" />
+                          </UFormField>
+                          <div>
+                            <p class="text-xs text-white/80 mb-2 font-medium">{{ form.rsvpSeatingLabel || 'Do you require special seating? (e.g., wheelchair access)' }}</p>
+                            <div class="grid grid-cols-2 gap-2">
+                              <button type="button" class="preview-option-card-small" :class="{ 'preview-option-card-active': previewState.specialSeating === true }" @click="previewState.specialSeating = true">Yes</button>
+                              <button type="button" class="preview-option-card-small" :class="{ 'preview-option-card-active': previewState.specialSeating === false }" @click="previewState.specialSeating = false">No</button>
+                            </div>
+                          </div>
+                          <UFormField :label="form.rsvpDietaryLabel || 'Dietary restrictions (if any)'">
+                            <UInput v-model="previewState.dietary" :placeholder="form.rsvpDietaryPlaceholder || 'e.g. Vegetarian, No Seafood'" size="sm" class="w-full" />
+                          </UFormField>
                         </div>
                       </div>
 
-                      <UFormField :label="form.rsvpDietaryLabel || 'Dietary restrictions (if any)'">
-                        <UInput placeholder="e.g. Vegetarian" size="sm" />
-                      </UFormField>
-                    </div>
+                      <!-- Step 3: Wishes & Summary -->
+                      <div v-else class="space-y-4 animate-in fade-in duration-300">
+                        <UFormField :label="form.rsvpWishesLabel || 'Wishes & Blessings'">
+                          <p class="italic text-[0.65rem] mb-1.5 opacity-70" :style="{ color: 'var(--theme-accent)' }">{{ form.rsvpWishesSubtitle || 'Write your well wishes for the couple' }}</p>
+                          <UTextarea v-model="previewState.doa" :placeholder="form.rsvpWishesPlaceholder || 'May your marriage be blessed...'" :rows="3" class="w-full text-xs" />
+                        </UFormField>
+                        <div class="rounded-lg border border-white/10 bg-white/5 p-3 text-[0.7rem] space-y-1.5">
+                          <h4 class="font-semibold text-white mb-1.5 border-b border-white/10 pb-1.5">{{ form.rsvpSummaryTitle || 'RSVP Summary' }}</h4>
+                          <div class="grid grid-cols-3 gap-1">
+                            <span class="text-white/50">{{ form.rsvpSummaryNameLabel || 'Name:' }}</span> <span class="col-span-2 font-medium">{{ previewState.name || 'Guest Name' }}</span>
+                            <span class="text-white/50">{{ form.rsvpSummaryStatusLabel || 'Status:' }}</span> <span class="col-span-2 font-medium" :class="previewState.attending === 'Yes' ? 'text-emerald-400' : 'text-red-400'">{{ previewState.attending === 'Yes' ? (form.rsvpAttendingText || 'Attending') : (form.rsvpNotAttendingText || 'Not Attending') }}</span>
+                            <template v-if="previewState.attending === 'Yes'">
+                              <span class="text-white/50">{{ form.rsvpSummaryGuestsLabel || 'Guests:' }}</span> <span class="col-span-2">{{ previewState.guestCount }}</span>
+                              <span class="text-white/50">{{ form.rsvpSummarySpecialLabel || 'Special:' }}</span> <span class="col-span-2">{{ previewState.specialSeating ? 'Yes' : 'No' }}</span>
+                            </template>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="flex items-center justify-between mt-6 pt-4 border-t border-white/10">
+                        <button v-if="previewStep > 0" type="button" class="preview-nav-btn" @click="goToPreviewStep(previewStep - 1)">
+                          <UIcon name="i-heroicons-arrow-left" class="w-3 h-3" /> {{ form.rsvpBackButton || 'Back' }}
+                        </button>
+                        <div v-else></div>
+                        <button type="button" class="preview-nav-btn-primary" @click="goToPreviewStep(previewStep + 1)">
+                          <template v-if="previewStep < 2">{{ form.rsvpContinueButton || 'Continue' }} <UIcon name="i-heroicons-arrow-right" class="w-3 h-3" /></template>
+                          <template v-else>{{ form.rsvpConfirmButton || 'Confirm RSVP' }} <UIcon name="i-heroicons-paper-airplane" class="w-3 h-3" /></template>
+                        </button>
+                      </div>
+                    </template>
+
+                    <!-- Thank You page -->
+                    <template v-else>
+                      <div class="text-center space-y-4 py-4 animate-in zoom-in duration-500">
+                        <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-white/5 border-2 mb-1" :style="{ borderColor: 'var(--theme-accent)' }">
+                          <UIcon name="i-heroicons-check" class="w-7 h-7" :style="{ color: 'var(--theme-accent)' }" />
+                        </div>
+                        <div>
+                          <h2 class="text-xl font-display mb-1.5 drop-shadow-md" :style="{ color: 'var(--theme-ink)' }">{{ fillNameToken(form.rsvpThankYouTitle || 'Thank you, {name}!', previewState.name) }}</h2>
+                          <p class="text-white/80 text-xs font-light leading-relaxed">
+                            {{ form.rsvpThankYouIntro || 'Your RSVP has been securely received.' }} {{ previewState.attending === 'Yes' ? (form.rsvpSuccessYes || 'We are absolutely thrilled to celebrate with you.') : (form.rsvpSuccessNo || 'You will be dearly missed.') }}
+                          </p>
+                        </div>
+                        <button type="button" class="preview-nav-btn mx-auto">{{ form.rsvpSubmitAnotherButton || 'Submit another response' }}</button>
+                      </div>
+
+                      <div class="mt-6 pt-6 border-t border-white/10">
+                        <WishesWall
+                          v-if="wedding"
+                          :wedding-id="wedding.id"
+                          :title="form.rsvpWishesWallTitle || 'Wishes & Blessings'"
+                          :empty-text="form.rsvpWishesEmptyText || 'Be the first to leave a wish 💛'"
+                        />
+                      </div>
+                    </template>
                   </div>
                </div>
             </div>
@@ -284,6 +413,7 @@
 </template>
 
 <script setup lang="ts">
+import confetti from 'canvas-confetti'
 import { createDefaultContent, type WeddingContent } from '~/composables/useWeddingTypes'
 import type { RsvpPreset } from '~/composables/useThemes'
 
@@ -323,6 +453,52 @@ function applyTranslation(preset: RsvpPreset) {
   toast.add({ title: `${preset.label} RSVP preset applied`, color: 'success' })
 }
 
+// --- Live Preview: a real, navigable 4-page mock of the guest-facing RSVP
+// flow (Step 1/2/3 + Thank You), mirroring app/pages/w/[slug]/rsvp.vue's
+// markup so every button and animation the editor form controls is visible
+// here, not just a single static card. previewState is a local sample
+// guest so the preview can be interacted with (choosing Yes/No, typing a
+// wish) without ever touching real guest data.
+const previewTabs = computed(() => [
+  { key: 'step1', label: form.rsvpStepAboutYou || 'About You' },
+  { key: 'step2', label: form.rsvpStepDetails || 'Details' },
+  { key: 'step3', label: form.rsvpStepWishes || 'Wishes' },
+  { key: 'thankyou', label: 'Thank You' }
+])
+const previewSteps = computed(() => [
+  form.rsvpStepAboutYou || 'About You',
+  form.rsvpStepDetails || 'Details',
+  form.rsvpStepWishes || 'Wishes'
+])
+const previewStep = ref(0)
+const previewState = reactive({
+  name: 'Alex Guest',
+  attending: 'Yes' as 'Yes' | 'No',
+  guestCount: 2,
+  specialSeating: false as boolean | null,
+  dietary: '',
+  doa: 'Wishing you both a lifetime of love and happiness!'
+})
+
+function previewConfetti() {
+  if (!import.meta.client) return
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+  const accentColor = (styleVars.value as Record<string, string>)['--theme-accent'] || '#d4a017'
+  confetti({
+    particleCount: 120,
+    spread: 90,
+    origin: { y: 0.5 },
+    colors: [accentColor, '#ffffff', '#f3ddaa'],
+    disableForReducedMotion: true
+  })
+}
+
+function goToPreviewStep(index: number) {
+  const clamped = Math.max(0, Math.min(3, index))
+  previewStep.value = clamped
+  if (clamped === 3) previewConfetti()
+}
+
 let initialized = false
 watch(
   wedding,
@@ -341,6 +517,13 @@ watch(
     if (!form.rsvpSeatingLabel) form.rsvpSeatingLabel = 'Do you require special seating? (e.g., wheelchair access)'
     if (!form.rsvpDietaryLabel) form.rsvpDietaryLabel = 'Dietary restrictions (if any)'
     if (!form.rsvpWishesLabel) form.rsvpWishesLabel = 'Wishes & Blessings'
+    if (!form.rsvpReturnButton) form.rsvpReturnButton = 'Return to Invitation'
+    if (!form.rsvpDeclineMessage) form.rsvpDeclineMessage = "We'll miss you, {name}! Feel free to leave us a wish on the next step."
+    if (!form.rsvpThankYouTitle) form.rsvpThankYouTitle = 'Thank you, {name}!'
+    if (!form.rsvpThankYouIntro) form.rsvpThankYouIntro = 'Your RSVP has been securely received.'
+    if (!form.rsvpSubmitAnotherButton) form.rsvpSubmitAnotherButton = 'Submit another response'
+    if (!form.rsvpWishesWallTitle) form.rsvpWishesWallTitle = 'Wishes & Blessings'
+    if (!form.rsvpWishesEmptyText) form.rsvpWishesEmptyText = 'Be the first to leave a wish 💛'
   },
   { immediate: true }
 )
@@ -401,7 +584,119 @@ useSeoMeta({ title: 'RSVP Editor — WeddingCard' })
 .custom-scrollbar::-webkit-scrollbar { width: 6px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: #374151; 
+  background-color: #374151;
   border-radius: 10px;
+}
+
+/* Live Preview: 4-page toggle (mirrors AdminLivePreview.vue's .preview-tab
+   Cover/Details switch) plus the mini step-indicator, option cards, and nav
+   buttons used inside the phone mockup - scaled-down equivalents of the
+   real classes in app/pages/w/[slug]/rsvp.vue. */
+.preview-tab {
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: transparent;
+  white-space: nowrap;
+}
+
+.preview-tab-active {
+  background: rgba(212, 160, 23, 0.12);
+  color: #f3ddaa;
+  border-color: rgba(212, 160, 23, 0.3);
+}
+
+.preview-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.65rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.preview-step-dot {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.preview-step-dot-active {
+  border-color: var(--theme-accent, #e3b04a);
+  color: var(--theme-ink, #f3ddaa);
+  background: var(--theme-accent-soft, rgba(212, 160, 23, 0.2));
+}
+
+.preview-option-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 0.85rem 0.5rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.03);
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.85);
+  transition: all 0.2s ease;
+}
+
+.preview-option-card-small {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.55rem;
+  border-radius: 0.6rem;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.03);
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 500;
+}
+
+.preview-option-card-active {
+  border-color: var(--theme-accent, #e3b04a) !important;
+  background: var(--theme-accent-soft, rgba(212, 160, 23, 0.15)) !important;
+  color: var(--theme-ink, #f3ddaa) !important;
+}
+
+.preview-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.75);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.preview-nav-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.5rem 1.1rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--theme-bg-from, #1f1400);
+  background: var(--theme-accent, #d4a017);
 }
 </style>

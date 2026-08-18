@@ -238,13 +238,53 @@ export interface TextPreset {
 }
 
 export const rsvpTextFields = [
-  { key: 'rsvpTitle', label: 'RSVP page title' }, { key: 'rsvpDeadlineText', label: 'Deadline prefix' }, { key: 'rsvpAttendQuestion', label: 'Attendance question' }, { key: 'rsvpAttendYes', label: 'Attending option' }, { key: 'rsvpAttendNo', label: 'Not attending option' }, { key: 'rsvpNameLabel', label: 'Name label' }, { key: 'rsvpNamePlaceholder', label: 'Name placeholder' }, { key: 'rsvpGuestLabel', label: 'Guest count label' }, { key: 'rsvpSeatingLabel', label: 'Special seating question' }, { key: 'rsvpDietaryLabel', label: 'Dietary label' }, { key: 'rsvpDietaryPlaceholder', label: 'Dietary placeholder' }, { key: 'rsvpWishesLabel', label: 'Wishes label' }, { key: 'rsvpWishesSubtitle', label: 'Wishes subtitle' }, { key: 'rsvpWishesPlaceholder', label: 'Wishes placeholder' }, { key: 'rsvpStepAboutYou', label: 'Step 1 label' }, { key: 'rsvpStepDetails', label: 'Step 2 label' }, { key: 'rsvpStepWishes', label: 'Step 3 label' }, { key: 'rsvpSummaryTitle', label: 'Summary title' }, { key: 'rsvpSummaryNameLabel', label: 'Summary name label' }, { key: 'rsvpSummaryStatusLabel', label: 'Summary status label' }, { key: 'rsvpSummaryGuestsLabel', label: 'Summary guests label' }, { key: 'rsvpSummarySpecialLabel', label: 'Summary special-needs label' }, { key: 'rsvpSummaryDietaryLabel', label: 'Summary dietary label' }, { key: 'rsvpAttendingText', label: 'Attending status text' }, { key: 'rsvpNotAttendingText', label: 'Not attending status text' }, { key: 'rsvpBackButton', label: 'Back button' }, { key: 'rsvpContinueButton', label: 'Continue button' }, { key: 'rsvpConfirmButton', label: 'Confirm button' }, { key: 'rsvpSuccessYes', label: 'Attending success text' }, { key: 'rsvpSuccessNo', label: 'Not-attending success text' }
+  { key: 'rsvpTitle', label: 'RSVP page title' }, { key: 'rsvpDeadlineText', label: 'Deadline prefix' }, { key: 'rsvpAttendQuestion', label: 'Attendance question' }, { key: 'rsvpAttendYes', label: 'Attending option' }, { key: 'rsvpAttendNo', label: 'Not attending option' }, { key: 'rsvpNameLabel', label: 'Name label' }, { key: 'rsvpNamePlaceholder', label: 'Name placeholder' }, { key: 'rsvpGuestLabel', label: 'Guest count label' }, { key: 'rsvpSeatingLabel', label: 'Special seating question' }, { key: 'rsvpDietaryLabel', label: 'Dietary label' }, { key: 'rsvpDietaryPlaceholder', label: 'Dietary placeholder' }, { key: 'rsvpWishesLabel', label: 'Wishes label' }, { key: 'rsvpWishesSubtitle', label: 'Wishes subtitle' }, { key: 'rsvpWishesPlaceholder', label: 'Wishes placeholder' }, { key: 'rsvpStepAboutYou', label: 'Step 1 label' }, { key: 'rsvpStepDetails', label: 'Step 2 label' }, { key: 'rsvpStepWishes', label: 'Step 3 label' }, { key: 'rsvpSummaryTitle', label: 'Summary title' }, { key: 'rsvpSummaryNameLabel', label: 'Summary name label' }, { key: 'rsvpSummaryStatusLabel', label: 'Summary status label' }, { key: 'rsvpSummaryGuestsLabel', label: 'Summary guests label' }, { key: 'rsvpSummarySpecialLabel', label: 'Summary special-needs label' }, { key: 'rsvpSummaryDietaryLabel', label: 'Summary dietary label' }, { key: 'rsvpAttendingText', label: 'Attending status text' }, { key: 'rsvpNotAttendingText', label: 'Not attending status text' }, { key: 'rsvpBackButton', label: 'Back button' }, { key: 'rsvpContinueButton', label: 'Continue button' }, { key: 'rsvpConfirmButton', label: 'Confirm button' }, { key: 'rsvpSuccessYes', label: 'Attending success text' }, { key: 'rsvpSuccessNo', label: 'Not-attending success text' }, { key: 'rsvpReturnButton', label: 'Return to invitation button' }, { key: 'rsvpDeclineMessage', label: 'Decline sympathy message ({name} token)' }, { key: 'rsvpThankYouTitle', label: 'Thank-you title ({name} token)' }, { key: 'rsvpThankYouIntro', label: 'Thank-you intro sentence' }, { key: 'rsvpSubmitAnotherButton', label: 'Submit another response button' }, { key: 'rsvpWishesWallTitle', label: 'Wishes wall heading' }, { key: 'rsvpWishesEmptyText', label: 'Wishes wall empty text' }
 ] as const satisfies ReadonlyArray<{ key: keyof WeddingContent, label: string }>
 export type RsvpTextKey = (typeof rsvpTextFields)[number]['key']
 export interface RsvpPreset { id: string; label: string; texts: Partial<Pick<WeddingContent, RsvpTextKey>> }
 export const builtInRsvpPresets: RsvpPreset[] = [
-  { id: 'en', label: 'English', texts: { rsvpTitle: 'RSVP', rsvpDeadlineText: 'Kindly respond by', rsvpAttendQuestion: 'Will you be attending?', rsvpAttendYes: 'Joyfully Accept', rsvpAttendNo: 'Regretfully Decline', rsvpGuestLabel: 'Number of guests attending', rsvpBackButton: 'Back', rsvpContinueButton: 'Continue', rsvpConfirmButton: 'Confirm RSVP' } },
-  { id: 'ms', label: 'Bahasa Melayu', texts: { rsvpTitle: 'RSVP / Pengesahan', rsvpDeadlineText: 'Sila sahkan kehadiran sebelum', rsvpAttendQuestion: 'Adakah anda akan hadir?', rsvpAttendYes: 'Ya, Akan Hadir', rsvpAttendNo: 'Maaf, Tidak Dapat Hadir', rsvpGuestLabel: 'Jumlah tetamu yang akan hadir', rsvpBackButton: 'Kembali', rsvpContinueButton: 'Seterusnya', rsvpConfirmButton: 'Sahkan RSVP' } }
+  {
+    id: 'en',
+    label: 'English',
+    texts: {
+      rsvpTitle: 'RSVP', rsvpDeadlineText: 'Kindly respond by', rsvpAttendQuestion: 'Will you be attending?', rsvpAttendYes: 'Joyfully Accept', rsvpAttendNo: 'Regretfully Decline',
+      rsvpNameLabel: 'Name(s)', rsvpNamePlaceholder: 'Type your full name',
+      rsvpGuestLabel: 'Number of guests attending', rsvpSeatingLabel: 'Do you require special seating? (e.g., wheelchair access)',
+      rsvpDietaryLabel: 'Dietary restrictions (if any)', rsvpDietaryPlaceholder: 'e.g. Vegetarian, No Seafood',
+      rsvpWishesLabel: 'Wishes & Blessings', rsvpWishesSubtitle: 'Write your well wishes for the couple', rsvpWishesPlaceholder: 'May your marriage be blessed...',
+      rsvpStepAboutYou: 'About You', rsvpStepDetails: 'Details', rsvpStepWishes: 'Wishes',
+      rsvpSummaryTitle: 'RSVP Summary', rsvpSummaryNameLabel: 'Name:', rsvpSummaryStatusLabel: 'Status:', rsvpSummaryGuestsLabel: 'Guests:', rsvpSummarySpecialLabel: 'Special:', rsvpSummaryDietaryLabel: 'Dietary:',
+      rsvpAttendingText: 'Attending', rsvpNotAttendingText: 'Not Attending',
+      rsvpBackButton: 'Back', rsvpContinueButton: 'Continue', rsvpConfirmButton: 'Confirm RSVP',
+      rsvpSuccessYes: 'We are absolutely thrilled to celebrate with you.', rsvpSuccessNo: 'You will be dearly missed.',
+      rsvpReturnButton: 'Return to Invitation',
+      rsvpDeclineMessage: "We'll miss you, {name}! Feel free to leave us a wish on the next step.",
+      rsvpThankYouTitle: 'Thank you, {name}!', rsvpThankYouIntro: 'Your RSVP has been securely received.',
+      rsvpSubmitAnotherButton: 'Submit another response',
+      rsvpWishesWallTitle: 'Wishes & Blessings', rsvpWishesEmptyText: 'Be the first to leave a wish 💛'
+    }
+  },
+  {
+    id: 'ms',
+    label: 'Bahasa Melayu',
+    texts: {
+      rsvpTitle: 'RSVP / Pengesahan', rsvpDeadlineText: 'Sila sahkan kehadiran sebelum', rsvpAttendQuestion: 'Adakah anda akan hadir?', rsvpAttendYes: 'Ya, Akan Hadir', rsvpAttendNo: 'Maaf, Tidak Dapat Hadir',
+      rsvpNameLabel: 'Nama', rsvpNamePlaceholder: 'Taip nama penuh anda',
+      rsvpGuestLabel: 'Jumlah tetamu yang akan hadir', rsvpSeatingLabel: 'Adakah anda memerlukan tempat duduk khas? (cth: akses kerusi roda)',
+      rsvpDietaryLabel: 'Sekatan pemakanan (jika ada)', rsvpDietaryPlaceholder: 'cth. Vegetarian, Tiada Makanan Laut',
+      rsvpWishesLabel: 'Ucapan & Doa Restu', rsvpWishesSubtitle: 'Tuliskan ucapan dan doa restu anda untuk pengantin', rsvpWishesPlaceholder: 'Semoga perkahwinan anda diberkati...',
+      rsvpStepAboutYou: 'Maklumat Anda', rsvpStepDetails: 'Butiran', rsvpStepWishes: 'Ucapan',
+      rsvpSummaryTitle: 'Ringkasan RSVP', rsvpSummaryNameLabel: 'Nama:', rsvpSummaryStatusLabel: 'Status:', rsvpSummaryGuestsLabel: 'Tetamu:', rsvpSummarySpecialLabel: 'Khas:', rsvpSummaryDietaryLabel: 'Pemakanan:',
+      rsvpAttendingText: 'Akan Hadir', rsvpNotAttendingText: 'Tidak Hadir',
+      rsvpBackButton: 'Kembali', rsvpContinueButton: 'Seterusnya', rsvpConfirmButton: 'Sahkan RSVP',
+      rsvpSuccessYes: 'Kami amat teruja untuk meraikan bersama anda.', rsvpSuccessNo: 'Kehadiran anda amat dirindui.',
+      rsvpReturnButton: 'Kembali ke Jemputan',
+      rsvpDeclineMessage: 'Kehadiran anda amat dirindui, {name}! Jangan lupa tinggalkan ucapan di langkah seterusnya.',
+      rsvpThankYouTitle: 'Terima kasih, {name}!', rsvpThankYouIntro: 'RSVP anda telah berjaya diterima.',
+      rsvpSubmitAnotherButton: 'Hantar respons lain',
+      rsvpWishesWallTitle: 'Ucapan & Doa Restu', rsvpWishesEmptyText: 'Jadilah yang pertama tinggalkan ucapan 💛'
+    }
+  }
 ]
 
 /** Platform controls for the couple dashboard. Routes and permissions stay

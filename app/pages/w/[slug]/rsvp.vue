@@ -35,7 +35,7 @@
     <UContainer class="max-w-xl w-full relative z-10 animate-fade-up">
       <div class="flex justify-center mb-6">
         <UButton :to="`/w/${slug}`" variant="ghost" color="neutral" size="sm" icon="i-heroicons-arrow-left" aria-label="Back to Cover" class="text-white/70 hover:text-white rounded-full bg-white/5 border border-white/10 backdrop-blur-sm px-4">
-          Return to Invitation
+          {{ wedding.content.rsvpReturnButton || 'Return to Invitation' }}
         </UButton>
       </div>
 
@@ -111,7 +111,7 @@
                     <div class="flex flex-col items-center justify-center h-full text-center space-y-4 pt-10">
                       <UIcon name="i-heroicons-envelope-open" class="w-12 h-12 text-white/30" />
                       <p class="text-white/80 italic text-lg">
-                        We’ll miss you, <span class="font-semibold text-white">{{ state.name || 'friend' }}</span>! <br/>Feel free to leave us a wish on the next step.
+                        {{ fillNameToken(wedding.content.rsvpDeclineMessage || "We'll miss you, {name}! Feel free to leave us a wish on the next step.", state.name) }}
                       </p>
                     </div>
                   </template>
@@ -187,19 +187,23 @@
             </div>
             
             <div>
-              <h2 class="text-4xl font-display mb-2 drop-shadow-md" :style="{ color: 'var(--theme-ink)' }">Thank you, {{ lastSubmittedName }}!</h2>
+              <h2 class="text-4xl font-display mb-2 drop-shadow-md" :style="{ color: 'var(--theme-ink)' }">{{ fillNameToken(wedding.content.rsvpThankYouTitle || 'Thank you, {name}!', lastSubmittedName) }}</h2>
               <p class="text-white/80 text-lg font-light max-w-md mx-auto leading-relaxed">
-                Your RSVP has been securely received. {{ lastAttending === 'Yes' ? (wedding.content.rsvpSuccessYes || 'We are absolutely thrilled to celebrate with you.') : (wedding.content.rsvpSuccessNo || 'You will be dearly missed.') }}
+                {{ wedding.content.rsvpThankYouIntro || 'Your RSVP has been securely received.' }} {{ lastAttending === 'Yes' ? (wedding.content.rsvpSuccessYes || 'We are absolutely thrilled to celebrate with you.') : (wedding.content.rsvpSuccessNo || 'You will be dearly missed.') }}
               </p>
             </div>
-            
+
             <div class="pt-6">
-              <UButton variant="soft" color="neutral" class="rounded-full px-6 hover:bg-white/10 transition-colors" @click="resetForm">Submit another response</UButton>
+              <UButton variant="soft" color="neutral" class="rounded-full px-6 hover:bg-white/10 transition-colors" @click="resetForm">{{ wedding.content.rsvpSubmitAnotherButton || 'Submit another response' }}</UButton>
             </div>
           </div>
 
           <div class="mt-12 pt-10 border-t border-white/10 animate-fade-up delay-2">
-            <WishesWall :wedding-id="wedding.id" />
+            <WishesWall
+              :wedding-id="wedding.id"
+              :title="wedding.content.rsvpWishesWallTitle || 'Wishes & Blessings'"
+              :empty-text="wedding.content.rsvpWishesEmptyText || 'Be the first to leave a wish 💛'"
+            />
           </div>
         </template>
       </div>
