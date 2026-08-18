@@ -1,5 +1,5 @@
 <template>
-  <DashboardEditor :override-wedding-id="weddingId" />
+  <DashboardEditorPanel :override-wedding-id="weddingId" />
 </template>
 
 <script setup lang="ts">
@@ -9,12 +9,17 @@
 // styles, and so on), until a superadmin editing a wedding here saw a
 // visibly older/plainer screen than a couple sees on their own dashboard.
 //
-// Fix: render the exact same page component couples use
-// (app/pages/dashboard/editor.vue), just pointed at a specific wedding ID
+// Fix: render the shared DashboardEditorPanel component (also used by
+// app/pages/dashboard/editor.vue), just pointed at a specific wedding ID
 // instead of "whichever wedding the signed-in account owns". There is now
 // only one Design Studio implementation, so this can never drift again.
-import DashboardEditor from '~/pages/dashboard/editor.vue'
-
+//
+// (An earlier version of this fix imported the dashboard *page* file
+// directly instead of a plain component. That broke routing in production -
+// two page files sharing the same name confused the framework's route
+// build, and this page ended up rendering the /admin Weddings & Sync
+// screen instead. Reusable UI must live in app/components/, never be
+// imported page-to-page.)
 definePageMeta({ layout: 'admin-wedding', middleware: 'superadmin' })
 
 const route = useRoute()

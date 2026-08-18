@@ -1,13 +1,13 @@
 <template>
-  <DashboardRsvpEditor :override-wedding-id="weddingId" />
+  <DashboardRsvpEditorPanel :override-wedding-id="weddingId" />
 </template>
 
 <script setup lang="ts">
-// See app/pages/admin/wedding/[id]/editor.vue for why this renders the real
-// couple-facing page instead of a separately maintained copy: it stops the
-// two from drifting apart, permanently.
-import DashboardRsvpEditor from '~/pages/dashboard/rsvp-editor.vue'
-
+// See app/pages/admin/wedding/[id]/editor.vue for the full explanation:
+// this renders the shared DashboardRsvpEditorPanel component (also used by
+// the real couple-facing page) instead of a separately maintained copy,
+// via a plain component in app/components/ rather than importing one page
+// file into another (which broke production routing).
 definePageMeta({ layout: 'admin-wedding', middleware: 'superadmin' })
 
 const route = useRoute()
