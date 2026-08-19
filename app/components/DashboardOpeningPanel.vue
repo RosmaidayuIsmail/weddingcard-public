@@ -104,6 +104,25 @@
               </div>
             </Transition>
 
+            <!-- Background Music - plays once a guest taps the envelope open,
+                 same moment MusicToggle appears on the real page. -->
+            <div class="pt-6 border-t border-gray-800">
+              <h3 class="text-sm font-semibold text-white mb-1">Background Music</h3>
+              <p class="text-xs text-gray-400 mb-4">Plays as soon as a guest opens the envelope. Leave empty for a silent opening.</p>
+              <div class="flex items-center gap-3 flex-wrap">
+                <input ref="audioInput" type="file" accept="audio/*" class="hidden" @change="handleAudioSelect">
+                <UButton size="sm" variant="soft" color="gray" icon="i-heroicons-arrow-up-tray" :loading="audioUploading" :disabled="!cloudinaryConfigured" @click="audioInput?.click()">
+                  {{ form.audioSrc ? 'Change Track' : 'Upload Audio' }}
+                </UButton>
+                <MusicToggle v-if="form.audioSrc" :src="form.audioSrc" />
+                <UButton v-if="form.audioSrc" size="sm" variant="ghost" color="error" icon="i-heroicons-trash" @click="form.audioSrc = ''" />
+              </div>
+              <UFormField label="Or paste a direct audio URL" class="mt-3">
+                <UInput v-model="form.audioSrc" placeholder="https://.../song.mp3" class="w-full" />
+              </UFormField>
+              <p v-if="!cloudinaryConfigured" class="text-xs text-amber-400/80 mt-2">Image/audio uploads aren't configured on this deployment - paste a direct URL instead.</p>
+            </div>
+
             <!-- Language Translation Presets -->
             <div class="pt-6 border-t border-gray-800">
               <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
@@ -171,6 +190,11 @@
               <div v-if="previewOpened" class="absolute inset-0 flex items-center justify-center text-white/50 text-sm italic">
                 (Inner card revealed)
               </div>
+              <!-- Same spot/trigger as the real page: the music toggle only
+                   appears once the envelope has been opened. -->
+              <div v-if="previewOpened && form.audioSrc" class="absolute top-4 right-4 z-30">
+                <MusicToggle :src="form.audioSrc" />
+              </div>
             </div>
           </div>
         </div>
@@ -191,7 +215,7 @@ import type { TextPreset } from '~/composables/useThemes'
 // pass it, so useMyWedding() falls back to its normal own-wedding lookup.
 const props = defineProps<{ overrideWeddingId?: string | null }>()
 const { wedding, loading, saving, updateContent } = useMyWedding(toRef(props, 'overrideWeddingId'))
-const { isConfigured: cloudinaryConfigured, uploadImage } = useCloudinary()
+const { isConfigured: cloudinaryConfigured, uploadImage, uploadAudio } = useCloudinary()
 const { themeStyleVars, allFontOptions, allTextPresets, enabledOpeningStyles: openingStyles } = useThemes()
 
 const fontSelectItems = computed(() => [
@@ -210,6 +234,25 @@ const previewOpened = ref(false)
 
 const openingBgInput = ref<HTMLInputElement | null>(null)
 const openingBgUploading = ref(false)
+
+const audioInput = ref<HTMLInputElement | null>(null)
+const audioUploading = ref(false)
+
+async function handleAudioSelect(event: Event) {
+  const file = (event.target as HTMLInputElement).files?.[0]
+  if (!file || !wedding.value) return
+  audioUploading.value = true
+  try {
+    const url = await uploadAudio(file, `weddings/${wedding.value.id}/audio`, file.name)
+    form.audioSrc = url
+    toast.add({ title: 'Background music uploaded', color: 'success' })
+  } catch (error) {
+    toast.add({ title: error instanceof Error ? error.message : 'Upload failed', color: 'error' })
+  } finally {
+    audioUploading.value = false
+  }
+  if (audioInput.value) audioInput.value.value = ''
+}
 
 // The cover picture upload panel now powers every style except Classic,
 // Modern Dark and Minimal Light: the two Canva backgrounds (required),

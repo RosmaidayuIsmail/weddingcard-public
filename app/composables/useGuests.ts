@@ -92,6 +92,16 @@ export function useGuests(weddingIdSource: string | Ref<string | undefined> | ((
     await updateDoc(doc(db, 'weddings', weddingId, 'guests', guestId), { tier })
   }
 
+  // Full edit - lets a couple correct a typo'd name/phone, or manually
+  // record an RSVP that came in offline (a phone call, a message, in
+  // person) instead of through the live RSVP form.
+  async function updateGuest(guestId: string, partial: Partial<Omit<GuestDoc, 'id'>>) {
+    const weddingId = currentWeddingId.value
+    if (!db || !weddingId) return
+    await updateDoc(doc(db, 'weddings', weddingId, 'guests', guestId), { ...partial })
+    toast.add({ title: 'Guest updated', color: 'success' })
+  }
+
   async function removeGuest(guestId: string) {
     const weddingId = currentWeddingId.value
     if (!db || !weddingId) return
@@ -156,6 +166,7 @@ export function useGuests(weddingIdSource: string | Ref<string | undefined> | ((
     totalGuestCount,
     addGuest,
     updateGuestTier,
+    updateGuest,
     removeGuest,
     whatsappLink,
     personalizedLink,

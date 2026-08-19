@@ -1,11 +1,15 @@
 <template>
   <ol class="flow-timeline">
-    <li v-for="item in items" :key="item.id" class="flow-item">
+    <li v-for="item in items" :key="item.id" class="flow-item" :class="{ 'flow-item-highlight': item.highlight }">
       <div class="flow-time">{{ item.time }}</div>
       <div class="flow-dot" />
       <div class="flow-body">
-        <p class="flow-title">{{ item.title }}</p>
+        <p class="flow-title">
+          {{ item.title }}
+          <span v-if="item.highlight" class="flow-star">&#9733;</span>
+        </p>
         <p v-if="item.description" class="flow-description">{{ item.description }}</p>
+        <p v-if="item.location" class="flow-location">&#128205; {{ item.location }}</p>
       </div>
     </li>
   </ol>
@@ -59,5 +63,28 @@ defineProps<{ items: FlowItem[] }>()
   font-size: 0.75rem;
   color: rgba(255, 255, 255, 0.6);
   margin-top: 0.1rem;
+}
+
+.flow-location {
+  font-size: 0.7rem;
+  color: var(--color-gold-300, #ecc973);
+  opacity: 0.8;
+  margin-top: 0.2rem;
+}
+
+.flow-star {
+  color: var(--color-gold-400, #e3b04a);
+  font-size: 0.7rem;
+  margin-left: 0.15rem;
+}
+
+.flow-item-highlight .flow-dot {
+  width: 0.7rem;
+  height: 0.7rem;
+  box-shadow: 0 0 0 3px rgba(227, 176, 74, 0.25);
+}
+
+.flow-item-highlight .flow-title {
+  color: var(--color-gold-200, #f3ddaa);
 }
 </style>

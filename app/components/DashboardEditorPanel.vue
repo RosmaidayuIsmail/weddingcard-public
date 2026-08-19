@@ -409,6 +409,45 @@
                       </div>
                     </div>
                   </div>
+
+                  <div class="pt-4 border-t border-gray-800 mt-4">
+                    <button type="button" class="text-xs text-gold-300 hover:text-gold-200 flex items-center gap-1" @click="showBank2 = !showBank2">
+                      <UIcon :name="showBank2 ? 'i-heroicons-chevron-down' : 'i-heroicons-chevron-right'" class="w-3.5 h-3.5" />
+                      {{ showBank2 ? 'Hide second account' : 'Add a second account (e.g. the other family)' }}
+                    </button>
+                    <Transition name="fade-down">
+                      <div v-if="showBank2" class="mt-4 space-y-4">
+                        <div class="grid sm:grid-cols-3 gap-4">
+                          <UFormField label="Bank Name">
+                            <UInput v-model="form.bank2.name" size="md" class="w-full" placeholder="e.g. CIMB" />
+                          </UFormField>
+                          <UFormField label="Account Name">
+                            <UInput v-model="form.bank2.accountName" size="md" class="w-full" />
+                          </UFormField>
+                          <UFormField label="Account Number">
+                            <UInput v-model="form.bank2.accountNumber" size="md" class="w-full" />
+                          </UFormField>
+                        </div>
+                        <div>
+                          <p class="text-sm font-medium text-gray-300 mb-3">Transfer QR Code <span class="text-xs text-gray-500 font-normal ml-1">(Optional)</span></p>
+                          <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                            <div v-if="form.bank2.qrCodeUrl" class="w-16 h-16 rounded-xl overflow-hidden border border-gray-700 shrink-0 shadow-md">
+                              <img :src="form.bank2.qrCodeUrl" class="w-full h-full object-cover" />
+                            </div>
+                            <div class="flex flex-col gap-2">
+                              <input ref="qr2Input" type="file" accept="image/*" class="hidden" @change="handleQr2Select">
+                              <div class="flex flex-wrap gap-2">
+                                <UButton size="sm" variant="soft" color="gray" icon="i-heroicons-qr-code" :loading="qr2Uploading" :disabled="!cloudinaryConfigured" @click="qr2Input?.click()">
+                                  {{ form.bank2.qrCodeUrl ? 'Change QR' : 'Upload QR Code' }}
+                                </UButton>
+                                <UButton v-if="form.bank2.qrCodeUrl" size="sm" variant="ghost" color="error" icon="i-heroicons-trash" @click="form.bank2.qrCodeUrl = ''" />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </Transition>
+                  </div>
                 </div>
               </Transition>
             </div>
@@ -958,6 +997,10 @@ const uploading = ref(false)
 const qrInput = ref<HTMLInputElement | null>(null)
 const qrUploading = ref(false)
 
+const qr2Input = ref<HTMLInputElement | null>(null)
+const qr2Uploading = ref(false)
+const showBank2 = ref(false)
+
 const iconInput = ref<HTMLInputElement | null>(null)
 const iconUploading = ref(false)
 
@@ -1231,6 +1274,8 @@ watch(
     if (!form.namesLayout) form.namesLayout = 'horizontal'
 
     if (!form.bank) form.bank = { name: '', accountName: '', accountNumber: '', qrCodeUrl: '' }
+    if (!form.bank2) form.bank2 = { name: '', accountName: '', accountNumber: '', qrCodeUrl: '' }
+    showBank2.value = !!(form.bank2.name || form.bank2.accountName || form.bank2.accountNumber || form.bank2.qrCodeUrl)
     if (form.dateISO) {
       calendarDate.value = new Date(form.dateISO)
     }
@@ -1299,6 +1344,22 @@ async function handleQrSelect(event: Event) {
     qrUploading.value = false
   }
   if (qrInput.value) qrInput.value.value = ''
+}
+
+async function handleQr2Select(event: Event) {
+  const file = (event.target as HTMLInputElement).files?.[0]
+  if (!file || !wedding.value) return
+  qr2Uploading.value = true
+  try {
+    const url = await uploadImage(file, `weddings/${wedding.value.id}/qr`)
+    form.bank2.qrCodeUrl = url
+    toast.add({ title: 'QR code uploaded — remember to save', color: 'success' })
+  } catch (error) {
+    toast.add({ title: 'Upload failed', color: 'error' })
+  } finally {
+    qr2Uploading.value = false
+  }
+  if (qr2Input.value) qr2Input.value.value = ''
 }
 
 async function handleIconSelect(event: Event) {

@@ -9,7 +9,7 @@ export function useCloudinary() {
 
   const isConfigured = Boolean(config.cloudinaryCloudName && config.cloudinaryUploadPreset)
 
-  async function uploadImage(file: Blob, folder?: string, filename = 'upload.png'): Promise<string> {
+  async function uploadToCloudinary(file: Blob, resourceType: 'image' | 'video', folder?: string, filename = 'upload.png'): Promise<string> {
     if (!isConfigured) {
       throw new Error(
         'Cloudinary is not configured. Add NUXT_PUBLIC_CLOUDINARY_CLOUD_NAME and NUXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET to .env.'
@@ -21,7 +21,7 @@ export function useCloudinary() {
     formData.append('upload_preset', config.cloudinaryUploadPreset)
     if (folder) formData.append('folder', folder)
 
-    const response = await fetch(`https://api.cloudinary.com/v1_1/${config.cloudinaryCloudName}/image/upload`, {
+    const response = await fetch(`https://api.cloudinary.com/v1_1/${config.cloudinaryCloudName}/${resourceType}/upload`, {
       method: 'POST',
       body: formData
     })
@@ -35,5 +35,16 @@ export function useCloudinary() {
     return data.secure_url
   }
 
-  return { isConfigured, uploadImage }
+  async function uploadImage(file: Blob, folder?: string, filename = 'upload.png'): Promise<string> {
+    return uploadToCloudinary(file, 'image', folder, filename)
+  }
+
+  // Cloudinary files audio under its "video" resource type - there's no
+  // separate audio endpoint. Used for the Opening Design background music
+  // upload.
+  async function uploadAudio(file: Blob, folder?: string, filename = 'upload.mp3'): Promise<string> {
+    return uploadToCloudinary(file, 'video', folder, filename)
+  }
+
+  return { isConfigured, uploadImage, uploadAudio }
 }

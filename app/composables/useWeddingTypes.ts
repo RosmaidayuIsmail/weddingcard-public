@@ -29,6 +29,9 @@ export interface WeddingContent {
   /** Which floating particle style to use: 'petals' | 'confetti' | 'hearts' | 'sparkles' */
   petalStyle: string
   bank: WeddingBank
+  /** Optional second gift account (e.g. the groom's family's own account) -
+   * shown alongside `bank` on the live Gift page when it has any data. */
+  bank2: WeddingBank
   coverPhotoUrl: string
   audioSrc: string
   customAccent: string
@@ -174,6 +177,10 @@ export interface FlowItem {
   time: string
   title: string
   description: string
+  /** Optional venue/hall name for this event, shown under the description when set. */
+  location?: string
+  /** Marks a key moment (e.g. Akad Nikah) so it's shown with extra emphasis on the timeline. */
+  highlight?: boolean
 }
 
 export type WeddingPlan = 'free' | 'premium'
@@ -228,6 +235,7 @@ export function createDefaultContent(brideName = '', groomName = ''): WeddingCon
     enablePetals: true,
     petalStyle: 'petals',
     bank: { name: '', accountName: '', accountNumber: '', qrCodeUrl: '' },
+    bank2: { name: '', accountName: '', accountNumber: '', qrCodeUrl: '' },
     coverPhotoUrl: '',
     audioSrc: '',
     customAccent: '',

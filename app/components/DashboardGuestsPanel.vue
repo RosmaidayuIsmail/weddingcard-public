@@ -65,16 +65,26 @@
       </div>
 
       <!-- Filters & Actions Bar -->
-      <div class="flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between animate-fade-up delay-2">
-        <div class="flex bg-white/5 p-1 rounded-full border border-white/10">
-          <button v-for="t in tierFilters" :key="t.value" type="button" class="filter-pill" :class="{ 'filter-pill-active': tierFilter === t.value }" @click="tierFilter = t.value">
-            {{ t.label }}
-          </button>
+      <div class="flex flex-col gap-4 animate-fade-up delay-2">
+        <div class="flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
+          <div class="flex flex-wrap gap-2">
+            <div class="flex bg-white/5 p-1 rounded-full border border-white/10">
+              <button v-for="t in tierFilters" :key="t.value" type="button" class="filter-pill" :class="{ 'filter-pill-active': tierFilter === t.value }" @click="tierFilter = t.value">
+                {{ t.label }}
+              </button>
+            </div>
+            <div class="flex bg-white/5 p-1 rounded-full border border-white/10">
+              <button v-for="s in statusFilters" :key="s.value" type="button" class="filter-pill" :class="{ 'filter-pill-active': statusFilter === s.value }" @click="statusFilter = s.value">
+                {{ s.label }}
+              </button>
+            </div>
+          </div>
+          <div class="flex gap-3">
+            <UButton size="sm" color="neutral" variant="soft" icon="i-heroicons-printer" class="rounded-full px-4 hover:bg-white/10 border-white/10" @click="printList">Print / PDF</UButton>
+            <UButton size="sm" color="primary" variant="soft" icon="i-heroicons-arrow-down-tray" class="rounded-full px-4" @click="exportCSV()">Export CSV</UButton>
+          </div>
         </div>
-        <div class="flex gap-3">
-          <UButton size="sm" color="neutral" variant="soft" icon="i-heroicons-printer" class="rounded-full px-4 hover:bg-white/10 border-white/10" @click="printList">Print / PDF</UButton>
-          <UButton size="sm" color="primary" variant="soft" icon="i-heroicons-arrow-down-tray" class="rounded-full px-4" @click="exportCSV()">Export CSV</UButton>
-        </div>
+        <UInput v-model="searchQuery" placeholder="Search guests by name or phone..." icon="i-heroicons-magnifying-glass" size="lg" class="w-full sm:max-w-sm" />
       </div>
 
       <!-- List -->
@@ -134,6 +144,15 @@
                 size="xs"
                 color="neutral"
                 variant="ghost"
+                icon="i-heroicons-pencil-square"
+                title="Edit guest / record RSVP manually"
+                class="hover:bg-white/10"
+                @click="openEditModal(guest)"
+              />
+              <UButton
+                size="xs"
+                color="neutral"
+                variant="ghost"
                 :icon="copiedId === guest.id ? 'i-heroicons-check' : 'i-heroicons-link'"
                 title="Copy personalized RSVP link"
                 class="hover:bg-white/10"
@@ -165,6 +184,50 @@
         </div>
       </div>
     </div>
+
+    <!-- Edit guest / record RSVP manually -->
+    <UModal v-model:open="editModalOpen" title="Edit guest">
+      <template #body>
+        <div v-if="editForm" class="space-y-4">
+          <div class="grid sm:grid-cols-2 gap-4">
+            <UFormField label="Name">
+              <UInput v-model="editForm.name" size="lg" class="w-full" />
+            </UFormField>
+            <UFormField label="Phone">
+              <UInput v-model="editForm.phone" size="lg" class="w-full" />
+            </UFormField>
+          </div>
+          <UFormField label="Tier">
+            <USelect v-model="editForm.tier" :items="[{ label: guestListSettings.generalLabel, value: 'general' }, { label: guestListSettings.vipLabel, value: 'vip' }]" class="w-full" />
+          </UFormField>
+          <div class="h-px bg-white/10"></div>
+          <p class="text-xs text-white/40">Use this to record an RSVP that came in offline - a call, a text, in person - instead of through the live RSVP form.</p>
+          <UFormField label="RSVP Status">
+            <USelect v-model="editForm.attending" :items="[{ label: 'No response yet', value: '' }, { label: 'Attending', value: 'Yes' }, { label: 'Not attending', value: 'No' }]" class="w-full" />
+          </UFormField>
+          <div v-if="editForm.attending === 'Yes'" class="grid sm:grid-cols-2 gap-4">
+            <UFormField label="Guest count">
+              <UInputNumber v-model="editForm.guestCount" :min="1" :max="10" class="w-full" />
+            </UFormField>
+            <UFormField label="Special seating">
+              <USelect v-model="editForm.specialSeating" :items="[{ label: 'No', value: false }, { label: 'Yes', value: true }]" class="w-full" />
+            </UFormField>
+          </div>
+          <UFormField v-if="editForm.attending === 'Yes'" label="Dietary needs">
+            <UInput v-model="editForm.dietary" class="w-full" />
+          </UFormField>
+          <UFormField label="Wishes / blessings">
+            <UTextarea v-model="editForm.doa" :rows="2" class="w-full" />
+          </UFormField>
+        </div>
+      </template>
+      <template #footer>
+        <div class="flex justify-end gap-2 w-full">
+          <UButton variant="ghost" color="neutral" @click="editModalOpen = false">Cancel</UButton>
+          <UButton color="primary" :loading="savingEdit" @click="saveEdit">Save changes</UButton>
+        </div>
+      </template>
+    </UModal>
   </div>
 </template>
 
@@ -187,6 +250,7 @@ const {
   addGuest,
   removeGuest,
   updateGuestTier,
+  updateGuest,
   whatsappLink,
   personalizedLink,
   exportCSV
@@ -237,13 +301,61 @@ const tierFilters = computed(() => [
 ])
 const tierFilter = ref<'all' | 'vip' | 'general'>('all')
 
+const statusFilters = [
+  { label: 'All', value: 'all' as const },
+  { label: 'Attending', value: 'yes' as const },
+  { label: 'Declined', value: 'no' as const },
+  { label: 'No Response', value: 'pending' as const }
+]
+const statusFilter = ref<'all' | 'yes' | 'no' | 'pending'>('all')
+
+const searchQuery = ref('')
+
 const filteredGuests = computed(() => {
-  if (tierFilter.value === 'all') return guests.value
-  return guests.value.filter((g) => g.tier === tierFilter.value)
+  let list = guests.value
+  if (tierFilter.value !== 'all') {
+    list = list.filter((g) => g.tier === tierFilter.value)
+  }
+  if (statusFilter.value === 'yes') {
+    list = list.filter((g) => g.attending === 'Yes')
+  } else if (statusFilter.value === 'no') {
+    list = list.filter((g) => g.attending === 'No')
+  } else if (statusFilter.value === 'pending') {
+    list = list.filter((g) => !g.attending)
+  }
+  const q = searchQuery.value.trim().toLowerCase()
+  if (q) {
+    list = list.filter((g) => g.name.toLowerCase().includes(q) || g.phone.toLowerCase().includes(q))
+  }
+  return list
 })
 
 function printList() {
   if (import.meta.client) window.print()
+}
+
+// Edit guest / record RSVP manually - lets the couple fix a typo'd name or
+// phone, or log an RSVP that came in offline (a call, a text, in person)
+// instead of through the live RSVP form.
+const editModalOpen = ref(false)
+const editForm = ref<GuestDoc | null>(null)
+const savingEdit = ref(false)
+
+function openEditModal(guest: GuestDoc) {
+  editForm.value = { ...guest }
+  editModalOpen.value = true
+}
+
+async function saveEdit() {
+  if (!editForm.value) return
+  savingEdit.value = true
+  try {
+    const { id, ...partial } = editForm.value
+    await updateGuest(id, partial)
+    editModalOpen.value = false
+  } finally {
+    savingEdit.value = false
+  }
 }
 
 useSeoMeta({ title: 'Guest List — WeddingCard' })

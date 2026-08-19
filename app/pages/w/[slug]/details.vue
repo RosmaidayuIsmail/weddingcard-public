@@ -149,7 +149,7 @@
 
             <template v-else-if="currentKey === 'gift'">
               <h2 class="font-display font-semibold text-2xl mb-4" :style="{ color: 'var(--theme-accent)' }">A Gift of Love</h2>
-              <GiftCard :bank="wedding.content.bank" />
+              <GiftCard :banks="[wedding.content.bank, wedding.content.bank2]" />
             </template>
 
             <template v-else-if="currentKey === 'flow'">
@@ -238,7 +238,10 @@ const slideKeys = computed(() => {
   if (wedding.value.content.brideFullName || wedding.value.content.groomFullName) keys.push('family')
   keys.push('event')
   if (wedding.value.content.mapUrl) keys.push('location')
-  if (wedding.value.content.enableGift && (wedding.value.content.bank?.accountNumber || wedding.value.content.bank?.qrCodeUrl)) {
+  if (wedding.value.content.enableGift && (
+    wedding.value.content.bank?.accountNumber || wedding.value.content.bank?.qrCodeUrl ||
+    wedding.value.content.bank2?.accountNumber || wedding.value.content.bank2?.qrCodeUrl
+  )) {
     keys.push('gift')
   }
   if (wedding.value.flow?.length) keys.push('flow')

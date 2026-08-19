@@ -111,74 +111,120 @@
         </div>
       </div>
 
+      <!-- Countdown -->
+      <div v-if="wedding.content.dateISO" class="rounded-2xl border border-white/5 bg-white/[0.02] p-6 sm:p-8 text-center backdrop-blur-md">
+        <p class="text-xs text-white/50 uppercase tracking-widest font-semibold mb-4">Counting down to the big day</p>
+        <CountdownTimer :target="wedding.content.dateISO" />
+      </div>
+
+      <!-- Setup Checklist -->
+      <div v-if="checklistPercent < 100" class="rounded-2xl border border-gold-400/15 bg-gold-400/[0.04] p-6 sm:p-8">
+        <div class="flex items-center justify-between mb-4">
+          <p class="text-sm font-semibold text-white flex items-center gap-2">
+            <UIcon name="i-heroicons-check-badge" class="w-5 h-5 text-gold-300" /> Finish setting up your card
+          </p>
+          <span class="text-xs text-white/50">{{ checklistDoneCount }}/{{ checklistItems.length }} done</span>
+        </div>
+        <div class="h-1.5 rounded-full bg-white/5 overflow-hidden mb-5">
+          <div class="h-full bg-gradient-to-r from-gold-500 to-gold-300 rounded-full transition-all duration-500" :style="{ width: `${checklistPercent}%` }" />
+        </div>
+        <div class="grid sm:grid-cols-2 gap-2.5">
+          <NuxtLink
+            v-for="item in checklistItems"
+            :key="item.key"
+            :to="item.to || '/dashboard'"
+            class="checklist-item"
+            :class="{ 'checklist-item-done': item.done }"
+            @click="item.action ? onChecklistClick($event, item.action) : undefined"
+          >
+            <UIcon :name="item.done ? 'i-heroicons-check-circle-solid' : 'i-heroicons-arrow-right-circle'" class="w-5 h-5 shrink-0" :class="item.done ? 'text-emerald-400' : 'text-white/30'" />
+            <span class="text-sm" :class="item.done ? 'text-white/50 line-through' : 'text-white/80'">{{ item.label }}</span>
+          </NuxtLink>
+        </div>
+      </div>
+      <div v-else class="rounded-2xl border border-emerald-400/20 bg-emerald-400/5 p-5 flex items-center gap-3">
+        <UIcon name="i-heroicons-sparkles" class="w-6 h-6 text-emerald-400 shrink-0" />
+        <p class="text-sm text-white/80">Your card is fully set up. Keep an eye on Guest List for new responses!</p>
+      </div>
+
       <!-- Bento Grid: Stats & Actions -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        
+
         <!-- Stats Box -->
-        <div class="md:col-span-2 grid grid-cols-2 gap-4">
-          <div class="stat-card">
-            <div class="p-2 rounded-lg bg-white/5 self-start mb-2"><UIcon name="i-heroicons-envelope" class="w-5 h-5 text-white/60" /></div>
-            <div>
-              <p class="stat-label">Total Invited</p>
-              <p class="stat-number">{{ totalInvited }}</p>
+        <div class="md:col-span-2 space-y-4">
+          <div class="grid grid-cols-2 gap-4">
+            <div class="stat-card">
+              <div class="p-2 rounded-lg bg-white/5 self-start mb-2"><UIcon name="i-heroicons-envelope" class="w-5 h-5 text-white/60" /></div>
+              <div>
+                <p class="stat-label">Total Invited</p>
+                <p class="stat-number">{{ totalInvited }}</p>
+              </div>
+            </div>
+            <div class="stat-card border-emerald-500/20 bg-emerald-500/5">
+              <div class="p-2 rounded-lg bg-emerald-500/10 self-start mb-2"><UIcon name="i-heroicons-check-circle" class="w-5 h-5 text-emerald-400" /></div>
+              <div>
+                <p class="stat-label text-emerald-400/70">Attending</p>
+                <p class="stat-number text-emerald-400">{{ totalAttending }}</p>
+              </div>
+            </div>
+            <div class="stat-card border-red-500/20 bg-red-500/5">
+              <div class="p-2 rounded-lg bg-red-500/10 self-start mb-2"><UIcon name="i-heroicons-x-circle" class="w-5 h-5 text-red-400" /></div>
+              <div>
+                <p class="stat-label text-red-400/70">Not Attending</p>
+                <p class="stat-number text-red-400">{{ totalNotAttending }}</p>
+              </div>
+            </div>
+            <div class="stat-card border-gold-400/20 bg-gold-400/5">
+              <div class="p-2 rounded-lg bg-gold-400/10 self-start mb-2"><UIcon name="i-heroicons-users" class="w-5 h-5 text-gold-300" /></div>
+              <div>
+                <p class="stat-label text-gold-300/70">Total Headcount</p>
+                <p class="stat-number text-gold-300">{{ totalGuestCount }}</p>
+              </div>
             </div>
           </div>
-          <div class="stat-card border-emerald-500/20 bg-emerald-500/5">
-            <div class="p-2 rounded-lg bg-emerald-500/10 self-start mb-2"><UIcon name="i-heroicons-check-circle" class="w-5 h-5 text-emerald-400" /></div>
+
+          <!-- Response rate bar -->
+          <div class="stat-card !flex-row items-center justify-between gap-4">
             <div>
-              <p class="stat-label text-emerald-400/70">Attending</p>
-              <p class="stat-number text-emerald-400">{{ totalAttending }}</p>
+              <p class="stat-label">Response Rate</p>
+              <p class="text-sm text-white/50 mt-1">{{ totalResponded }} of {{ totalInvited }} guests have responded</p>
+            </div>
+            <div class="flex items-center gap-3 shrink-0">
+              <div class="w-28 h-1.5 rounded-full bg-white/5 overflow-hidden">
+                <div class="h-full bg-gradient-to-r from-indigo-400 to-emerald-400 rounded-full transition-all duration-500" :style="{ width: `${responseRatePercent}%` }" />
+              </div>
+              <span class="text-lg font-bold text-white tabular-nums">{{ responseRatePercent }}%</span>
             </div>
           </div>
-          <div class="stat-card border-red-500/20 bg-red-500/5">
-            <div class="p-2 rounded-lg bg-red-500/10 self-start mb-2"><UIcon name="i-heroicons-x-circle" class="w-5 h-5 text-red-400" /></div>
-            <div>
-              <p class="stat-label text-red-400/70">Not Attending</p>
-              <p class="stat-number text-red-400">{{ totalNotAttending }}</p>
+
+          <!-- Recent Responses -->
+          <div v-if="recentGuests.length" class="stat-card !block">
+            <p class="stat-label mb-3">Latest Responses</p>
+            <div class="space-y-2">
+              <div v-for="g in recentGuests" :key="g.id" class="flex items-center justify-between gap-3 text-sm">
+                <span class="text-white/80 truncate">{{ g.name }}</span>
+                <UBadge :color="g.attending === 'Yes' ? 'success' : 'error'" variant="subtle" size="sm">
+                  {{ g.attending === 'Yes' ? 'Attending' : 'Not attending' }}
+                </UBadge>
+              </div>
             </div>
-          </div>
-          <div class="stat-card border-gold-400/20 bg-gold-400/5">
-            <div class="p-2 rounded-lg bg-gold-400/10 self-start mb-2"><UIcon name="i-heroicons-users" class="w-5 h-5 text-gold-300" /></div>
-            <div>
-              <p class="stat-label text-gold-300/70">Total Headcount</p>
-              <p class="stat-number text-gold-300">{{ totalGuestCount }}</p>
-            </div>
+            <NuxtLink to="/dashboard/guests" class="text-xs text-gold-300/80 hover:text-gold-200 mt-3 inline-flex items-center gap-1">
+              View all guests <UIcon name="i-heroicons-arrow-right" class="w-3 h-3" />
+            </NuxtLink>
           </div>
         </div>
 
-        <!-- Quick Actions Vertical Stack -->
-        <div class="space-y-4">
-          <NuxtLink to="/dashboard/editor" class="quick-link group">
-            <div class="p-3 rounded-xl bg-gold-400/10 group-hover:bg-gold-400/20 transition-colors">
-              <UIcon name="i-heroicons-paint-brush" class="w-6 h-6 text-gold-300" />
+        <!-- Quick Actions -->
+        <div class="grid grid-cols-2 md:grid-cols-1 gap-3">
+          <NuxtLink v-for="link in quickLinks" :key="link.to" :to="link.to" class="quick-link group">
+            <div class="p-3 rounded-xl transition-colors" :class="link.iconBg">
+              <UIcon :name="link.icon" class="w-6 h-6" :class="link.iconColor" />
             </div>
-            <div>
-              <p class="font-semibold text-white group-hover:text-gold-200 transition-colors">Design Studio</p>
-              <p class="text-xs text-white/50">Edit text, theme, and photos</p>
+            <div class="min-w-0">
+              <p class="font-semibold text-white transition-colors truncate">{{ link.label }}</p>
+              <p class="text-xs text-white/50 truncate">{{ link.description }}</p>
             </div>
-            <UIcon name="i-heroicons-chevron-right" class="w-5 h-5 text-white/20 ml-auto group-hover:text-white/60 transition-colors" />
-          </NuxtLink>
-          
-          <NuxtLink to="/dashboard/guests" class="quick-link group">
-            <div class="p-3 rounded-xl bg-emerald-400/10 group-hover:bg-emerald-400/20 transition-colors">
-              <UIcon name="i-heroicons-clipboard-document-list" class="w-6 h-6 text-emerald-400" />
-            </div>
-            <div>
-              <p class="font-semibold text-white group-hover:text-emerald-300 transition-colors">Guest List</p>
-              <p class="text-xs text-white/50">Manage RSVPs & VIPs</p>
-            </div>
-            <UIcon name="i-heroicons-chevron-right" class="w-5 h-5 text-white/20 ml-auto group-hover:text-white/60 transition-colors" />
-          </NuxtLink>
-
-          <NuxtLink to="/dashboard/flow" class="quick-link group">
-            <div class="p-3 rounded-xl bg-indigo-400/10 group-hover:bg-indigo-400/20 transition-colors">
-              <UIcon name="i-heroicons-clock" class="w-6 h-6 text-indigo-400" />
-            </div>
-            <div>
-              <p class="font-semibold text-white group-hover:text-indigo-300 transition-colors">Day Flow</p>
-              <p class="text-xs text-white/50">Plan your event timeline</p>
-            </div>
-            <UIcon name="i-heroicons-chevron-right" class="w-5 h-5 text-white/20 ml-auto group-hover:text-white/60 transition-colors" />
+            <UIcon name="i-heroicons-chevron-right" class="w-5 h-5 text-white/20 ml-auto group-hover:text-white/60 transition-colors hidden md:block" />
           </NuxtLink>
         </div>
 
@@ -192,9 +238,44 @@ definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
 const { wedding, loading, createWedding, isSlugAvailable, setPublished, updateContent, updateSlug } = useMyWedding()
 const { dashboardSettings } = useThemes()
-const { totalInvited, totalAttending, totalNotAttending, totalGuestCount } = useGuests(() => wedding.value?.id)
+const { guests, totalInvited, totalResponded, totalAttending, totalNotAttending, totalGuestCount } = useGuests(() => wedding.value?.id)
 const toast = useToast()
 const config = useRuntimeConfig()
+
+// --- Setup checklist: a quick "what's left" nudge computed straight from
+// the wedding's own data, so it never drifts out of sync with what's
+// actually been filled in - no separate progress field to maintain.
+const checklistItems = computed(() => {
+  if (!wedding.value) return []
+  const c = wedding.value.content
+  return [
+    { key: 'cover', label: 'Add a cover photo', done: !!c.coverPhotoUrl, to: '/dashboard/editor' },
+    { key: 'date', label: 'Set your wedding date & venue', done: !!c.dateISO && !!c.venueName, to: '/dashboard/editor' },
+    { key: 'guests', label: 'Add your first guest', done: totalInvited.value > 0, to: '/dashboard/guests' },
+    { key: 'flow', label: 'Plan your day flow', done: (wedding.value.flow?.length || 0) > 0, to: '/dashboard/flow' },
+    { key: 'rsvp', label: 'Customize your RSVP text', done: !!c.rsvpDeadlineLabel, to: '/dashboard/rsvp-editor' },
+    { key: 'publish', label: 'Publish your card live', done: wedding.value.status === 'published', to: '/dashboard', action: togglePublish }
+  ]
+})
+const checklistDoneCount = computed(() => checklistItems.value.filter((i) => i.done).length)
+const checklistPercent = computed(() => checklistItems.value.length ? Math.round((checklistDoneCount.value / checklistItems.value.length) * 100) : 100)
+
+function onChecklistClick(event: MouseEvent, action: () => void) {
+  event.preventDefault()
+  action()
+}
+
+const responseRatePercent = computed(() => (totalInvited.value > 0 ? Math.round((totalResponded.value / totalInvited.value) * 100) : 0))
+const recentGuests = computed(() => guests.value.filter((g) => g.attending).slice(0, 5))
+
+const quickLinks = [
+  { to: '/dashboard/opening', label: 'Opening Design', description: 'Choose the envelope-opening style', icon: 'i-heroicons-envelope', iconBg: 'bg-rose-400/10 group-hover:bg-rose-400/20', iconColor: 'text-rose-300' },
+  { to: '/dashboard/editor', label: 'Design Studio', description: 'Edit text, theme, and photos', icon: 'i-heroicons-paint-brush', iconBg: 'bg-gold-400/10 group-hover:bg-gold-400/20', iconColor: 'text-gold-300' },
+  { to: '/dashboard/rsvp-editor', label: 'RSVP Editor', description: 'Customize the guest RSVP flow', icon: 'i-heroicons-pencil-square', iconBg: 'bg-purple-400/10 group-hover:bg-purple-400/20', iconColor: 'text-purple-300' },
+  { to: '/dashboard/guests', label: 'Guest List', description: 'Manage RSVPs & VIPs', icon: 'i-heroicons-clipboard-document-list', iconBg: 'bg-emerald-400/10 group-hover:bg-emerald-400/20', iconColor: 'text-emerald-400' },
+  { to: '/dashboard/flow', label: 'Day Flow', description: 'Plan your event timeline', icon: 'i-heroicons-clock', iconBg: 'bg-indigo-400/10 group-hover:bg-indigo-400/20', iconColor: 'text-indigo-400' },
+  { to: '/dashboard/billing', label: 'Billing & Plans', description: 'Manage your plan', icon: 'i-heroicons-credit-card', iconBg: 'bg-sky-400/10 group-hover:bg-sky-400/20', iconColor: 'text-sky-300' }
+]
 
 const brideName = ref('')
 
@@ -364,5 +445,25 @@ async function togglePublish() {
   background: rgba(255, 255, 255, 0.04);
   transform: translateX(4px);
   box-shadow: 0 10px 20px -10px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+.checklist-item {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transition: all 0.2s ease;
+}
+
+.checklist-item:hover {
+  border-color: rgba(212, 160, 23, 0.3);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.checklist-item-done {
+  opacity: 0.7;
 }
 </style>

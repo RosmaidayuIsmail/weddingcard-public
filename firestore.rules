@@ -11,6 +11,11 @@ rules_version = '2';
 //                                         PRIVATE: only the owner or a superadmin can read
 //   weddings/{weddingId}/wishes/{id}   - public-safe subset (name + message only)
 //                                         used by the live Wishes Wall
+//   weddings/{weddingId}/billingRequests/{id} - a couple's own "please upgrade
+//                                         me to Premium" requests. PRIVATE:
+//                                         only the owner (create/read their
+//                                         own) or a superadmin (read/update
+//                                         to approve/decline) can touch these.
 //
 // The guests/wishes split exists specifically so the full guest list (phone
 // numbers, dietary needs, guest counts) never has to be publicly readable -
@@ -70,6 +75,16 @@ service cloud.firestore {
         allow read: if true; // powers the public live Wishes Wall
         allow create: if true;
         allow update, delete: if false;
+      }
+
+      match /billingRequests/{requestId} {
+        allow read: if isOwner(get(/databases/$(database)/documents/weddings/$(weddingId)).data) || isSuperAdmin();
+        // A couple can only ever file a new request as 'pending' for their
+        // own wedding - only a superadmin can flip it to approved/declined.
+        allow create: if isOwner(get(/databases/$(database)/documents/weddings/$(weddingId)).data) &&
+          request.resource.data.status == 'pending';
+        allow update: if isSuperAdmin();
+        allow delete: if false;
       }
     }
   }

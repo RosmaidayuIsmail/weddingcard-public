@@ -5,26 +5,28 @@
       Your presence is the greatest gift. For those who’d still like to send a token of love:
     </p>
 
-    <!-- QR Code Display -->
-    <div v-if="bank.qrCodeUrl" class="mt-6 mb-4 flex justify-center">
-      <div class="p-2 bg-white rounded-xl shadow-lg border border-white/20">
-        <img :src="bank.qrCodeUrl" alt="Bank Transfer QR Code" class="w-32 h-32 rounded-lg" />
+    <div v-for="(account, index) in banks" :key="index" :class="index > 0 ? 'mt-6 pt-6 border-t border-white/10' : ''">
+      <!-- QR Code Display -->
+      <div v-if="account.qrCodeUrl" class="mt-6 mb-4 flex justify-center">
+        <div class="p-2 bg-white rounded-xl shadow-lg border border-white/20">
+          <img :src="account.qrCodeUrl" alt="Bank Transfer QR Code" class="w-32 h-32 rounded-lg" />
+        </div>
       </div>
-    </div>
 
-    <!-- Bank Details -->
-    <div class="mt-4 space-y-1 text-sm">
-      <p v-if="bank.name" class="text-gold-200 font-semibold">{{ bank.name }}</p>
-      <p v-if="bank.accountName" class="text-white/90">{{ bank.accountName }}</p>
-      <button
-        v-if="bank.accountNumber"
-        type="button"
-        class="account-number mt-2"
-        @click="copyAccount"
-      >
-        {{ bank.accountNumber }}
-        <UIcon name="i-heroicons-clipboard-document" class="w-4 h-4" />
-      </button>
+      <!-- Bank Details -->
+      <div class="mt-4 space-y-1 text-sm">
+        <p v-if="account.name" class="text-gold-200 font-semibold">{{ account.name }}</p>
+        <p v-if="account.accountName" class="text-white/90">{{ account.accountName }}</p>
+        <button
+          v-if="account.accountNumber"
+          type="button"
+          class="account-number mt-2"
+          @click="copyAccount(account.accountNumber)"
+        >
+          {{ account.accountNumber }}
+          <UIcon name="i-heroicons-clipboard-document" class="w-4 h-4" />
+        </button>
+      </div>
     </div>
 
     <p v-if="copied" class="mt-3 text-xs font-medium text-emerald-400">Account number copied ✨</p>
@@ -32,14 +34,25 @@
 </template>
 
 <script setup lang="ts">
-const props = defineProps<{ bank: { name: string; accountName: string; accountNumber: string; qrCodeUrl?: string } }>()
+interface BankAccount { name: string; accountName: string; accountNumber: string; qrCodeUrl?: string }
+
+// Accepts either the legacy single `bank` prop (kept for any call site that
+// hasn't moved to the array form) or a `banks` array so a card can show a
+// second gift account (e.g. the groom's family's own account) alongside the
+// first, with one shared intro sentence instead of repeating it.
+const props = defineProps<{ bank?: BankAccount; banks?: BankAccount[] }>()
 const toast = useToast()
 const copied = ref(false)
 
-async function copyAccount() {
-  if (!props.bank.accountNumber) return
+const banks = computed(() => {
+  const list = props.banks && props.banks.length ? props.banks : props.bank ? [props.bank] : []
+  return list.filter((b) => b?.accountNumber || b?.qrCodeUrl)
+})
+
+async function copyAccount(accountNumber: string) {
+  if (!accountNumber) return
   try {
-    await navigator.clipboard.writeText(props.bank.accountNumber.replace(/\s+/g, ''))
+    await navigator.clipboard.writeText(accountNumber.replace(/\s+/g, ''))
     copied.value = true
     toast.add({ title: 'Copied', description: 'Account number copied to clipboard.', color: 'success' })
     setTimeout(() => (copied.value = false), 2000)
