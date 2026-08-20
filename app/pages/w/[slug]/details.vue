@@ -14,7 +14,7 @@
     <div class="absolute inset-0 z-0 bg-gradient-to-b" :style="{ background: `linear-gradient(160deg, var(--theme-bg-from), var(--theme-bg-via), var(--theme-bg-to))` }"></div>
     
     <div v-if="wedding.content.coverPhotoUrl" class="absolute inset-0 z-0 transition-opacity duration-1000 animate-in fade-in" :class="wedding.content.hideSystemText ? 'opacity-100' : 'opacity-40'">
-      <img :src="wedding.content.coverPhotoUrl" alt="Background" class="w-full h-full" :class="wedding.content.hideSystemText ? 'object-contain' : 'object-cover'" />
+      <img :src="optimizedImageUrl(wedding.content.coverPhotoUrl, 1600)" alt="Background" loading="eager" fetchpriority="high" class="w-full h-full" :class="wedding.content.hideSystemText ? 'object-contain' : 'object-cover'" />
       <div class="absolute inset-0" :style="{ background: `linear-gradient(to bottom, transparent, var(--theme-bg-to))` }"></div>
     </div>
 

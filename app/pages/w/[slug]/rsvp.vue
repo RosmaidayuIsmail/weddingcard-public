@@ -31,7 +31,7 @@
          dark background below the fold. Painting the gradient straight on
          the growing section itself removes that failure mode entirely. -->
     <div v-if="wedding.content.coverPhotoUrl" class="absolute inset-0 z-0 opacity-40 transition-opacity duration-1000 animate-in fade-in pointer-events-none">
-      <img :src="wedding.content.coverPhotoUrl" alt="Background" class="w-full h-full object-cover" />
+      <img :src="optimizedImageUrl(wedding.content.coverPhotoUrl, 1600)" alt="Background" loading="eager" fetchpriority="high" class="w-full h-full object-cover" />
       <div class="absolute inset-0" :style="{ background: `linear-gradient(to bottom, transparent, var(--theme-bg-to))` }"></div>
     </div>
 

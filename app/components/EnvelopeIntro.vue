@@ -15,19 +15,19 @@
       <div v-if="content.openingStyle === 'custom-split' && content.openingBgUrl" class="absolute inset-0 z-0 flex">
         <!-- Left Door -->
         <div class="relative w-1/2 h-full overflow-hidden door-left z-10">
-          <img :src="content.openingBgUrl" class="absolute top-0 left-0 w-[200%] h-full max-w-none object-cover" />
+          <img :src="optimizedImageUrl(content.openingBgUrl, 1400)" loading="eager" fetchpriority="high" class="absolute top-0 left-0 w-[200%] h-full max-w-none object-cover" />
           <div class="absolute inset-0 bg-black/40 border-r border-white/20 shadow-[5px_0_15px_rgba(0,0,0,0.4)]"></div>
         </div>
         <!-- Right Door -->
         <div class="relative w-1/2 h-full overflow-hidden door-right z-10">
-          <img :src="content.openingBgUrl" class="absolute top-0 right-0 w-[200%] h-full max-w-none object-cover" />
+          <img :src="optimizedImageUrl(content.openingBgUrl, 1400)" loading="eager" fetchpriority="high" class="absolute top-0 right-0 w-[200%] h-full max-w-none object-cover" />
           <div class="absolute inset-0 bg-black/40 border-l border-white/20 shadow-[-5px_0_15px_rgba(0,0,0,0.4)]"></div>
         </div>
       </div>
 
       <!-- Custom Canva Background Image (Standard Fade) -->
       <div v-else-if="content.openingStyle === 'custom' && content.openingBgUrl" class="absolute inset-0 z-0">
-        <img :src="content.openingBgUrl" alt="Cover Background" class="w-full h-full object-cover" />
+        <img :src="optimizedImageUrl(content.openingBgUrl, 1400)" alt="Cover Background" loading="eager" fetchpriority="high" class="w-full h-full object-cover" />
         <div class="absolute inset-0 bg-black/40"></div>
       </div>
 
@@ -50,11 +50,11 @@
       <div v-else-if="content.openingStyle === 'wax-seal'" class="absolute inset-0 z-0 flex wax-seal-doors">
         <template v-if="content.openingBgUrl">
           <div class="relative w-1/2 h-full overflow-hidden door-left">
-            <img :src="content.openingBgUrl" class="absolute top-0 left-0 w-[200%] h-full max-w-none object-cover" />
+            <img :src="optimizedImageUrl(content.openingBgUrl, 1400)" loading="eager" fetchpriority="high" class="absolute top-0 left-0 w-[200%] h-full max-w-none object-cover" />
             <div class="absolute inset-0 bg-black/45"></div>
           </div>
           <div class="relative w-1/2 h-full overflow-hidden door-right">
-            <img :src="content.openingBgUrl" class="absolute top-0 right-0 w-[200%] h-full max-w-none object-cover" />
+            <img :src="optimizedImageUrl(content.openingBgUrl, 1400)" loading="eager" fetchpriority="high" class="absolute top-0 right-0 w-[200%] h-full max-w-none object-cover" />
             <div class="absolute inset-0 bg-black/45"></div>
           </div>
         </template>
@@ -76,14 +76,14 @@
            block, so the picture just travels off-screen along with it,
            same as Canva (Fade). Falls back to the default gradient. -->
       <div v-else-if="isSlideStyle && content.openingBgUrl" class="absolute inset-0 z-0">
-        <img :src="content.openingBgUrl" alt="Cover Background" class="w-full h-full object-cover" />
+        <img :src="optimizedImageUrl(content.openingBgUrl, 1400)" alt="Cover Background" loading="eager" fetchpriority="high" class="w-full h-full object-cover" />
         <div class="absolute inset-0 bg-black/40"></div>
       </div>
 
       <!-- Confetti Burst Background -->
       <div v-else-if="content.openingStyle === 'confetti-burst'" class="absolute inset-0 z-0 confetti-burst-bg overflow-hidden" :style="{ background: `linear-gradient(135deg, var(--theme-bg-from, #0d2a4a) 0%, var(--theme-bg-to, #04101f) 100%)` }">
         <!-- Optional uploaded background image -->
-        <img v-if="content.openingBgUrl" :src="content.openingBgUrl" alt="Cover Background" class="absolute inset-0 w-full h-full object-cover opacity-40 mix-blend-overlay" />
+        <img v-if="content.openingBgUrl" :src="optimizedImageUrl(content.openingBgUrl, 1400)" alt="Cover Background" loading="eager" fetchpriority="high" class="absolute inset-0 w-full h-full object-cover opacity-40 mix-blend-overlay" />
         
         <!-- Animated Confetti Particles -->
         <div class="absolute inset-0 pointer-events-none">
@@ -268,12 +268,18 @@ const actionStyle = computed(() =>
 // three elements, so the overrides above actually render in the chosen font.
 useHead({
   link: computed(() => {
-    const links: Array<{ rel: string; href: string }> = []
+    const links: Array<Record<string, string>> = []
     const urls = [props.content.openingTitleFontUrl, props.content.openingGreetingFontUrl, props.content.openingActionFontUrl]
     for (const url of urls) {
       if (url && !url.includes('fonts.google.com/specimen/')) {
         links.push({ rel: 'stylesheet', href: url })
       }
+    }
+    // This background is the very first thing a guest sees, so kick off the
+    // download as early as possible (in <head>, before the img tag even
+    // renders) rather than waiting on it to be discovered further down.
+    if (props.content.openingBgUrl) {
+      links.push({ rel: 'preload', as: 'image', href: optimizedImageUrl(props.content.openingBgUrl, 1400), fetchpriority: 'high' })
     }
     return links
   })

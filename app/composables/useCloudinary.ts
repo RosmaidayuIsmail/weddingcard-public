@@ -1,4 +1,26 @@
 /**
+ * Rewrites a Cloudinary delivery URL to request an auto-format
+ * (WebP/AVIF where supported), auto-quality, width-capped version instead
+ * of the raw original upload. A photo straight off a phone camera can be
+ * 5-10MB - guests on mobile data were downloading that in full for every
+ * cover/background photo, which is why those images appeared slowly and
+ * looked "broken" for a moment before popping in.
+ *
+ * Safe no-op for non-Cloudinary URLs (external links, empty strings, etc.)
+ * so it can be applied everywhere a stored image URL is rendered.
+ */
+export function optimizedImageUrl(url: string | undefined | null, width = 1600): string {
+  if (!url) return ''
+  const marker = '/upload/'
+  const markerIndex = url.indexOf(marker)
+  if (!url.includes('res.cloudinary.com') || markerIndex === -1) return url
+  // Already has transformation params applied (e.g. re-processed elsewhere) - don't double up.
+  if (/\/upload\/[^/]*\bf_auto\b/.test(url)) return url
+  const insertAt = markerIndex + marker.length
+  return `${url.slice(0, insertAt)}f_auto,q_auto,w_${width},c_limit/${url.slice(insertAt)}`
+}
+
+/**
  * Client-side image upload via Cloudinary's unsigned upload API.
  * No secret key involved - an "unsigned upload preset" (configured in the
  * Cloudinary dashboard) is specifically designed to be safe to call directly

@@ -27,8 +27,23 @@
          for the text on top comes from a black tint overlay + the bottom
          fade below, NOT from dimming the photo itself, so the photo stays
          as vibrant/visible as it is on those other pages. -->
-    <div v-if="wedding.content.coverPhotoUrl && opened" class="absolute inset-0 z-0 transition-opacity duration-1000 animate-in fade-in">
-      <img :src="wedding.content.coverPhotoUrl" alt="Background" class="w-full h-full animate-[pulse_20s_ease-in-out_infinite_alternate]" :class="wedding.content.hideSystemText ? 'object-contain' : 'object-cover scale-105'">
+    <!-- Mounted as soon as the wedding loads (not gated on `opened`) so the
+         browser starts downloading this photo while the guest is still
+         looking at the envelope, instead of only starting once they tap it
+         open - that delay was exactly why the background used to pop in
+         late/unfinished right after the open animation. Visibility is
+         controlled separately by opacity below, once BOTH the envelope is
+         open AND the image has actually finished loading. -->
+    <div v-if="wedding.content.coverPhotoUrl" class="absolute inset-0 z-0 transition-opacity duration-700" :class="opened && coverPhotoLoaded ? 'opacity-100' : 'opacity-0'">
+      <img
+        :src="optimizedCoverPhotoUrl"
+        alt="Background"
+        loading="eager"
+        fetchpriority="high"
+        class="w-full h-full animate-[pulse_20s_ease-in-out_infinite_alternate]"
+        :class="wedding.content.hideSystemText ? 'object-contain' : 'object-cover scale-105'"
+        @load="coverPhotoLoaded = true"
+      >
       <div v-if="!wedding.content.hideSystemText" class="absolute inset-0 bg-black/40"></div>
       <div class="absolute inset-0" :style="{ background: `linear-gradient(to bottom, transparent 0%, var(--theme-bg-to) 90%)` }" />
     </div>
@@ -191,12 +206,26 @@ const styleVars = computed(() =>
   )
 )
 
+// Optimized (auto-format/auto-quality/width-capped) version of the cover
+// photo - see optimizedImageUrl() in useCloudinary.ts for why. coverPhotoLoaded
+// tracks whether it's actually finished downloading, so it only fades in
+// once it's ready rather than popping in half-rendered.
+const optimizedCoverPhotoUrl = computed(() => optimizedImageUrl(wedding.value?.content.coverPhotoUrl, 1600))
+const coverPhotoLoaded = ref(false)
+
 useHead({
   link: computed(() => {
+    const links: Array<Record<string, string>> = []
     if (wedding.value?.content.customFontUrl && !wedding.value.content.customFontUrl.includes('fonts.google.com/specimen/')) {
-      return [{ rel: 'stylesheet', href: wedding.value.content.customFontUrl }]
+      links.push({ rel: 'stylesheet', href: wedding.value.content.customFontUrl })
     }
-    return []
+    // Kick off the cover photo download as early as possible - before the
+    // <img> tag even exists yet - so it's ready well before the guest taps
+    // the envelope open.
+    if (optimizedCoverPhotoUrl.value) {
+      links.push({ rel: 'preload', as: 'image', href: optimizedCoverPhotoUrl.value, fetchpriority: 'high' })
+    }
+    return links
   })
 })
 
