@@ -192,9 +192,11 @@
                 (Inner card revealed)
               </div>
               <!-- Same spot/trigger as the real page: the music toggle only
-                   appears once the envelope has been opened. -->
+                   appears once the envelope has been opened, and autoplays
+                   just like the live page does, so this preview matches
+                   what a guest actually experiences. -->
               <div v-if="previewOpened && form.audioSrc" class="absolute top-4 right-4 z-30">
-                <MusicToggle :src="form.audioSrc" />
+                <MusicToggle :src="form.audioSrc" autoplay />
               </div>
             </div>
           </div>

@@ -21,6 +21,14 @@
     <PetalsBackground v-if="wedding.content.enablePetals !== false" :style-name="wedding.content.petalStyle" class="z-0" />
     <CardOrnament :style="wedding.content.ornamentStyle" color="var(--theme-accent)" class="z-0" />
 
+    <!-- Same background-music track as the Opening page - MusicToggle just
+         hooks into the already-running singleton player, so navigating here
+         doesn't restart or interrupt it. Fixed (not absolute) since this
+         page scrolls, unlike the Opening page's single hero screen. -->
+    <div v-if="wedding.content.audioSrc" class="fixed top-4 right-4 z-30">
+      <MusicToggle :src="wedding.content.audioSrc" autoplay />
+    </div>
+
     <div class="max-w-lg w-full relative z-10 animate-fade-up">
       <div class="flex items-center justify-between mb-6 px-2">
         <UButton :to="coverLink" variant="ghost" color="neutral" size="md" icon="i-heroicons-arrow-left" aria-label="Back to Cover" class="text-white/70 hover:text-white rounded-full bg-white/5 border border-white/10 backdrop-blur-sm" />

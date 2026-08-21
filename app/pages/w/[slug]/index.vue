@@ -57,7 +57,13 @@
       <EnvelopeIntro v-model:opened="opened" :guest-name="guestName" :content="wedding.content" />
 
       <div v-if="opened" class="absolute top-6 right-6 z-30">
-        <MusicToggle v-if="wedding.content.audioSrc" :src="wedding.content.audioSrc" />
+        <!-- autoplay: this only mounts the instant the guest taps the
+             envelope open, so calling play() here happens within that same
+             tap's "user gesture" window - browsers allow autoplay-with-sound
+             right after a real tap/click, just not on page load with no
+             interaction at all. Falls back to the muted icon (silently) if
+             a particular browser still blocks it. -->
+        <MusicToggle v-if="wedding.content.audioSrc" :src="wedding.content.audioSrc" autoplay />
       </div>
 
       <div v-if="opened && !wedding.content.hideSystemText" class="absolute inset-0 z-10">

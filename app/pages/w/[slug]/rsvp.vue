@@ -38,6 +38,13 @@
     <PetalsBackground v-if="wedding.content.enablePetals !== false" :style-name="wedding.content.petalStyle" class="z-0 pointer-events-none" />
     <CardOrnament :style="wedding.content.ornamentStyle" color="var(--theme-accent)" class="z-0 pointer-events-none" />
 
+    <!-- Same background-music track as the Opening/Details pages -
+         MusicToggle just hooks into the already-running singleton player,
+         so arriving here doesn't restart or interrupt it. -->
+    <div v-if="wedding.content.audioSrc" class="fixed top-4 right-4 z-30">
+      <MusicToggle :src="wedding.content.audioSrc" autoplay />
+    </div>
+
     <UContainer class="max-w-xl w-full relative z-10 animate-fade-up">
       <div class="flex justify-center mb-6">
         <UButton :to="`/w/${slug}`" variant="ghost" color="neutral" size="sm" icon="i-heroicons-arrow-left" aria-label="Back to Cover" class="text-white/70 hover:text-white rounded-full bg-white/5 border border-white/10 backdrop-blur-sm px-4">
