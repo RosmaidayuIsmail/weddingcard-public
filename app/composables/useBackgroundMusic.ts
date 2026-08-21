@@ -34,10 +34,21 @@ let ytPlayer: any = null
 let ytContainer: HTMLDivElement | null = null
 let ytReady = false
 let pendingAutoplay = false
-// Whether an autoplay/start has already been attempted for the current
-// track - guards against a later page's autoplay="true" MusicToggle
-// re-triggering playback (and overriding a guest who's since paused it).
-let startAttempted = false
+// Whether the guest has explicitly hit pause/mute on the current track -
+// the ONE thing that should ever stop a later autoplay="true" MusicToggle
+// (Details page, RSVP page, or re-tapping the envelope after navigating
+// back to it) from re-triggering playback. This used to be a one-shot
+// "already attempted" flag instead, which is wrong: it correctly stopped a
+// second page's autoplay from overriding a manual pause, but it also
+// permanently blocked every later LEGITIMATE autoplay - most visibly, a
+// guest who navigates away from the opened envelope and back (e.g. browser
+// back button) gets a fresh "Tap to open" and taps it again, which is a
+// perfectly good user gesture to start the music, but the one-shot flag
+// had already been spent on the very first open and silently ate every tap
+// after that. Gating on "did the guest ask for silence" instead of "has
+// this been tried before" fixes that without reopening the original
+// override-a-manual-pause problem.
+let manuallyPaused = false
 // Whether the music SHOULD currently be playing, as far as the guest's own
 // choices are concerned (they haven't paused it) - independent of whether
 // it's actually audible right now. See bindResumeListeners() below for why
@@ -88,7 +99,7 @@ function teardownPlayer() {
   ytContainer = null
   ytReady = false
   pendingAutoplay = false
-  startAttempted = false
+  manuallyPaused = false
   shouldPlay = false
   playing.value = false
 }
@@ -201,19 +212,21 @@ function startPlayback() {
 }
 
 /**
- * Makes sure `src` is prepared, and - the first time this is called for a
- * given track - attempts to start it if `autoplay` is set. Later calls with
- * the same src (e.g. MusicToggle mounting fresh on the Details/RSVP pages
- * after the guest already opened the envelope on the Opening page) never
- * re-trigger playback, so navigating between pages neither restarts the
- * track nor overrides a guest who's since paused it.
+ * Makes sure `src` is prepared, and attempts to start it if `autoplay` is
+ * set - every time this is called, not just the first. MusicToggle mounting
+ * fresh on the Details/RSVP pages, or the guest navigating back to the
+ * Opening page and tapping the envelope open again, all call this with
+ * autoplay=true; startPlayback() itself is a safe no-op whenever the track
+ * is already playing, so repeat calls never restart or glitch it. The only
+ * thing that should stop an autoplay attempt from going through is the
+ * guest having explicitly paused it (`manuallyPaused`) - reset whenever a
+ * new track loads, since that's a fresh choice to make.
  */
 function ensurePlaying(src: string | undefined | null, autoplay = false) {
   const isNewTrack = (src || null) !== currentSrc.value
   preparePlayer(src)
-  if (isNewTrack) startAttempted = false
-  if (autoplay && !startAttempted) {
-    startAttempted = true
+  if (isNewTrack) manuallyPaused = false
+  if (autoplay && !manuallyPaused) {
     startPlayback()
   }
 }
@@ -222,8 +235,10 @@ function toggle() {
   if (ytPlayer) {
     if (playing.value) {
       shouldPlay = false
+      manuallyPaused = true
       ytPlayer.pauseVideo()
     } else {
+      manuallyPaused = false
       startPlayback()
     }
     return
@@ -231,8 +246,10 @@ function toggle() {
   if (!audio) return
   if (playing.value) {
     shouldPlay = false
+    manuallyPaused = true
     audio.pause()
   } else {
+    manuallyPaused = false
     startPlayback()
   }
 }

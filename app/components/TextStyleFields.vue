@@ -112,24 +112,44 @@
   // Same Google Font URL auto-extraction pattern used elsewhere in the editor
   // (main Typography section, Monogram) - paste a specimen page link, get the
   // correct stylesheet URL and CSS family name filled in automatically.
+  //
+  // Two paste formats are supported: a "specimen" page link
+  // (https://fonts.google.com/specimen/Merienda), which gets rewritten into
+  // the actual stylesheet URL below, and a stylesheet URL pasted directly
+  // (https://fonts.googleapis.com/css2?family=Merienda&display=swap), which
+  // is used as-is. Either way we always re-derive FontFamily from whatever
+  // `family=` value ends up in the URL, since that's the only thing that
+  // actually makes the text render in the chosen font - previously this only
+  // happened for specimen links, so a directly-pasted stylesheet URL loaded
+  // the font file but never switched the CSS font-family, and looked like
+  // the font picker was silently doing nothing.
   watch(fontUrlValue, (newVal) => {
-    if (newVal && newVal.includes('fonts.google.com/specimen/')) {
-      try {
+    if (!newVal) return
+    try {
+      let workingUrl = newVal
+      if (newVal.includes('fonts.google.com/specimen/')) {
         const urlObj = new URL(newVal)
         const pathSegments = urlObj.pathname.split('/').filter(Boolean)
         const rawFontName = pathSegments[pathSegments.length - 1]
         if (rawFontName) {
           const cleanFontNameEncoded = rawFontName.split('?')[0]
-          fontUrlValue.value = `https://fonts.googleapis.com/css2?family=${cleanFontNameEncoded}&display=swap`
-          const familyKey = `${props.prefix}FontFamily`
-          if (!props.form[familyKey]) {
-            const fontNameDecoded = decodeURIComponent(cleanFontNameEncoded).replace(/\+/g, ' ')
-            props.form[familyKey] = `'${fontNameDecoded}', sans-serif`
-          }
+          workingUrl = `https://fonts.googleapis.com/css2?family=${cleanFontNameEncoded}&display=swap`
+          fontUrlValue.value = workingUrl
         }
-      } catch (e) {
-        console.error(e)
       }
+
+      if (workingUrl.includes('fonts.googleapis.com/css2')) {
+        const urlObj = new URL(workingUrl)
+        const familyParam = urlObj.searchParams.get('family')
+        if (familyParam) {
+          const rawName = familyParam.split(':')[0] // strip weight axis, e.g. "Merienda:wght@400..700"
+          const fontNameDecoded = decodeURIComponent(rawName).replace(/\+/g, ' ')
+          const familyKey = `${props.prefix}FontFamily`
+          props.form[familyKey] = `'${fontNameDecoded}', sans-serif`
+        }
+      }
+    } catch (e) {
+      console.error(e)
     }
   })
   </script>
