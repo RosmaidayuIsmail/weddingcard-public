@@ -117,10 +117,11 @@
                 <MusicToggle v-if="form.audioSrc" :src="form.audioSrc" />
                 <UButton v-if="form.audioSrc" size="sm" variant="ghost" color="error" icon="i-heroicons-trash" @click="form.audioSrc = ''" />
               </div>
-              <UFormField label="Or paste a direct audio URL" class="mt-3">
-                <UInput v-model="form.audioSrc" placeholder="https://.../song.mp3" class="w-full" />
+              <UFormField label="Or paste a song link — YouTube, YouTube Music, or a direct audio URL" class="mt-3">
+                <UInput v-model="form.audioSrc" placeholder="https://music.youtube.com/watch?v=... or https://.../song.mp3" class="w-full" />
               </UFormField>
-              <p v-if="!cloudinaryConfigured" class="text-xs text-amber-400/80 mt-2">Image/audio uploads aren't configured on this deployment - paste a direct URL instead.</p>
+              <p class="text-xs text-gray-500 mt-2">A YouTube or YouTube Music link plays through YouTube's own player in the background — no downloading needed. It won't work if the video's owner has disabled embedding elsewhere.</p>
+              <p v-if="!cloudinaryConfigured" class="text-xs text-amber-400/80 mt-2">Image/audio uploads aren't configured on this deployment - paste a link instead.</p>
             </div>
 
             <!-- Language Translation Presets -->
