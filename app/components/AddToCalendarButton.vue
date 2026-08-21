@@ -5,7 +5,7 @@
     variant="soft"
     @click="downloadIcs"
   >
-    Add to Calendar
+    {{ label || 'Add to Calendar' }}
   </UButton>
 </template>
 
@@ -17,6 +17,7 @@ const props = defineProps<{
   venueName: string
   venueAddress: string
   rsvpDeadlineLabel?: string
+  label?: string
 }>()
 
 function toIcsDate(date: Date) {

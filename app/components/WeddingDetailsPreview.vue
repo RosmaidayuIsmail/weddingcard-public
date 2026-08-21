@@ -62,14 +62,14 @@
                     <img v-if="content.bridePhotoUrl" :src="content.bridePhotoUrl" alt="" class="w-14 h-14 rounded-full object-cover mx-auto mb-2 border-2" :style="{ borderColor: 'var(--theme-accent)' }">
                     <p class="text-[0.6rem] uppercase tracking-widest font-semibold mb-1" :style="{ color: 'var(--theme-accent)' }">{{ content.familyBrideLabel || 'Bride' }}</p>
                     <p class="font-bold text-sm text-white/90">{{ content.brideFullName || 'Bride Full Name' }}</p>
-                    <p class="text-xs text-white/60 font-light line-clamp-2">Child of <br/>{{ content.brideParents || 'Parents' }}</p>
+                    <p class="text-xs text-white/60 font-light line-clamp-2">{{ content.childOfLabel || 'Child of' }} <br/>{{ content.brideParents || 'Parents' }}</p>
                   </div>
                   <div class="h-px bg-white/10 w-16 mx-auto my-4" />
                   <div v-if="content.groomFullName || content.groomParents" class="space-y-1">
                     <img v-if="content.groomPhotoUrl" :src="content.groomPhotoUrl" alt="" class="w-14 h-14 rounded-full object-cover mx-auto mb-2 border-2" :style="{ borderColor: 'var(--theme-accent)' }">
                     <p class="text-[0.6rem] uppercase tracking-widest font-semibold mb-1" :style="{ color: 'var(--theme-accent)' }">{{ content.familyGroomLabel || 'Groom' }}</p>
                     <p class="font-bold text-sm text-white/90">{{ content.groomFullName || 'Groom Full Name' }}</p>
-                    <p class="text-xs text-white/60 font-light line-clamp-2">Child of <br/>{{ content.groomParents || 'Parents' }}</p>
+                    <p class="text-xs text-white/60 font-light line-clamp-2">{{ content.childOfLabel || 'Child of' }} <br/>{{ content.groomParents || 'Parents' }}</p>
                   </div>
                 </div>
               </template>
@@ -120,7 +120,7 @@
 
               <!-- Flow -->
               <template v-else-if="currentKey === 'flow'">
-                <h2 class="font-display font-semibold text-xl mb-3" :style="{ color: 'var(--theme-accent)' }">Event Flow</h2>
+                <h2 class="font-display font-semibold text-xl mb-3" :style="{ color: 'var(--theme-accent)' }">{{ content.eventFlowHeading || 'Event Flow' }}</h2>
                 <div class="scale-[0.85] origin-top max-h-[300px] overflow-y-auto hide-scrollbar text-left">
                    <FlowTimeline :items="flow" />
                 </div>

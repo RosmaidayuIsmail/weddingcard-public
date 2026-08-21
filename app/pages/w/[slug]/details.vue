@@ -98,14 +98,14 @@
                   <img v-if="wedding.content.bridePhotoUrl" :src="wedding.content.bridePhotoUrl" alt="" class="w-20 h-20 rounded-full object-cover mx-auto mb-3 border-2" :style="{ borderColor: 'var(--theme-accent)' }">
                   <p class="text-xs uppercase tracking-widest font-semibold mb-2" :style="{ color: 'var(--theme-accent)' }">{{ wedding.content.familyBrideLabel || 'Bride' }}</p>
                   <p class="font-bold text-lg text-white/90">{{ wedding.content.brideFullName }}</p>
-                  <p class="text-sm text-white/70" :style="{ fontWeight: 'var(--theme-text-weight)' }">Child of <br/>{{ wedding.content.brideParents }}</p>
+                  <p class="text-sm text-white/70" :style="{ fontWeight: 'var(--theme-text-weight)' }">{{ wedding.content.childOfLabel || 'Child of' }} <br/>{{ wedding.content.brideParents }}</p>
                 </div>
                 <div class="h-px bg-white/10 w-24 mx-auto my-6" />
                 <div v-if="wedding.content.groomFullName || wedding.content.groomParents" class="space-y-1">
                   <img v-if="wedding.content.groomPhotoUrl" :src="wedding.content.groomPhotoUrl" alt="" class="w-20 h-20 rounded-full object-cover mx-auto mb-3 border-2" :style="{ borderColor: 'var(--theme-accent)' }">
                   <p class="text-xs uppercase tracking-widest font-semibold mb-2" :style="{ color: 'var(--theme-accent)' }">{{ wedding.content.familyGroomLabel || 'Groom' }}</p>
                   <p class="font-bold text-lg text-white/90">{{ wedding.content.groomFullName }}</p>
-                  <p class="text-sm text-white/70" :style="{ fontWeight: 'var(--theme-text-weight)' }">Child of <br/>{{ wedding.content.groomParents }}</p>
+                  <p class="text-sm text-white/70" :style="{ fontWeight: 'var(--theme-text-weight)' }">{{ wedding.content.childOfLabel || 'Child of' }} <br/>{{ wedding.content.groomParents }}</p>
                 </div>
               </div>
             </template>
@@ -137,6 +137,7 @@
                   :venue-name="wedding.content.venueName"
                   :venue-address="wedding.content.venueAddress"
                   :rsvp-deadline-label="wedding.content.rsvpDeadlineLabel"
+                  :label="wedding.content.calendarButtonLabel"
                   class="rounded-full shadow-lg"
                 />
               </div>
@@ -161,7 +162,7 @@
             </template>
 
             <template v-else-if="currentKey === 'flow'">
-              <h2 class="font-display font-semibold text-2xl mb-6" :style="{ color: 'var(--theme-accent)' }">Event Flow</h2>
+              <h2 class="font-display font-semibold text-2xl mb-6" :style="{ color: 'var(--theme-accent)' }">{{ wedding.content.eventFlowHeading || 'Event Flow' }}</h2>
               <FlowTimeline :items="wedding.flow" />
             </template>
           </div>

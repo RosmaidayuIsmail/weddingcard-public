@@ -32,6 +32,12 @@ export interface WeddingContent {
   coupleDividerLabel: string
   familyBrideLabel: string
   familyGroomLabel: string
+  /** "Child of" above each parent's names on the Family slide. */
+  childOfLabel: string
+  /** Label on the "Add to Calendar" button under the Details/Event section. */
+  calendarButtonLabel: string
+  /** Heading above the day-of schedule (FlowTimeline) shown on the Details page. */
+  eventFlowHeading: string
   hashtag: string
   enableGift: boolean
   enablePetals: boolean
@@ -246,6 +252,9 @@ export function createDefaultContent(brideName = '', groomName = ''): WeddingCon
     coupleDividerLabel: 'Bride & Groom',
     familyBrideLabel: 'Bride',
     familyGroomLabel: 'Groom',
+    childOfLabel: 'Child of',
+    calendarButtonLabel: 'Add to Calendar',
+    eventFlowHeading: 'Event Flow',
     hashtag: '',
     enableGift: false,
     enablePetals: true,
