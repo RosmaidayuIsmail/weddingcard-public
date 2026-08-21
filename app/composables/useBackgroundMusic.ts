@@ -2,15 +2,22 @@
  * A single, page-independent background-music player shared across an
  * entire wedding site visit (Opening -> Details -> RSVP).
  *
- * Previously each page mounted its own <audio>/YouTube player inside
- * MusicToggle.vue, and destroyed it in onBeforeUnmount - so the music cut
- * out and restarted from zero every time a guest navigated to another page.
- * The actual player now lives here, at module scope, completely outside
- * any single component's lifecycle, so it just keeps running as the guest
- * moves between pages. MusicToggle.vue (mounted fresh on every page) is
- * just a thin remote control: it calls ensurePlaying() on mount, which is a
- * no-op if the singleton is already set up for this wedding's track, and
- * otherwise starts it.
+ * The actual <audio>/YouTube player lives here, at module scope, completely
+ * outside any single component's lifecycle, so it keeps running as the
+ * guest moves between pages instead of being destroyed and recreated on
+ * every navigation. MusicToggle.vue (mounted fresh on every page) is just a
+ * thin remote control.
+ *
+ * Setup ("prepare") is deliberately separate from actually starting
+ * playback ("start"). preparePlayer() creates the underlying <audio>/YouTube
+ * player and tells the browser to start buffering it as early as possible -
+ * as soon as the wedding data loads, while the guest is still looking at
+ * the closed envelope - without making any sound. The one-tap-late "lag"
+ * guests were hearing was the player being created AND started at the same
+ * instant the envelope was tapped, so the very first thing that happened
+ * was kicking off a fresh network fetch. Priming it ahead of time means
+ * that by the time the guest actually taps, there's little to nothing left
+ * to wait for.
  *
  * This state is intentionally module-level (not inside the exported
  * function) so every component that calls useBackgroundMusic() shares the
@@ -25,6 +32,12 @@ const playing = ref(false)
 let audio: HTMLAudioElement | null = null
 let ytPlayer: any = null
 let ytContainer: HTMLDivElement | null = null
+let ytReady = false
+let pendingAutoplay = false
+// Whether an autoplay/start has already been attempted for the current
+// track - guards against a later page's autoplay="true" MusicToggle
+// re-triggering playback (and overriding a guest who's since paused it).
+let startAttempted = false
 
 function teardownPlayer() {
   audio?.pause()
@@ -33,25 +46,30 @@ function teardownPlayer() {
   ytPlayer = null
   ytContainer?.remove()
   ytContainer = null
+  ytReady = false
+  pendingAutoplay = false
+  startAttempted = false
+  playing.value = false
 }
 
-function startAudioElement(src: string, autoplay: boolean) {
-  audio = new Audio(src)
+function prepareAudioElement(src: string) {
+  audio = new Audio()
   audio.loop = true
   audio.volume = 0.35
+  // Hints the browser to fetch/buffer the whole file ahead of time rather
+  // than waiting for play() to be called.
+  audio.preload = 'auto'
   audio.addEventListener('play', () => (playing.value = true))
   audio.addEventListener('pause', () => (playing.value = false))
-
-  if (autoplay) {
-    audio.play().catch(() => {
-      // Autoplay was blocked - expected until the guest actually interacts with the page.
-    })
-  }
+  audio.src = src
+  audio.load()
 }
 
-async function startYoutubePlayer(videoId: string, autoplay: boolean) {
+async function prepareYoutubePlayer(src: string, videoId: string) {
   await loadYoutubeIframeApi()
   if (!import.meta.client || !window.YT?.Player) return
+  // Another prepare/teardown may have superseded this one while awaiting the API.
+  if (currentSrc.value !== src) return
 
   // Hidden off-screen player - only the audio is meant to reach guests,
   // the video track itself is never shown.
@@ -77,8 +95,15 @@ async function startYoutubePlayer(videoId: string, autoplay: boolean) {
     },
     events: {
       onReady: (event: any) => {
+        ytReady = true
         event.target.setVolume(35)
-        if (autoplay) event.target.playVideo()
+        // Buffers the video without playing it, so playVideo() later has
+        // as little left to load as possible.
+        event.target.cueVideoById(videoId)
+        if (pendingAutoplay) {
+          pendingAutoplay = false
+          event.target.playVideo()
+        }
       },
       onStateChange: (event: any) => {
         // YT.PlayerState: -1 unstarted, 0 ended, 1 playing, 2 paused, 3 buffering, 5 cued
@@ -100,27 +125,54 @@ async function startYoutubePlayer(videoId: string, autoplay: boolean) {
 }
 
 /**
- * Makes sure the singleton is playing `src`. If it's already set up for
- * this exact src - the common case, since every page of the same wedding
- * passes the same wedding.content.audioSrc - this is a no-op that leaves
- * whatever's currently playing/paused exactly as it is, so navigating
- * between pages never interrupts or force-restarts the track, and never
- * overrides a guest who's deliberately paused it. Only tears down and
- * rebuilds the player when the src genuinely changes.
+ * Sets up (but does not start) the player for `src`, ahead of time. Call
+ * this as soon as the track is known - e.g. the moment the wedding data
+ * loads, before the guest has even tapped the envelope - so the browser has
+ * a head start buffering it. A no-op if already prepared for this exact src.
  */
-function ensurePlaying(src: string | undefined | null, autoplay = false) {
+function preparePlayer(src: string | undefined | null) {
   if (!import.meta.client) return
   const next = src || null
   if (next === currentSrc.value && (audio || ytPlayer)) return
 
   teardownPlayer()
   currentSrc.value = next
-  playing.value = false
   if (!next) return
 
   const videoId = extractYoutubeVideoId(next)
-  if (videoId) startYoutubePlayer(videoId, autoplay)
-  else startAudioElement(next, autoplay)
+  if (videoId) prepareYoutubePlayer(next, videoId)
+  else prepareAudioElement(next)
+}
+
+function startPlayback() {
+  if (extractYoutubeVideoId(currentSrc.value)) {
+    if (ytReady && ytPlayer) ytPlayer.playVideo()
+    else pendingAutoplay = true
+    return
+  }
+  if (audio?.paused) {
+    audio.play().catch(() => {
+      // Autoplay was blocked - expected until the guest actually interacts with the page.
+    })
+  }
+}
+
+/**
+ * Makes sure `src` is prepared, and - the first time this is called for a
+ * given track - attempts to start it if `autoplay` is set. Later calls with
+ * the same src (e.g. MusicToggle mounting fresh on the Details/RSVP pages
+ * after the guest already opened the envelope on the Opening page) never
+ * re-trigger playback, so navigating between pages neither restarts the
+ * track nor overrides a guest who's since paused it.
+ */
+function ensurePlaying(src: string | undefined | null, autoplay = false) {
+  const isNewTrack = (src || null) !== currentSrc.value
+  preparePlayer(src)
+  if (isNewTrack) startAttempted = false
+  if (autoplay && !startAttempted) {
+    startAttempted = true
+    startPlayback()
+  }
 }
 
 function toggle() {
@@ -140,5 +192,5 @@ function toggle() {
 }
 
 export function useBackgroundMusic() {
-  return { playing, ensurePlaying, toggle }
+  return { playing, preparePlayer, ensurePlaying, toggle }
 }

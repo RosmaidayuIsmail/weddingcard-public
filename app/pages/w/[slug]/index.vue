@@ -258,4 +258,19 @@ watch(
   },
   { immediate: true }
 )
+
+// Primes the background-music track (buffers the audio file / readies the
+// hidden YouTube player) the moment the wedding loads, while the guest is
+// still looking at the closed envelope - not just when they tap it open.
+// MusicToggle's own ensurePlaying() call on tap then has little to nothing
+// left to wait for, instead of starting the download from zero at that
+// exact moment (which was the audible lag).
+const { preparePlayer } = useBackgroundMusic()
+watch(
+  () => wedding.value?.content.audioSrc,
+  (src) => {
+    if (src) preparePlayer(src)
+  },
+  { immediate: true }
+)
 </script>
