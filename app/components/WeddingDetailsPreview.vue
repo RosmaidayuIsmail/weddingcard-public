@@ -50,7 +50,7 @@
                     {{ content.groomName || 'Groom' }}
                   </h2>
                   <div class="h-px w-12 mx-auto my-3" :style="{ background: 'var(--theme-accent)' }"></div>
-                  <p class="text-[0.65rem] uppercase tracking-widest text-white/60">Bride & Groom</p>
+                  <p class="text-[0.65rem] uppercase tracking-widest text-white/60">{{ content.coupleDividerLabel || 'Bride & Groom' }}</p>
                 </div>
               </template>
 
@@ -60,14 +60,14 @@
                   <UIcon v-if="!content.bridePhotoUrl && !content.groomPhotoUrl" name="i-heroicons-users" class="w-6 h-6 mx-auto mb-3 opacity-50" :style="{ color: 'var(--theme-accent)' }" />
                   <div v-if="content.brideFullName || content.brideParents" class="space-y-1">
                     <img v-if="content.bridePhotoUrl" :src="content.bridePhotoUrl" alt="" class="w-14 h-14 rounded-full object-cover mx-auto mb-2 border-2" :style="{ borderColor: 'var(--theme-accent)' }">
-                    <p class="text-[0.6rem] uppercase tracking-widest font-semibold mb-1" :style="{ color: 'var(--theme-accent)' }">Bride</p>
+                    <p class="text-[0.6rem] uppercase tracking-widest font-semibold mb-1" :style="{ color: 'var(--theme-accent)' }">{{ content.familyBrideLabel || 'Bride' }}</p>
                     <p class="font-bold text-sm text-white/90">{{ content.brideFullName || 'Bride Full Name' }}</p>
                     <p class="text-xs text-white/60 font-light line-clamp-2">Child of <br/>{{ content.brideParents || 'Parents' }}</p>
                   </div>
                   <div class="h-px bg-white/10 w-16 mx-auto my-4" />
                   <div v-if="content.groomFullName || content.groomParents" class="space-y-1">
                     <img v-if="content.groomPhotoUrl" :src="content.groomPhotoUrl" alt="" class="w-14 h-14 rounded-full object-cover mx-auto mb-2 border-2" :style="{ borderColor: 'var(--theme-accent)' }">
-                    <p class="text-[0.6rem] uppercase tracking-widest font-semibold mb-1" :style="{ color: 'var(--theme-accent)' }">Groom</p>
+                    <p class="text-[0.6rem] uppercase tracking-widest font-semibold mb-1" :style="{ color: 'var(--theme-accent)' }">{{ content.familyGroomLabel || 'Groom' }}</p>
                     <p class="font-bold text-sm text-white/90">{{ content.groomFullName || 'Groom Full Name' }}</p>
                     <p class="text-xs text-white/60 font-light line-clamp-2">Child of <br/>{{ content.groomParents || 'Parents' }}</p>
                   </div>
@@ -77,7 +77,7 @@
               <!-- Event Logistics -->
               <template v-else-if="currentKey === 'event'">
                 <div v-if="!content.hideSystemText">
-                  <h2 class="font-display font-semibold text-xl mb-4" :style="{ color: 'var(--theme-accent)' }">The Details</h2>
+                  <h2 class="font-display font-semibold text-xl mb-4" :style="{ color: 'var(--theme-accent)' }">{{ content.detailsHeading || 'The Details' }}</h2>
                   <div class="space-y-3 text-white/90">
                     <div v-if="content.dateLabel" class="flex flex-col items-center">
                       <UIcon name="i-heroicons-calendar" class="w-4 h-4 mb-1 opacity-70" />
@@ -98,14 +98,14 @@
 
               <!-- Location Maps -->
               <template v-else-if="currentKey === 'location'">
-                <h2 class="font-display font-semibold text-xl mb-1" :style="{ color: 'var(--theme-accent)' }">Location</h2>
-                <p class="text-[0.65rem] text-white/60 mb-4">Scan or tap to open in Maps</p>
+                <h2 class="font-display font-semibold text-xl mb-1" :style="{ color: 'var(--theme-accent)' }">{{ content.locationHeading || 'Location' }}</h2>
+                <p class="text-[0.65rem] text-white/60 mb-4">{{ content.locationSubtitle || 'Scan or tap to open in Maps' }}</p>
                 <div class="flex flex-col items-center gap-4">
                   <div class="p-2 bg-white rounded-xl shadow-lg">
                     <img :src="qrCodeUrl" alt="QR code" class="w-24 h-24">
                   </div>
                   <UButton size="xs" color="primary" class="font-semibold rounded-full px-4 pointer-events-none">
-                    Google Maps
+                    {{ content.locationMapsButtonLabel || 'Google Maps' }}
                   </UButton>
                 </div>
               </template>

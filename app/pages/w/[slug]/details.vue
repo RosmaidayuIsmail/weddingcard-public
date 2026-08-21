@@ -83,7 +83,7 @@
                   {{ wedding.content.groomName }}
                 </h2>
                 <div class="h-px w-16 mx-auto my-4" :style="{ background: 'var(--theme-accent)' }"></div>
-                <p class="text-sm uppercase tracking-widest text-white/60">Bride &amp; Groom</p>
+                <p class="text-sm uppercase tracking-widest text-white/60">{{ wedding.content.coupleDividerLabel || 'Bride & Groom' }}</p>
                 <div v-if="wedding.content.monogramEnabled" class="mt-5 flex justify-center">
                   <img v-if="wedding.content.monogramType === 'upload' && wedding.content.monogramImageUrl" :src="wedding.content.monogramImageUrl" alt="Monogram" class="w-12 h-12 object-contain opacity-90">
                   <span v-else class="text-2xl" :style="{ fontFamily: monogramFontFamily, color: 'var(--theme-accent)' }">{{ monogramDisplayText }}</span>
@@ -96,14 +96,14 @@
                 <UIcon v-if="!wedding.content.bridePhotoUrl && !wedding.content.groomPhotoUrl" name="i-heroicons-users" class="w-8 h-8 mx-auto mb-4 opacity-50" :style="{ color: 'var(--theme-accent)' }" />
                 <div v-if="wedding.content.brideFullName || wedding.content.brideParents" class="space-y-1">
                   <img v-if="wedding.content.bridePhotoUrl" :src="wedding.content.bridePhotoUrl" alt="" class="w-20 h-20 rounded-full object-cover mx-auto mb-3 border-2" :style="{ borderColor: 'var(--theme-accent)' }">
-                  <p class="text-xs uppercase tracking-widest font-semibold mb-2" :style="{ color: 'var(--theme-accent)' }">Bride</p>
+                  <p class="text-xs uppercase tracking-widest font-semibold mb-2" :style="{ color: 'var(--theme-accent)' }">{{ wedding.content.familyBrideLabel || 'Bride' }}</p>
                   <p class="font-bold text-lg text-white/90">{{ wedding.content.brideFullName }}</p>
                   <p class="text-sm text-white/70" :style="{ fontWeight: 'var(--theme-text-weight)' }">Child of <br/>{{ wedding.content.brideParents }}</p>
                 </div>
                 <div class="h-px bg-white/10 w-24 mx-auto my-6" />
                 <div v-if="wedding.content.groomFullName || wedding.content.groomParents" class="space-y-1">
                   <img v-if="wedding.content.groomPhotoUrl" :src="wedding.content.groomPhotoUrl" alt="" class="w-20 h-20 rounded-full object-cover mx-auto mb-3 border-2" :style="{ borderColor: 'var(--theme-accent)' }">
-                  <p class="text-xs uppercase tracking-widest font-semibold mb-2" :style="{ color: 'var(--theme-accent)' }">Groom</p>
+                  <p class="text-xs uppercase tracking-widest font-semibold mb-2" :style="{ color: 'var(--theme-accent)' }">{{ wedding.content.familyGroomLabel || 'Groom' }}</p>
                   <p class="font-bold text-lg text-white/90">{{ wedding.content.groomFullName }}</p>
                   <p class="text-sm text-white/70" :style="{ fontWeight: 'var(--theme-text-weight)' }">Child of <br/>{{ wedding.content.groomParents }}</p>
                 </div>
@@ -112,7 +112,7 @@
 
             <template v-else-if="currentKey === 'event'">
               <div v-if="!wedding.content.hideSystemText">
-                <h2 class="font-display font-semibold text-2xl mb-6" :style="{ color: 'var(--theme-accent)' }">The Details</h2>
+                <h2 class="font-display font-semibold text-2xl mb-6" :style="{ color: 'var(--theme-accent)' }">{{ wedding.content.detailsHeading || 'The Details' }}</h2>
                 <div class="space-y-4 text-white/90">
                   <div v-if="wedding.content.dateLabel" class="flex flex-col items-center">
                     <UIcon name="i-heroicons-calendar" class="w-5 h-5 mb-1 opacity-70" />
@@ -143,14 +143,14 @@
             </template>
 
             <template v-else-if="currentKey === 'location'">
-              <h2 class="font-display font-semibold text-2xl mb-2" :style="{ color: 'var(--theme-accent)' }">Location</h2>
-              <p class="text-sm text-white/60 mb-6">Scan or tap to open in Maps</p>
+              <h2 class="font-display font-semibold text-2xl mb-2" :style="{ color: 'var(--theme-accent)' }">{{ wedding.content.locationHeading || 'Location' }}</h2>
+              <p class="text-sm text-white/60 mb-6">{{ wedding.content.locationSubtitle || 'Scan or tap to open in Maps' }}</p>
               <div class="flex flex-col items-center gap-6">
                 <div class="p-3 bg-white rounded-2xl shadow-xl">
-                  <img :src="qrCodeUrl" alt="QR code linking to the venue on Google Maps" class="w-36 h-36" loading="lazy">
+                  <img :src="qrCodeUrl" :alt="`QR code linking to the venue on ${wedding.content.locationMapsButtonLabel || 'Google Maps'}`" class="w-36 h-36" loading="lazy">
                 </div>
                 <UButton :to="wedding.content.mapUrl" target="_blank" external icon="i-heroicons-map-pin" color="primary" class="font-semibold rounded-full px-6 shadow-md">
-                  Open Google Maps
+                  {{ wedding.content.locationMapsButtonLabel || 'Google Maps' }}
                 </UButton>
               </div>
             </template>

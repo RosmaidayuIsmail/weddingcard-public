@@ -23,6 +23,15 @@ export interface WeddingContent {
   venueAddress: string
   mapUrl: string
   rsvpDeadlineLabel: string
+  /** Details page section headings/labels - translatable so a couple can
+   *  offer the Details/Location page fully in Malay (or any language). */
+  detailsHeading: string
+  locationHeading: string
+  locationSubtitle: string
+  locationMapsButtonLabel: string
+  coupleDividerLabel: string
+  familyBrideLabel: string
+  familyGroomLabel: string
   hashtag: string
   enableGift: boolean
   enablePetals: boolean
@@ -230,6 +239,13 @@ export function createDefaultContent(brideName = '', groomName = ''): WeddingCon
     venueAddress: '',
     mapUrl: '',
     rsvpDeadlineLabel: '',
+    detailsHeading: 'The Details',
+    locationHeading: 'Location',
+    locationSubtitle: 'Scan or tap to open in Maps',
+    locationMapsButtonLabel: 'Google Maps',
+    coupleDividerLabel: 'Bride & Groom',
+    familyBrideLabel: 'Bride',
+    familyGroomLabel: 'Groom',
     hashtag: '',
     enableGift: false,
     enablePetals: true,

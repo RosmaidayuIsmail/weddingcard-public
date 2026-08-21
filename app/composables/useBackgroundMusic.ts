@@ -38,6 +38,46 @@ let pendingAutoplay = false
 // track - guards against a later page's autoplay="true" MusicToggle
 // re-triggering playback (and overriding a guest who's since paused it).
 let startAttempted = false
+// Whether the music SHOULD currently be playing, as far as the guest's own
+// choices are concerned (they haven't paused it) - independent of whether
+// it's actually audible right now. See bindResumeListeners() below for why
+// this exists separately from `playing`.
+let shouldPlay = false
+let resumeListenersBound = false
+
+/**
+ * Re-attempts playback whenever this tab/page becomes visible or active
+ * again, as long as the guest hasn't paused the music themselves.
+ *
+ * Why this is needed: a guest who opens the link, taps the envelope (music
+ * starts, `opened` becomes true), then backgrounds the browser - switching
+ * apps, locking their phone, or dismissing an in-app browser sheet from
+ * WhatsApp/Instagram - and later comes back to that same tab does NOT get a
+ * fresh page load. Mobile browsers routinely auto-pause `<audio>`/embedded
+ * video when a tab goes to the background, and do not resume it on their
+ * own; some also restore the page from a frozen bfcache snapshot instead of
+ * re-running the page's scripts. Either way, `opened` is already `true` on
+ * return, so there's no fresh tap for ensurePlaying()'s gesture-gated start
+ * to hook into - the track just stays silently paused forever after that
+ * first backgrounding. This is exactly the "works the first time, not on
+ * reopen" behavior reported. These listeners are the only remaining chance
+ * to get the music going again on a guest's return, so every path that
+ * marks something as playing calls bindResumeListeners() once.
+ */
+function bindResumeListeners() {
+  if (resumeListenersBound || !import.meta.client) return
+  resumeListenersBound = true
+
+  const tryResume = () => {
+    if (!shouldPlay) return
+    if (document.visibilityState !== 'visible') return
+    startPlayback()
+  }
+
+  document.addEventListener('visibilitychange', tryResume)
+  window.addEventListener('pageshow', tryResume)
+  window.addEventListener('focus', tryResume)
+}
 
 function teardownPlayer() {
   audio?.pause()
@@ -49,6 +89,7 @@ function teardownPlayer() {
   ytReady = false
   pendingAutoplay = false
   startAttempted = false
+  shouldPlay = false
   playing.value = false
 }
 
@@ -145,6 +186,8 @@ function preparePlayer(src: string | undefined | null) {
 }
 
 function startPlayback() {
+  bindResumeListeners()
+  shouldPlay = true
   if (extractYoutubeVideoId(currentSrc.value)) {
     if (ytReady && ytPlayer) ytPlayer.playVideo()
     else pendingAutoplay = true
@@ -177,17 +220,20 @@ function ensurePlaying(src: string | undefined | null, autoplay = false) {
 
 function toggle() {
   if (ytPlayer) {
-    if (playing.value) ytPlayer.pauseVideo()
-    else ytPlayer.playVideo()
+    if (playing.value) {
+      shouldPlay = false
+      ytPlayer.pauseVideo()
+    } else {
+      startPlayback()
+    }
     return
   }
   if (!audio) return
   if (playing.value) {
+    shouldPlay = false
     audio.pause()
   } else {
-    audio.play().catch(() => {
-      // Blocked or no track loaded yet.
-    })
+    startPlayback()
   }
 }
 

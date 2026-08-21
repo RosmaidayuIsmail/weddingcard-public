@@ -287,6 +287,46 @@ export const builtInRsvpPresets: RsvpPreset[] = [
   }
 ]
 
+export const detailsTextFields = [
+  { key: 'detailsHeading', label: 'Details section heading' },
+  { key: 'coupleDividerLabel', label: "Couple divider caption (e.g. 'Bride & Groom')" },
+  { key: 'familyBrideLabel', label: 'Bride label' },
+  { key: 'familyGroomLabel', label: 'Groom label' },
+  { key: 'locationHeading', label: 'Location section heading' },
+  { key: 'locationSubtitle', label: 'Location subtitle' },
+  { key: 'locationMapsButtonLabel', label: 'Maps button label' }
+] as const satisfies ReadonlyArray<{ key: keyof WeddingContent, label: string }>
+export type DetailsTextKey = (typeof detailsTextFields)[number]['key']
+export interface DetailsPreset { id: string; label: string; texts: Partial<Pick<WeddingContent, DetailsTextKey>> }
+export const builtInDetailsPresets: DetailsPreset[] = [
+  {
+    id: 'en',
+    label: 'English',
+    texts: {
+      detailsHeading: 'The Details',
+      coupleDividerLabel: 'Bride & Groom',
+      familyBrideLabel: 'Bride',
+      familyGroomLabel: 'Groom',
+      locationHeading: 'Location',
+      locationSubtitle: 'Scan or tap to open in Maps',
+      locationMapsButtonLabel: 'Google Maps'
+    }
+  },
+  {
+    id: 'ms',
+    label: 'Bahasa Melayu',
+    texts: {
+      detailsHeading: 'Butiran Perkahwinan',
+      coupleDividerLabel: 'Pengantin Perempuan & Pengantin Lelaki',
+      familyBrideLabel: 'Pengantin Perempuan',
+      familyGroomLabel: 'Pengantin Lelaki',
+      locationHeading: 'Lokasi',
+      locationSubtitle: 'Imbas atau ketik untuk buka dalam Peta',
+      locationMapsButtonLabel: 'Google Maps'
+    }
+  }
+]
+
 /** Platform controls for the couple dashboard. Routes and permissions stay
  * in source code; admin changes only labels and availability. */
 export interface DashboardNavSetting {
@@ -718,6 +758,8 @@ export function useThemes() {
     builtInTextPresets,
     builtInRsvpPresets,
     rsvpTextFields,
+    builtInDetailsPresets,
+    detailsTextFields,
     ensureCatalogLoaded,
     openingStyleCatalog,
     disabledOpeningStyles,
