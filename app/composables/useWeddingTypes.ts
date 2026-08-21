@@ -75,10 +75,19 @@ export interface WeddingContent {
   openingTitle: string
   openingGreeting: string
   openingActionText: string
+  /** Which curated color palette the Modern Dark / Minimal Light opening
+   *  styles render with - see modernDarkPaletteCatalog / minimalLightPaletteCatalog
+   *  in useThemes.ts. Empty string falls back to each catalog's first entry,
+   *  so existing cards keep their current look until a couple opts in. */
+  openingModernDarkPalette: string
+  openingMinimalLightPalette: string
   /**
-   * Per-element typography overrides for the opening/envelope screen's three
-   * text elements. Each falls back to sensible defaults when empty, so
-   * existing cards are unaffected until the user opts in.
+   * Per-element typography overrides for the opening/envelope screen's text
+   * elements. Each falls back to sensible defaults when empty, so existing
+   * cards are unaffected until the user opts in. The guest-name box has
+   * three independently-stylable parts - the greeting text before the name
+   * (e.g. "Menjemput"), the guest's name itself, and the greeting text after
+   * it (e.g. "sekeluarga") - so a couple can mix fonts across all three.
    */
   openingTitleFont: string
   openingTitleFontUrl: string
@@ -92,6 +101,18 @@ export interface WeddingContent {
   openingGreetingSize: number
   openingGreetingColor: string
   openingGreetingWeight: string
+  openingGuestNameFont: string
+  openingGuestNameFontUrl: string
+  openingGuestNameFontFamily: string
+  openingGuestNameSize: number
+  openingGuestNameColor: string
+  openingGuestNameWeight: string
+  openingGreetingAfterFont: string
+  openingGreetingAfterFontUrl: string
+  openingGreetingAfterFontFamily: string
+  openingGreetingAfterSize: number
+  openingGreetingAfterColor: string
+  openingGreetingAfterWeight: string
   openingActionFont: string
   openingActionFontUrl: string
   openingActionFontFamily: string
@@ -285,6 +306,8 @@ export function createDefaultContent(brideName = '', groomName = ''): WeddingCon
     openingTitle: "You're Invited",
     openingGreeting: 'Dear',
     openingActionText: 'Tap to open',
+    openingModernDarkPalette: '',
+    openingMinimalLightPalette: '',
     openingTitleFont: '',
     openingTitleFontUrl: '',
     openingTitleFontFamily: '',
@@ -297,6 +320,18 @@ export function createDefaultContent(brideName = '', groomName = ''): WeddingCon
     openingGreetingSize: 100,
     openingGreetingColor: '',
     openingGreetingWeight: '',
+    openingGuestNameFont: '',
+    openingGuestNameFontUrl: '',
+    openingGuestNameFontFamily: '',
+    openingGuestNameSize: 100,
+    openingGuestNameColor: '',
+    openingGuestNameWeight: '',
+    openingGreetingAfterFont: '',
+    openingGreetingAfterFontUrl: '',
+    openingGreetingAfterFontFamily: '',
+    openingGreetingAfterSize: 100,
+    openingGreetingAfterColor: '',
+    openingGreetingAfterWeight: '',
     openingActionFont: '',
     openingActionFontUrl: '',
     openingActionFontFamily: '',

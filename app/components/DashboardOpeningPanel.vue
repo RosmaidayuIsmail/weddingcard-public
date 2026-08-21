@@ -72,6 +72,45 @@
               </div>
             </div>
 
+            <!-- Modern Dark / Minimal Light palette picker - each of these
+                 two styles is a couple-selectable curated color palette
+                 (real gradient + blob colors, not just a label) rather than
+                 one fixed look. -->
+            <Transition name="fade-down">
+              <div v-if="form.openingStyle === 'modern-dark'" class="p-5 rounded-xl bg-[#111827] border border-gray-700 space-y-3">
+                <h3 class="text-sm font-semibold text-white">Modern Dark Palette</h3>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <button
+                    v-for="palette in modernDarkPaletteCatalog"
+                    :key="palette.id"
+                    type="button"
+                    class="palette-swatch"
+                    :class="{ 'palette-swatch-active': (form.openingModernDarkPalette || modernDarkPaletteCatalog[0].id) === palette.id }"
+                    @click="form.openingModernDarkPalette = palette.id"
+                  >
+                    <span class="palette-swatch-dot" :style="{ background: palette.swatch }" />
+                    <span class="text-xs">{{ palette.label }}</span>
+                  </button>
+                </div>
+              </div>
+              <div v-else-if="form.openingStyle === 'minimal-light'" class="p-5 rounded-xl bg-[#111827] border border-gray-700 space-y-3">
+                <h3 class="text-sm font-semibold text-white">Minimal Light Palette</h3>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <button
+                    v-for="palette in minimalLightPaletteCatalog"
+                    :key="palette.id"
+                    type="button"
+                    class="palette-swatch"
+                    :class="{ 'palette-swatch-active': (form.openingMinimalLightPalette || minimalLightPaletteCatalog[0].id) === palette.id }"
+                    @click="form.openingMinimalLightPalette = palette.id"
+                  >
+                    <span class="palette-swatch-dot" :style="{ background: palette.swatch }" />
+                    <span class="text-xs">{{ palette.label }}</span>
+                  </button>
+                </div>
+              </div>
+            </Transition>
+
             <!-- Cover Picture Upload - powers the Canva backgrounds AND now
                  the Wax Seal doors, which can slide open over your own
                  picture instead of a plain gradient, same as Split Door. -->
@@ -146,13 +185,27 @@
 
                 <UFormField label="Guest Greeting">
                   <UInput v-model="form.openingGreeting" placeholder="e.g. Menjemput {guestName} sekeluarga" size="lg" class="w-full" />
-                  <template #help><span class="text-xs text-gray-500">Use <code class="text-gold-300">{guestName}</code> anywhere in the sentence - text before and after it both work, e.g. "Menjemput {guestName} sekeluarga".</span></template>
+                  <template #help><span class="text-xs text-gray-500">Use <code class="text-gold-300">{guestName}</code> anywhere in the sentence - text before and after it both work, e.g. "Menjemput {guestName} sekeluarga". Each of the three parts - before, the name, and after - can have its own font below, so e.g. "Menjemput" and "sekeluarga" don't have to match.</span></template>
                 </UFormField>
                 <button type="button" class="text-xs text-gold-300 hover:text-gold-200 flex items-center gap-1" @click="showGreetingStyle = !showGreetingStyle">
-                  <UIcon :name="showGreetingStyle ? 'i-heroicons-chevron-down' : 'i-heroicons-chevron-right'" class="w-3.5 h-3.5" /> Customize font, size, color &amp; boldness
+                  <UIcon :name="showGreetingStyle ? 'i-heroicons-chevron-down' : 'i-heroicons-chevron-right'" class="w-3.5 h-3.5" /> Customize font for the text before the name (e.g. "Menjemput")
                 </button>
                 <div v-if="showGreetingStyle" class="p-4 rounded-xl bg-[#111827] border border-gray-700 space-y-4">
                   <TextStyleFields prefix="openingGreeting" :form="form" :font-select-items="fontSelectItems" />
+                </div>
+
+                <button type="button" class="text-xs text-gold-300 hover:text-gold-200 flex items-center gap-1" @click="showGuestNameStyle = !showGuestNameStyle">
+                  <UIcon :name="showGuestNameStyle ? 'i-heroicons-chevron-down' : 'i-heroicons-chevron-right'" class="w-3.5 h-3.5" /> Customize font for the guest's name itself
+                </button>
+                <div v-if="showGuestNameStyle" class="p-4 rounded-xl bg-[#111827] border border-gray-700 space-y-4">
+                  <TextStyleFields prefix="openingGuestName" :form="form" :font-select-items="fontSelectItems" />
+                </div>
+
+                <button type="button" class="text-xs text-gold-300 hover:text-gold-200 flex items-center gap-1" @click="showGreetingAfterStyle = !showGreetingAfterStyle">
+                  <UIcon :name="showGreetingAfterStyle ? 'i-heroicons-chevron-down' : 'i-heroicons-chevron-right'" class="w-3.5 h-3.5" /> Customize font for the text after the name (e.g. "sekeluarga")
+                </button>
+                <div v-if="showGreetingAfterStyle" class="p-4 rounded-xl bg-[#111827] border border-gray-700 space-y-4">
+                  <TextStyleFields prefix="openingGreetingAfter" :form="form" :font-select-items="fontSelectItems" />
                 </div>
 
                 <UFormField label="Action Button Text">
@@ -191,12 +244,15 @@
               <div v-if="previewOpened" class="absolute inset-0 flex items-center justify-center text-white/50 text-sm italic">
                 (Inner card revealed)
               </div>
-              <!-- Same spot/trigger as the real page: the music toggle only
-                   appears once the envelope has been opened, and autoplays
-                   just like the live page does, so this preview matches
-                   what a guest actually experiences. -->
+              <!-- Same spot/trigger as the real page, but deliberately NOT
+                   autoplay: this preview shares the same page-wide audio
+                   player as the actual live site, so an autoplaying toggle
+                   here meant every tap of "preview the animation" while
+                   editing also started playing music unprompted. Tapping
+                   the icon still lets you manually check how a track
+                   sounds. -->
               <div v-if="previewOpened && form.audioSrc" class="absolute top-4 right-4 z-30">
-                <MusicToggle :src="form.audioSrc" autoplay />
+                <MusicToggle :src="form.audioSrc" />
               </div>
             </div>
           </div>
@@ -228,6 +284,8 @@ const fontSelectItems = computed(() => [
 
 const showTitleStyle = ref(false)
 const showGreetingStyle = ref(false)
+const showGuestNameStyle = ref(false)
+const showGreetingAfterStyle = ref(false)
 const showActionStyle = ref(false)
 const toast = useToast()
 
@@ -401,6 +459,35 @@ useSeoMeta({ title: 'Opening Design — WeddingCard' })
   background: rgba(212, 160, 23, 0.1);
   border-color: var(--color-gold-400);
   color: #f3ddaa;
+}
+
+/* Modern Dark / Minimal Light palette swatches */
+.palette-swatch {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.75rem;
+  background: #1F2937;
+  border: 1px solid #374151;
+  color: #9CA3AF;
+  transition: all 0.2s ease;
+}
+.palette-swatch:hover {
+  border-color: rgba(212, 160, 23, 0.4);
+  color: white;
+}
+.palette-swatch-active {
+  background: rgba(212, 160, 23, 0.1);
+  border-color: var(--color-gold-400);
+  color: #f3ddaa;
+}
+.palette-swatch-dot {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  flex-shrink: 0;
 }
 
 /* Smartphone Bezel */

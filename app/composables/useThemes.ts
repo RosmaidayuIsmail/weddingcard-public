@@ -510,6 +510,37 @@ export const openingStyleCatalog: OpeningStyle[] = [
   { label: 'Confetti Burst', value: 'confetti-burst', icon: 'i-heroicons-sparkles' },
 ]
 
+// Curated color palettes for the Modern Dark and Minimal Light opening
+// styles - real CSS gradients/blob colors applied in EnvelopeIntro.vue, not
+// just labels. A couple picks one by id (WeddingContent.openingModernDarkPalette
+// / openingMinimalLightPalette); an empty/unknown id falls back to the first
+// entry so older cards keep today's look unchanged.
+export interface OpeningPalette {
+  id: string
+  label: string
+  swatch: string // small preview color for the picker button
+  bgFrom: string
+  bgVia: string
+  bgTo: string
+  blobPrimary: string
+  blobSecondary: string
+  ink?: string // text color override - only Minimal Light palettes use this
+}
+
+export const modernDarkPaletteCatalog: OpeningPalette[] = [
+  { id: 'midnight', label: 'Midnight Blue', swatch: '#1d4ed8', bgFrom: '#0a192f', bgVia: '#112240', bgTo: '#020c1b', blobPrimary: '#1d4ed8', blobSecondary: '#e3b04a' },
+  { id: 'wine', label: 'Deep Wine', swatch: '#9d174d', bgFrom: '#2a0a14', bgVia: '#3d0f1f', bgTo: '#0f0308', blobPrimary: '#9d174d', blobSecondary: '#e3b04a' },
+  { id: 'emerald', label: 'Emerald Noir', swatch: '#059669', bgFrom: '#05201a', bgVia: '#0a2e24', bgTo: '#01100c', blobPrimary: '#059669', blobSecondary: '#e3b04a' },
+  { id: 'onyx', label: 'Onyx Gold', swatch: '#e3b04a', bgFrom: '#161616', bgVia: '#1e1e1e', bgTo: '#060606', blobPrimary: '#e3b04a', blobSecondary: '#8a8a8a' }
+]
+
+export const minimalLightPaletteCatalog: OpeningPalette[] = [
+  { id: 'ivory', label: 'Ivory', swatch: '#c9b48a', bgFrom: '#fdfcfb', bgVia: '#f6f3ee', bgTo: '#ece5d8', blobPrimary: '#c9b48a', blobSecondary: '#93c5fd', ink: '#1e293b' },
+  { id: 'blush', label: 'Blush', swatch: '#f4b8c6', bgFrom: '#fdf2f8', bgVia: '#fbe4ee', bgTo: '#f6cfdf', blobPrimary: '#f4b8c6', blobSecondary: '#f9d4a8', ink: '#5b3a44' },
+  { id: 'sage', label: 'Sage', swatch: '#a8c4a2', bgFrom: '#f5f8f2', bgVia: '#e8f0e2', bgTo: '#d8e6cf', blobPrimary: '#a8c4a2', blobSecondary: '#e3b04a', ink: '#374a35' },
+  { id: 'champagne', label: 'Champagne', swatch: '#e3c27a', bgFrom: '#fffbf2', bgVia: '#faf0da', bgTo: '#f2e0bc', blobPrimary: '#e3c27a', blobSecondary: '#d9a5a5', ink: '#5b4636' }
+]
+
 // Same "toggle, don't author" pattern as openingStyleCatalog: each of these
 // is real CSS/markup in CardOrnament.vue, PetalsBackground.vue, or the
 // Cover/Inner icon template branches - admin controls which of these every
