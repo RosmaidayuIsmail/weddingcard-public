@@ -73,6 +73,7 @@ const { wedding } = useMyWedding()
 const navItems = [
   { to: '/vip/dashboard', label: 'Wedding Details', icon: 'i-heroicons-heart' },
   { to: '/vip/dashboard/scenes', label: 'Your Scenes', icon: 'i-heroicons-film' },
+  { to: '/vip/dashboard/rsvp', label: 'RSVP Text', icon: 'i-heroicons-chat-bubble-left-right' },
   { to: '/vip/dashboard/publish', label: 'Preview & Publish', icon: 'i-heroicons-rocket-launch' }
 ]
 
