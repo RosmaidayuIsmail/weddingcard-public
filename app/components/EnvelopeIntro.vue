@@ -147,7 +147,7 @@
              hinge. -->
         <div v-if="content.openingStyle === 'classic'" class="envelope-classic-wrap mb-8">
           <div class="envelope-inner-card">
-            <UIcon name="i-heroicons-heart" class="envelope-letter-icon" :style="textStyleAccent" />
+            <UIcon name="i-heroicons-heart" class="envelope-letter-icon w-7 h-7" :style="textStyleAccent" />
             <div class="envelope-letter-lines"><span></span><span></span></div>
           </div>
           <svg viewBox="0 0 200 140" class="envelope-body-svg" xmlns="http://www.w3.org/2000/svg">
@@ -246,8 +246,13 @@ const transitionName = computed(() => {
 })
 
 const overlayClass = computed(() => {
-  if (props.content.openingStyle === 'minimal-light') return 'text-slate-800'
-  return 'text-white'
+  const textColor = props.content.openingStyle === 'minimal-light' ? 'text-slate-800' : 'text-white'
+  // Style-specific hook so the leave-transition CSS can single out Wax Seal
+  // from Split Door even though both share the 'split-door' transition name
+  // - see the .style-wax-seal rules below for why they need different
+  // timing.
+  if (props.content.openingStyle === 'wax-seal') return `${textColor} style-wax-seal`
+  return textColor
 })
 
 const isSlideStyle = computed(() =>
@@ -478,22 +483,30 @@ const guestBoxStyle = computed(() => {
 }
 
 .envelope-letter-icon {
-  width: 20%;
-  height: auto;
+  /* Fixed size (the w-7 h-7 Tailwind classes on the element itself), not a
+     percentage - a percentage width with height:auto on an icon component
+     with no intrinsic aspect-ratio computes to 0 height, which is why this
+     was invisible before: the card rendered but the heart on it never did. */
   color: var(--theme-accent, #e3b04a);
   opacity: 0.9;
+  flex-shrink: 0;
 }
 
 .envelope-letter-lines {
   display: flex;
   flex-direction: column;
-  gap: 14%;
+  gap: 8px;
   width: 100%;
 }
 
 .envelope-letter-lines span {
+  /* Fixed height, not a percentage - .envelope-letter-lines has no explicit
+     height of its own (it's sized by its content), and a percentage height
+     against an auto-height container resolves to 0 per the CSS spec. That
+     made both "text lines" render as invisible 0px-tall bars, which is why
+     the letter card looked completely blank instead of like a written note. */
   display: block;
-  height: 8%;
+  height: 6px;
   border-radius: 999px;
   background: rgba(20, 30, 45, 0.18);
 }
@@ -686,13 +699,14 @@ const guestBoxStyle = computed(() => {
   animation-delay: var(--delay, 0s);
 }
 
-/* Wax-seal doors specifically (not Split Door) wait a beat for the seal to
-   crack before they start sliding, and the title/guest box/button hold
-   steady until the seal has finished breaking apart instead of fading out
-   underneath it. */
+/* Wax-seal doors specifically (not Split Door) wait for the seal to fully
+   crack and scatter (press-crack finishes ~0.36s in, the flying pieces
+   finish fading ~0.6-0.7s in) before they start sliding, so it reads as a
+   real sequence - press, crack, shatter, THEN the doors swing open - rather
+   than the doors already moving while the seal is still mid-break. */
 .split-door-leave-active .wax-seal-doors .door-left,
 .split-door-leave-active .wax-seal-doors .door-right {
-  transition-delay: 0.12s;
+  transition-delay: 0.55s;
 }
 
 @keyframes wax-seal-press-crack {
@@ -773,6 +787,30 @@ const guestBoxStyle = computed(() => {
 }
 .split-door-leave-to {
   opacity: 0;
+}
+
+/* Wax Seal only (Split Door keeps the rules above - a full-bleed photo or
+   solid door panel stays visually opaque as it slides, so it never showed
+   this problem). Wax Seal's own base opacity used to start fading from the
+   very first frame with no delay at all, which meant the title text and
+   "Tap to open" button were only ever partially transparent - just see-
+   through enough that the guest-detail page's own text, already fading in
+   underneath, was visible AT THE SAME TIME. Two blocks of real text
+   overlapping mid-transition is what actually read as "corrupted" rather
+   than a controlled reveal. The fix mirrors Classic Envelope's already-
+   working pattern: stay fully opaque (blocking whatever's behind
+   completely) while the seal cracks and scatters, THEN dissolve everything
+   - background, doors, title, button - together in one clean pass, so
+   there's never a moment where both layers of text are legible at once. */
+.split-door-leave-active.style-wax-seal {
+  /* Vue only removes this element from the DOM once ITS OWN transition ends
+     (child transitionend events don't count) - so this has to outlast the
+     doors' full 0.55s-delay + 1.2s-duration slide (1.75s) below, or the
+     doors would visibly snap away mid-slide instead of finishing. */
+  transition: opacity 1.2s ease 0.6s;
+}
+.split-door-leave-active.style-wax-seal .content-container {
+  transition: opacity 0.25s ease 0.6s, transform 0.9s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 /* --- Confetti Burst Background Animation --- */
@@ -973,7 +1011,9 @@ const guestBoxStyle = computed(() => {
   .split-door-leave-active .wax-crumb,
   .split-door-leave-active .content-container,
   .split-door-leave-active .door-left,
-  .split-door-leave-active .door-right {
+  .split-door-leave-active .door-right,
+  .split-door-leave-active.style-wax-seal,
+  .split-door-leave-active.style-wax-seal .content-container {
     animation-duration: 0.2s;
     animation-delay: 0s;
     transition-duration: 0.2s;
