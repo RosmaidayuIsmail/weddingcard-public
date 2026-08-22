@@ -1,5 +1,5 @@
 <template>
-  <div class="theme-surface text-white relative overflow-hidden" :style="styleVars">
+  <div class="theme-surface text-white relative overflow-hidden" :class="{ 'cine-embedded-root': embedded }" :style="styleVars">
     <CustomCodeBlock v-if="customCode.position === 'top'" class="relative z-20" />
 
     <div v-if="wedding.content.audioSrc && opened" class="fixed top-4 right-4 z-40">
@@ -10,14 +10,14 @@
          tap is also the "user gesture" the browser needs to allow the music
          to autoplay, and it's the moment that kicks off the whole camera
          sequence below. -->
-    <div class="envelope-shell" :class="{ 'envelope-shell-collapsed': envelopeCollapsed }">
+    <div class="envelope-shell" :class="{ 'envelope-shell-collapsed': envelopeCollapsed, 'cine-embedded': embedded }">
       <EnvelopeIntro v-model:opened="opened" :guest-name="guestName" :content="wedding.content" />
     </div>
 
     <!-- The cinematic canvas: everything below lives on one wide "world" the
          camera pans and zooms across on its own timer - see runCamera().
          Nothing here responds to scrolling or taps; it plays itself. -->
-    <div v-if="opened" class="cine-viewport" ref="viewportEl">
+    <div v-if="opened" class="cine-viewport" :class="{ 'cine-embedded': embedded }" ref="viewportEl">
       <!-- A photo of the couple's own venue, fixed to the viewport (not
            panned like the world below) so it reads as a constant backdrop
            behind every scene - see vipBackgroundImageUrl on WeddingDoc and
@@ -328,8 +328,23 @@ const props = withDefaults(defineProps<{
   wedding: WeddingDoc
   guestName?: string
   rsvpLink: string
+  /**
+   * True when this instance is mounted inside a small dashboard preview
+   * frame (see the "Live Preview" panel on Your Scenes) instead of the real
+   * full-screen guest page. Everything about the camera engine already
+   * measures its own container's actual size, so no math changes - the only
+   * real difference is that .envelope-shell/.cine-viewport normally reserve
+   * `100dvh` (the real device screen), which would blow out of a small
+   * bezel. In embedded mode they reserve `100%` of their own parent
+   * instead, so the exact same component fits inside a small phone frame.
+   * The couple's real wedding.content, vipScenes, and theme all render
+   * completely unchanged - this is the same component and same data as the
+   * live guest page, not a second reimplementation to keep in sync.
+   */
+  embedded?: boolean
 }>(), {
-  guestName: ''
+  guestName: '',
+  embedded: false
 })
 
 const { themeStyleVars, customCode } = useThemes()
@@ -565,6 +580,24 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+/* Embedded mode (see the `embedded` prop above) - a small dashboard preview
+   frame has a fixed pixel height, not a real device screen, so `100dvh`
+   would blow out of it. These three rules are the ONLY difference between
+   the embedded and real full-screen render; everything else (camera math,
+   theme colors, content) is the exact same component doing the exact same
+   thing at a smaller size. */
+.cine-embedded-root {
+  height: 100%;
+}
+.envelope-shell.cine-embedded {
+  min-height: 100%;
+  height: 100%;
+}
+.cine-viewport.cine-embedded {
+  min-height: 100%;
+  height: 100%;
+}
+
 .envelope-shell {
   position: relative;
   overflow: hidden;

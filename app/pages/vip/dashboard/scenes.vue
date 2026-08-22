@@ -125,42 +125,32 @@
           </div>
         </div>
 
-        <!-- Right: content check -->
+        <!-- Right: live preview - the actual VipCinematicInvite component
+             (see its `embedded` prop), fed your real wedding data with just
+             the scene list swapped for whatever's in the editor on the left
+             right now, so edits show up before you even hit Save. This is
+             the same code, camera engine, and theme as the real guest page
+             at /w/[slug]/vip - not a second reimplementation that can drift
+             out of sync with it. Tap the phone to open it, same as a guest
+             would. -->
         <div class="w-full lg:w-[340px] shrink-0 flex flex-col items-center">
           <p class="text-xs font-semibold uppercase tracking-widest text-gold-200/70 flex items-center gap-2 w-full mb-2 px-1">
-            <UIcon name="i-heroicons-device-phone-mobile" class="w-4 h-4" /> Content Check (not animated)
+            <UIcon name="i-heroicons-device-phone-mobile" class="w-4 h-4" /> Live Preview
           </p>
           <p class="text-xs text-white/40 mb-4 px-1 leading-relaxed">
-            Stacks your text/photos so you can proofread. Not the real animation -
-            use <b class="text-gold-300/80">Preview Live</b> above for that.
+            The real fly-through, exactly as a guest sees it - tap the phone to open it.
+            Reflects your scenes below as you edit, even before you save.
           </p>
           <div class="phone-bezel w-full max-w-[340px] shadow-2xl shrink-0">
             <div class="phone-notch"></div>
-            <div class="phone-screen hide-scrollbar relative flex flex-col p-5" :style="styleVars">
-              <div class="absolute inset-0 z-0" :style="{ background: 'linear-gradient(160deg, var(--theme-bg-from), var(--theme-bg-via), var(--theme-bg-to))' }"></div>
-              <div class="relative z-10 space-y-4 pb-8">
-                <div class="text-center pt-4 pb-2">
-                  <p class="text-[0.6rem] tracking-[0.3em] uppercase mb-2" :style="{ color: 'var(--theme-accent)' }">You're Invited</p>
-                  <h2 class="text-2xl italic" :style="{ color: 'var(--theme-ink)', fontFamily: 'var(--theme-heading-font)' }">
-                    {{ wedding?.content.brideName }} &amp; {{ wedding?.content.groomName }}
-                  </h2>
-                </div>
-                <div v-if="scenes.length === 0" class="text-center text-sm opacity-50 mt-6 italic" :style="{ color: 'var(--theme-ink)' }">
-                  Your scenes will appear here...
-                </div>
-                <div v-for="scene in scenes" :key="scene.id" class="preview-card">
-                  <img v-if="scene.imageUrl" :src="scene.imageUrl" class="w-full h-28 object-cover rounded-t-xl" />
-                  <div class="p-3">
-                    <h3 v-if="scene.title" class="text-sm font-semibold mb-1" :style="{ color: 'var(--theme-ink)', fontFamily: 'var(--theme-heading-font)' }">{{ scene.title }}</h3>
-                    <p v-if="scene.body" class="text-xs opacity-70 leading-relaxed" :style="{ color: 'var(--theme-ink)' }">{{ scene.body }}</p>
-                    <p class="camera-badge"><UIcon name="i-heroicons-video-camera" class="w-3 h-3" /> {{ cameraSummary(scene) }}</p>
-                  </div>
-                </div>
-                <div class="text-center pt-2 pb-4">
-                  <p class="text-[0.6rem] tracking-[0.3em] uppercase mb-2" :style="{ color: 'var(--theme-accent)' }">Join Our Celebration</p>
-                  <span class="inline-block text-xs px-4 py-2 rounded-full" :style="{ background: 'var(--theme-accent)', color: '#150a20' }">RSVP Now</span>
-                </div>
-              </div>
+            <div class="phone-screen hide-scrollbar relative">
+              <VipCinematicInvite
+                v-if="previewWedding"
+                :key="wedding?.id"
+                :wedding="previewWedding"
+                :rsvp-link="rsvpLink"
+                embedded
+              />
             </div>
           </div>
         </div>
@@ -176,7 +166,6 @@ import type { VipScene } from '~/composables/useWeddingTypes'
 
 const { profile } = useAuth()
 const { wedding, loading, saving, updateVip } = useMyWedding()
-const { themeStyleVars } = useThemes()
 const { isConfigured: cloudinaryConfigured, uploadImage } = useCloudinary()
 const toast = useToast()
 
@@ -196,13 +185,6 @@ const positionOptions = [
   { label: 'Right', value: 'right' }
 ]
 
-function cameraSummary(scene: VipScene) {
-  const pos = scene.position && scene.position !== 'auto' ? scene.position : 'auto side'
-  const zoom = scene.zoomPercent ? `${scene.zoomPercent}% zoom` : 'auto zoom'
-  const hold = scene.holdSeconds ? `${scene.holdSeconds}s` : 'auto timing'
-  return `${pos} · ${zoom} · ${hold}`
-}
-
 const draftImageInput = ref<HTMLInputElement | null>(null)
 const sceneImageInputs: Record<string, HTMLInputElement | null> = {}
 function setSceneImageInput(id: string, el: Element | null) {
@@ -210,11 +192,16 @@ function setSceneImageInput(id: string, el: Element | null) {
 }
 const uploadingFor = ref<string | null>(null)
 
-const styleVars = computed(() => {
-  if (!wedding.value) return {}
-  const c = wedding.value.content
-  return themeStyleVars(wedding.value.themeId, { bgFrom: c.customBgFrom, bgTo: c.customBgTo, accent: c.customAccent }, c.customFontFamily || c.fontFamily)
+// Feeds the Live Preview panel: the couple's real wedding doc, with only
+// vipScenes swapped for whatever's in the left-hand editor right now (not
+// necessarily saved yet) - so the preview updates as they type, same as the
+// old mockup did, but now it's the real animated component instead of a
+// static stack.
+const previewWedding = computed(() => {
+  if (!wedding.value) return null
+  return { ...wedding.value, vipScenes: scenes.value }
 })
+const rsvpLink = computed(() => (wedding.value ? `/w/${wedding.value.slug}/rsvp` : ''))
 
 let initialized = false
 watch(wedding, (value) => {
@@ -391,8 +378,7 @@ useSeoMeta({ title: 'Your Scenes — VIP Cinematic' })
 .phone-screen {
   width: 100%;
   height: 100%;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden;
   background: #111;
 }
 .list-enter-active, .list-leave-active { transition: all 0.3s ease; }
