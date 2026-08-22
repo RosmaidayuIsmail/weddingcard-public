@@ -18,297 +18,341 @@
       <p class="text-lg">This account hasn't created their wedding yet.</p>
     </div>
 
-    <div v-else class="flex-1 min-h-0 flex flex-col mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 pb-4">
+    <div v-else class="flex-1 min-h-0 flex flex-col lg:flex-row mx-auto w-full max-w-[1500px] px-4 sm:px-6 lg:px-8 pb-4 lg:gap-6">
 
-      <!-- Header -->
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 shrink-0 pt-4 lg:pt-0">
-        <div>
-          <h1 class="text-3xl sm:text-4xl font-display font-bold bg-clip-text text-transparent bg-gradient-to-r from-gold-100 via-gold-300 to-gold-500 tracking-tight">
-            VIP Cinematic
-          </h1>
-          <p class="text-sm text-white/50 mt-1 flex items-center gap-2">
-            <UIcon name="i-heroicons-film" class="w-4 h-4" style="color: #e3b04a;" />
-            A separate invitation page with an automatic camera that pans and zooms across your story on its own - no scrolling needed.
-          </p>
-        </div>
-
-        <div class="flex items-center gap-3">
-          <span v-if="savedAt" class="text-xs font-medium text-emerald-400 bg-emerald-400/10 px-3 py-1.5 rounded-full flex items-center gap-1.5 animate-in fade-in zoom-in duration-300">
-            <UIcon name="i-heroicons-check-circle" class="w-4 h-4" /> Saved
-          </span>
-          <UButton
-            size="lg"
-            variant="soft"
-            color="neutral"
-            icon="i-heroicons-play-circle"
-            class="font-semibold w-full sm:w-auto"
-            :loading="previewing"
-            @click="previewLive"
-          >
-            Preview Live Cinematic
-          </UButton>
-          <UButton
-            size="lg"
-            color="primary"
-            class="font-semibold shadow-xl shadow-gold-500/20 transition-all hover:-translate-y-0.5 hover:shadow-gold-500/30 w-full sm:w-auto"
-            :loading="saving"
-            @click="save"
-          >
-            Save changes
-          </UButton>
-        </div>
-      </div>
-
-      <!-- How it works - added because the panels below give no indication
-           on their own of what a "scene" is, what order means, or how the
-           finished result actually looks (a plain form has no way to convey
-           "this becomes an automatic camera fly-through"). -->
-      <div class="how-it-works animate-in fade-in slide-in-from-bottom-4 duration-500 shrink-0 mb-6">
-        <button type="button" class="how-it-works-toggle" @click="showGuide = !showGuide">
-          <span class="flex items-center gap-2">
-            <UIcon name="i-heroicons-information-circle" style="color: #e3b04a;" class="w-5 h-5" />
-            How VIP Cinematic works
-          </span>
-          <UIcon :name="showGuide ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'" class="w-4 h-4 text-white/50" />
+      <!-- Section sidebar - same idea as the regular couple dashboard's left
+           sidebar (Design Studio, Guest List, etc.): everything editable is
+           organized into named sections instead of one long scrolling page.
+           On small screens this becomes a horizontal scrollable pill bar. -->
+      <aside class="vip-nav shrink-0 w-full lg:w-56 flex lg:flex-col gap-2 overflow-x-auto hide-scrollbar lg:overflow-visible pb-2 lg:pb-0 pt-4 lg:pt-0">
+        <button
+          v-for="s in sections"
+          :key="s.id"
+          type="button"
+          class="vip-nav-link"
+          :class="{ 'vip-nav-link-active': section === s.id }"
+          @click="section = s.id"
+        >
+          <UIcon :name="s.icon" class="w-5 h-5 shrink-0" />
+          <span class="whitespace-nowrap font-medium">{{ s.label }}</span>
         </button>
-        <div v-if="showGuide" class="how-it-works-body">
-          <ol class="space-y-2.5">
-            <li><b>1. Wedding Details</b> - fills the automatic cover and event-details scenes below.</li>
-            <li><b>2. Add your scenes</b> - your own story, in whatever order you add them. Each one plays as its own stop; use the arrows to reorder.</li>
-            <li><b>3. Set the camera per scene (optional)</b> - choose which side the camera looks from, how much it zooms in, and how many seconds it lingers. Leave any of these blank and it's picked automatically.</li>
-            <li><b>4. Preview Live Cinematic</b> - opens the real, playing animation in a new tab, exactly as guests will see it. The panel on the right is only a content check, not the animation itself.</li>
-            <li><b>5. Turn the VIP page on</b> below once you're happy, then copy/share the link.</li>
-          </ol>
-        </div>
-      </div>
+      </aside>
 
-      <div class="flex-1 flex flex-col lg:flex-row gap-8 xl:gap-12 lg:min-h-0">
+      <div class="flex-1 min-w-0 flex flex-col">
 
-        <!-- Left Column: Controls & List -->
-        <div class="flex-1 w-full lg:overflow-y-auto custom-scrollbar lg:pr-6 pb-8 lg:pb-20 space-y-6 order-2 lg:order-1">
-
-          <!-- Wedding Details - the couple's own account is dedicated to
-               VIP Cinematic only, so unlike a regular couple they don't
-               have Opening Design/Design Studio pages to set these in -
-               this is the one place they set the details the automatic
-               cover/event/location scenes in VipCinematicInvite.vue pull
-               from. -->
-          <div class="form-panel animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <h2 class="text-base font-semibold text-white mb-4 border-b border-gray-700 pb-3 flex items-center gap-2">
-              <UIcon name="i-heroicons-heart" style="color: #e3b04a;" class="w-5 h-5" />
-              Wedding Details
-            </h2>
-            <div class="grid sm:grid-cols-2 gap-4">
-              <UFormField label="Bride's Name">
-                <UInput v-model="details.brideName" placeholder="Aisyah" size="lg" class="w-full" />
-              </UFormField>
-              <UFormField label="Groom's Name">
-                <UInput v-model="details.groomName" placeholder="Danial" size="lg" class="w-full" />
-              </UFormField>
-              <UFormField label="Wedding Date">
-                <input v-model="details.dateISO" type="date" class="date-input" />
-              </UFormField>
-              <UFormField label="Time (as guests will see it)">
-                <UInput v-model="details.timeLabel" placeholder="e.g. 10:00 AM" size="lg" class="w-full" />
-              </UFormField>
-              <UFormField label="Date (as guests will see it)">
-                <UInput v-model="details.dateLabel" placeholder="e.g. Saturday, 12 September 2026" size="lg" class="w-full" />
-              </UFormField>
-              <UFormField label="Venue Name">
-                <UInput v-model="details.venueName" placeholder="The Grand Ballroom" size="lg" class="w-full" />
-              </UFormField>
-              <UFormField label="Venue Address" class="sm:col-span-2">
-                <UInput v-model="details.venueAddress" placeholder="123 Jalan Example, Kuala Lumpur" size="lg" class="w-full" />
-              </UFormField>
-              <UFormField label="Google Maps Link (optional)" class="sm:col-span-2">
-                <UInput v-model="details.mapUrl" placeholder="https://maps.google.com/..." size="lg" class="w-full" />
-              </UFormField>
-            </div>
-            <div class="flex items-center justify-between gap-4 mt-5 pt-4 border-t border-gray-800">
-              <div class="min-w-0">
-                <p class="text-sm font-medium text-white">RSVP button</p>
-                <p class="text-xs text-gray-400">Show the RSVP button and page at the end of the fly-through.</p>
-              </div>
-              <USwitch v-model="details.rsvpEnabled" size="lg" />
-            </div>
-          </div>
-
-          <!-- Enable/disable + live link panel -->
-          <div class="form-panel animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div class="flex items-center justify-between gap-4">
-              <div class="min-w-0">
-                <h2 class="text-base font-semibold text-white flex items-center gap-2">
-                  <UIcon name="i-heroicons-power" style="color: #e3b04a;" class="w-5 h-5" />
-                  VIP page is {{ vipEnabled ? 'on' : 'off' }}
-                </h2>
-                <p class="text-xs text-gray-400 mt-1">
-                  {{ vipEnabled ? 'Guests visiting the VIP link below will see the automatic cinematic invitation.' : "Turn this on once you're happy with your scenes - the link stays private until then." }}
-                </p>
-              </div>
-              <USwitch v-model="vipEnabled" size="lg" />
-            </div>
-            <div v-if="wedding" class="mt-4 pt-4 border-t border-gray-800 flex flex-wrap items-center gap-3">
-              <code class="text-xs text-gold-300 bg-black/30 px-3 py-1.5 rounded-lg break-all">{{ vipLinkPath }}</code>
-              <UButton variant="soft" color="gray" size="xs" icon="i-heroicons-clipboard" @click="copyLink">Copy link</UButton>
-              <UButton variant="link" color="gray" size="xs" :to="vipLinkPath" target="_blank" external :padded="false">
-                Open Live <UIcon name="i-heroicons-arrow-top-right-on-square" class="ml-1 w-3 h-3" />
-              </UButton>
-            </div>
-          </div>
-
-          <!-- Add a Scene Panel -->
-          <div class="form-panel animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100">
-            <h2 class="text-base font-semibold text-white mb-4 border-b border-gray-700 pb-3 flex items-center gap-2">
-              <UIcon name="i-heroicons-plus-circle" style="color: #e3b04a;" class="w-5 h-5" />
-              Add a Scene
-            </h2>
-
-            <div class="space-y-4">
-              <UInput v-model="draft.title" placeholder="Scene title, e.g. With Humble Hearts" size="lg" icon="i-heroicons-bookmark" class="w-full" />
-              <UTextarea v-model="draft.body" placeholder="Scene text - your own words, as long or short as you like" :rows="3" size="lg" class="w-full" />
-              <div class="flex items-center gap-4">
-                <div v-if="draft.imageUrl" class="w-16 h-16 rounded-lg overflow-hidden border border-gray-700 shrink-0 shadow-md">
-                  <img :src="draft.imageUrl" class="w-full h-full object-cover" />
-                </div>
-                <input ref="draftImageInput" type="file" accept="image/*" class="hidden" @change="(e) => handleImageSelect(e, 'draft')">
-                <div class="flex flex-wrap gap-2">
-                  <UButton size="sm" variant="soft" color="gray" icon="i-heroicons-photo" :loading="uploadingFor === 'draft'" :disabled="!cloudinaryConfigured" @click="draftImageInput?.click()">
-                    {{ draft.imageUrl ? 'Change Image' : 'Add Image (optional)' }}
-                  </UButton>
-                  <UButton v-if="draft.imageUrl" size="sm" variant="ghost" color="error" icon="i-heroicons-trash" @click="draft.imageUrl = ''" />
-                </div>
-              </div>
-
-              <!-- Camera controls - optional per-scene overrides for the
-                   automatic fly-through. Leaving these blank picks a calm
-                   default automatically (see VipCinematicInvite.vue). -->
-              <div class="camera-controls">
-                <p class="text-xs font-semibold uppercase tracking-widest text-gray-500 mb-2.5 flex items-center gap-1.5">
-                  <UIcon name="i-heroicons-video-camera" class="w-3.5 h-3.5" /> Camera for this scene (optional)
-                </p>
-                <div class="grid grid-cols-3 gap-3">
-                  <UFormField label="Position">
-                    <USelect v-model="draft.position" :items="positionOptions" size="sm" class="w-full" />
-                  </UFormField>
-                  <UFormField label="Zoom (%)">
-                    <UInput v-model.number="draft.zoomPercent" type="number" min="90" max="140" step="2" placeholder="Auto" size="sm" class="w-full" />
-                  </UFormField>
-                  <UFormField label="Hold (sec)">
-                    <UInput v-model.number="draft.holdSeconds" type="number" min="1.5" max="10" step="0.5" placeholder="Auto" size="sm" class="w-full" />
-                  </UFormField>
-                </div>
-              </div>
-
-              <UButton color="primary" icon="i-heroicons-plus" size="md" class="font-semibold shadow-md" @click="addScene">
-                Add Scene
-              </UButton>
-            </div>
-          </div>
-
-          <!-- Current Scenes List -->
+        <!-- Header -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 shrink-0 pt-4 lg:pt-4">
           <div>
-            <h3 class="text-sm font-semibold uppercase tracking-widest text-gray-500 mb-3 ml-1">Your Scenes</h3>
-            <div v-if="scenes.length === 0" class="text-center text-gray-500 py-12 bg-[#111827] border border-dashed border-gray-700 rounded-2xl">
-              <UIcon name="i-heroicons-film" class="w-10 h-10 mx-auto mb-2 opacity-50" />
-              No scenes yet - add your first one above. The cover and RSVP still show automatically either way.
-            </div>
-
-            <div v-else class="space-y-3">
-              <TransitionGroup name="list">
-                <div v-for="(scene, index) in scenes" :key="scene.id" class="scene-row group">
-                  <div class="flex flex-col gap-1 shrink-0 bg-gray-800/50 rounded-lg p-1">
-                    <UButton size="2xs" variant="ghost" color="gray" icon="i-heroicons-chevron-up" :disabled="index === 0" class="hover:text-gold-400" @click="move(index, -1)" />
-                    <UButton size="2xs" variant="ghost" color="gray" icon="i-heroicons-chevron-down" :disabled="index === scenes.length - 1" class="hover:text-gold-400" @click="move(index, 1)" />
-                  </div>
-
-                  <div v-if="scene.imageUrl" class="w-14 h-14 rounded-lg overflow-hidden border border-gray-700 shrink-0">
-                    <img :src="scene.imageUrl" class="w-full h-full object-cover" />
-                  </div>
-
-                  <!-- Editable Inline Fields -->
-                  <div class="flex flex-col flex-1 gap-2 min-w-0">
-                    <UInput v-model="scene.title" size="sm" placeholder="Scene title" class="w-full font-medium" />
-                    <UTextarea v-model="scene.body" size="xs" placeholder="Scene text..." :rows="2" class="w-full opacity-80" />
-                    <div class="flex flex-wrap gap-2">
-                      <input :ref="el => setSceneImageInput(scene.id, el)" type="file" accept="image/*" class="hidden" @change="(e) => handleImageSelect(e, scene.id)">
-                      <UButton size="2xs" variant="soft" color="gray" icon="i-heroicons-photo" :loading="uploadingFor === scene.id" :disabled="!cloudinaryConfigured" @click="sceneImageInputs[scene.id]?.click()">
-                        {{ scene.imageUrl ? 'Change image' : 'Add image' }}
-                      </UButton>
-                      <UButton v-if="scene.imageUrl" size="2xs" variant="ghost" color="error" @click="scene.imageUrl = ''">Remove image</UButton>
-                    </div>
-
-                    <!-- Per-scene camera controls - same overrides as the
-                         Add a Scene panel above, editable after the fact. -->
-                    <div class="grid grid-cols-3 gap-2 mt-1">
-                      <USelect v-model="scene.position" :items="positionOptions" size="xs" class="w-full" />
-                      <UInput v-model.number="scene.zoomPercent" type="number" min="90" max="140" step="2" placeholder="Zoom auto" size="xs" class="w-full" />
-                      <UInput v-model.number="scene.holdSeconds" type="number" min="1.5" max="10" step="0.5" placeholder="Hold auto" size="xs" class="w-full" />
-                    </div>
-                  </div>
-
-                  <UButton size="sm" variant="ghost" color="error" icon="i-heroicons-trash" class="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-2" @click="removeScene(index)" />
-                </div>
-              </TransitionGroup>
-            </div>
-          </div>
-
-        </div>
-
-        <!-- Right Column: Preview -->
-        <div class="w-full lg:w-[360px] xl:w-[400px] shrink-0 flex flex-col items-center pb-8 lg:pb-0 overflow-y-auto hide-scrollbar order-1 lg:order-2">
-          <div class="flex items-center justify-between w-full mb-2 px-2">
-            <p class="text-xs font-semibold uppercase tracking-widest text-gold-200/70 flex items-center gap-2">
-              <UIcon name="i-heroicons-device-phone-mobile" class="w-4 h-4" /> Content Check (not animated)
+            <h1 class="text-3xl sm:text-4xl font-display font-bold bg-clip-text text-transparent bg-gradient-to-r from-gold-100 via-gold-300 to-gold-500 tracking-tight">
+              VIP Cinematic
+            </h1>
+            <p class="text-sm text-white/50 mt-1 flex items-center gap-2">
+              <UIcon name="i-heroicons-film" class="w-4 h-4" style="color: #e3b04a;" />
+              A separate invitation page with an automatic camera that pans and zooms across your story on its own - no scrolling needed.
             </p>
           </div>
-          <p class="text-xs text-white/40 mb-4 px-2 leading-relaxed">
-            This just stacks your text/photos in order so you can proofread them. It does not move or zoom like the real page -
-            use <b class="text-gold-300/80">Preview Live Cinematic</b> above to see the actual fly-through.
-          </p>
 
-          <!-- Smartphone Mockup Wrapper - a stacked preview of the scenes in
-               order (the real guest page plays them one at a time with the
-               automatic camera - see VipCinematicInvite.vue - but the stacked
-               view here is enough to check your writing/photos at a glance,
-               NOT to judge the animation itself). -->
-          <div class="phone-bezel w-full max-w-[360px] shadow-2xl shrink-0">
-            <div class="phone-notch"></div>
-            <div class="phone-screen hide-scrollbar relative flex flex-col p-5" :style="styleVars">
-              <div class="absolute inset-0 z-0" :style="{ background: 'linear-gradient(160deg, var(--theme-bg-from), var(--theme-bg-via), var(--theme-bg-to))' }"></div>
+          <div class="flex items-center gap-3">
+            <span v-if="savedAt" class="text-xs font-medium text-emerald-400 bg-emerald-400/10 px-3 py-1.5 rounded-full flex items-center gap-1.5 animate-in fade-in zoom-in duration-300">
+              <UIcon name="i-heroicons-check-circle" class="w-4 h-4" /> Saved
+            </span>
+            <UButton
+              size="lg"
+              variant="soft"
+              color="neutral"
+              icon="i-heroicons-play-circle"
+              class="font-semibold w-full sm:w-auto"
+              :loading="previewing"
+              @click="previewLive"
+            >
+              Preview Live Cinematic
+            </UButton>
+            <UButton
+              size="lg"
+              color="primary"
+              class="font-semibold shadow-xl shadow-gold-500/20 transition-all hover:-translate-y-0.5 hover:shadow-gold-500/30 w-full sm:w-auto"
+              :loading="saving"
+              @click="save"
+            >
+              Save changes
+            </UButton>
+          </div>
+        </div>
 
-              <div class="relative z-10 space-y-4 pb-8">
-                <div class="text-center pt-4 pb-2">
-                  <p class="text-[0.6rem] tracking-[0.3em] uppercase mb-2" :style="{ color: 'var(--theme-accent)' }">You're Invited</p>
-                  <h2 class="text-2xl italic" :style="{ color: 'var(--theme-ink)', fontFamily: 'var(--theme-heading-font)' }">
-                    {{ wedding?.content.brideName }} &amp; {{ wedding?.content.groomName }}
-                  </h2>
+        <!-- How it works - added because the panels below give no indication
+             on their own of what a "scene" is, what order means, or how the
+             finished result actually looks (a plain form has no way to convey
+             "this becomes an automatic camera fly-through"). -->
+        <div class="how-it-works animate-in fade-in slide-in-from-bottom-4 duration-500 shrink-0 mb-6">
+          <button type="button" class="how-it-works-toggle" @click="showGuide = !showGuide">
+            <span class="flex items-center gap-2">
+              <UIcon name="i-heroicons-information-circle" style="color: #e3b04a;" class="w-5 h-5" />
+              How VIP Cinematic works
+            </span>
+            <UIcon :name="showGuide ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'" class="w-4 h-4 text-white/50" />
+          </button>
+          <div v-if="showGuide" class="how-it-works-body">
+            <ol class="space-y-2.5">
+              <li><b>1. Wedding Details</b> (left menu) - fills the automatic cover and event-details scenes.</li>
+              <li><b>2. Your Scenes</b> (left menu) - your own story, in whatever order you add them. Each one plays as its own stop; use the arrows to reorder, and set the camera per scene if you want more than the automatic default.</li>
+              <li><b>3. Preview & Publish</b> (left menu) - use <b>Preview Live Cinematic</b> above any time to open the real, playing animation in a new tab, exactly as guests will see it - the panel on the right is only a content check, not the animation itself. Turn the page on when you're happy, then copy/share the link.</li>
+            </ol>
+          </div>
+        </div>
+
+        <div class="flex-1 flex flex-col lg:flex-row gap-8 xl:gap-12 lg:min-h-0">
+
+          <!-- Left Column: section content -->
+          <div class="flex-1 w-full lg:overflow-y-auto custom-scrollbar lg:pr-6 pb-8 lg:pb-20 space-y-6 order-2 lg:order-1">
+
+            <!-- Section: Wedding Details - the couple's own account is
+                 dedicated to VIP Cinematic only, so unlike a regular couple
+                 they don't have Opening Design/Design Studio pages to set
+                 these in - this is the one place they set the details the
+                 automatic cover/event/location scenes in
+                 VipCinematicInvite.vue pull from. -->
+            <template v-if="section === 'details'">
+              <div class="form-panel animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <h2 class="text-base font-semibold text-white mb-4 border-b border-gray-700 pb-3 flex items-center gap-2">
+                  <UIcon name="i-heroicons-heart" style="color: #e3b04a;" class="w-5 h-5" />
+                  Wedding Details
+                </h2>
+                <div class="grid sm:grid-cols-2 gap-4">
+                  <UFormField label="Bride's Name">
+                    <UInput v-model="details.brideName" placeholder="Aisyah" size="lg" class="w-full" />
+                  </UFormField>
+                  <UFormField label="Groom's Name">
+                    <UInput v-model="details.groomName" placeholder="Danial" size="lg" class="w-full" />
+                  </UFormField>
+                  <UFormField label="Wedding Date">
+                    <input v-model="details.dateISO" type="date" class="date-input" />
+                  </UFormField>
+                  <UFormField label="Time (as guests will see it)">
+                    <UInput v-model="details.timeLabel" placeholder="e.g. 10:00 AM" size="lg" class="w-full" />
+                  </UFormField>
+                  <UFormField label="Date (as guests will see it)">
+                    <UInput v-model="details.dateLabel" placeholder="e.g. Saturday, 12 September 2026" size="lg" class="w-full" />
+                  </UFormField>
+                  <UFormField label="Venue Name">
+                    <UInput v-model="details.venueName" placeholder="The Grand Ballroom" size="lg" class="w-full" />
+                  </UFormField>
+                  <UFormField label="Venue Address" class="sm:col-span-2">
+                    <UInput v-model="details.venueAddress" placeholder="123 Jalan Example, Kuala Lumpur" size="lg" class="w-full" />
+                  </UFormField>
+                  <UFormField label="Google Maps Link (optional)" class="sm:col-span-2">
+                    <UInput v-model="details.mapUrl" placeholder="https://maps.google.com/..." size="lg" class="w-full" />
+                  </UFormField>
+                </div>
+                <div class="flex items-center justify-between gap-4 mt-5 pt-4 border-t border-gray-800">
+                  <div class="min-w-0">
+                    <p class="text-sm font-medium text-white">RSVP button</p>
+                    <p class="text-xs text-gray-400">Show the RSVP button and page at the end of the fly-through.</p>
+                  </div>
+                  <USwitch v-model="details.rsvpEnabled" size="lg" />
+                </div>
+              </div>
+            </template>
+
+            <!-- Section: Your Scenes -->
+            <template v-else-if="section === 'scenes'">
+              <div class="form-panel animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <h2 class="text-base font-semibold text-white mb-4 border-b border-gray-700 pb-3 flex items-center gap-2">
+                  <UIcon name="i-heroicons-plus-circle" style="color: #e3b04a;" class="w-5 h-5" />
+                  Add a Scene
+                </h2>
+
+                <div class="space-y-4">
+                  <UInput v-model="draft.title" placeholder="Scene title, e.g. With Humble Hearts" size="lg" icon="i-heroicons-bookmark" class="w-full" />
+                  <UTextarea v-model="draft.body" placeholder="Scene text - your own words, as long or short as you like" :rows="3" size="lg" class="w-full" />
+                  <div class="flex items-center gap-4">
+                    <div v-if="draft.imageUrl" class="w-16 h-16 rounded-lg overflow-hidden border border-gray-700 shrink-0 shadow-md">
+                      <img :src="draft.imageUrl" class="w-full h-full object-cover" />
+                    </div>
+                    <input ref="draftImageInput" type="file" accept="image/*" class="hidden" @change="(e) => handleImageSelect(e, 'draft')">
+                    <div class="flex flex-wrap gap-2">
+                      <UButton size="sm" variant="soft" color="gray" icon="i-heroicons-photo" :loading="uploadingFor === 'draft'" :disabled="!cloudinaryConfigured" @click="draftImageInput?.click()">
+                        {{ draft.imageUrl ? 'Change Image' : 'Add Image (optional)' }}
+                      </UButton>
+                      <UButton v-if="draft.imageUrl" size="sm" variant="ghost" color="error" icon="i-heroicons-trash" @click="draft.imageUrl = ''" />
+                    </div>
+                  </div>
+
+                  <!-- Camera controls - optional per-scene overrides for the
+                       automatic fly-through. Leaving these blank picks a calm
+                       default automatically (see VipCinematicInvite.vue). -->
+                  <div class="camera-controls">
+                    <p class="text-xs font-semibold uppercase tracking-widest text-gray-500 mb-2.5 flex items-center gap-1.5">
+                      <UIcon name="i-heroicons-video-camera" class="w-3.5 h-3.5" /> Camera for this scene (optional)
+                    </p>
+                    <div class="grid grid-cols-3 gap-3">
+                      <UFormField label="Position">
+                        <USelect v-model="draft.position" :items="positionOptions" size="sm" class="w-full" />
+                      </UFormField>
+                      <UFormField label="Zoom (%)">
+                        <UInput v-model.number="draft.zoomPercent" type="number" min="90" max="140" step="2" placeholder="Auto" size="sm" class="w-full" />
+                      </UFormField>
+                      <UFormField label="Hold (sec)">
+                        <UInput v-model.number="draft.holdSeconds" type="number" min="1.5" max="10" step="0.5" placeholder="Auto" size="sm" class="w-full" />
+                      </UFormField>
+                    </div>
+                  </div>
+
+                  <UButton color="primary" icon="i-heroicons-plus" size="md" class="font-semibold shadow-md" @click="addScene">
+                    Add Scene
+                  </UButton>
+                </div>
+              </div>
+
+              <!-- Current Scenes List -->
+              <div>
+                <h3 class="text-sm font-semibold uppercase tracking-widest text-gray-500 mb-3 ml-1">Your Scenes</h3>
+                <div v-if="scenes.length === 0" class="text-center text-gray-500 py-12 bg-[#111827] border border-dashed border-gray-700 rounded-2xl">
+                  <UIcon name="i-heroicons-film" class="w-10 h-10 mx-auto mb-2 opacity-50" />
+                  No scenes yet - add your first one above. The cover and RSVP still show automatically either way.
                 </div>
 
-                <div v-if="scenes.length === 0" class="text-center text-sm opacity-50 mt-6 italic" :style="{ color: 'var(--theme-ink)' }">
-                  Your scenes will appear here...
-                </div>
+                <div v-else class="space-y-3">
+                  <TransitionGroup name="list">
+                    <div v-for="(scene, index) in scenes" :key="scene.id" class="scene-row group">
+                      <div class="flex flex-col gap-1 shrink-0 bg-gray-800/50 rounded-lg p-1">
+                        <UButton size="2xs" variant="ghost" color="gray" icon="i-heroicons-chevron-up" :disabled="index === 0" class="hover:text-gold-400" @click="move(index, -1)" />
+                        <UButton size="2xs" variant="ghost" color="gray" icon="i-heroicons-chevron-down" :disabled="index === scenes.length - 1" class="hover:text-gold-400" @click="move(index, 1)" />
+                      </div>
 
-                <div v-for="scene in scenes" :key="scene.id" class="preview-card">
-                  <img v-if="scene.imageUrl" :src="scene.imageUrl" class="w-full h-28 object-cover rounded-t-xl" />
-                  <div class="p-3">
-                    <h3 v-if="scene.title" class="text-sm font-semibold mb-1" :style="{ color: 'var(--theme-ink)', fontFamily: 'var(--theme-heading-font)' }">{{ scene.title }}</h3>
-                    <p v-if="scene.body" class="text-xs opacity-70 leading-relaxed" :style="{ color: 'var(--theme-ink)' }">{{ scene.body }}</p>
-                    <p class="camera-badge">
-                      <UIcon name="i-heroicons-video-camera" class="w-3 h-3" />
-                      {{ cameraSummary(scene) }}
+                      <div v-if="scene.imageUrl" class="w-14 h-14 rounded-lg overflow-hidden border border-gray-700 shrink-0">
+                        <img :src="scene.imageUrl" class="w-full h-full object-cover" />
+                      </div>
+
+                      <!-- Editable Inline Fields -->
+                      <div class="flex flex-col flex-1 gap-2 min-w-0">
+                        <UInput v-model="scene.title" size="sm" placeholder="Scene title" class="w-full font-medium" />
+                        <UTextarea v-model="scene.body" size="xs" placeholder="Scene text..." :rows="2" class="w-full opacity-80" />
+                        <div class="flex flex-wrap gap-2">
+                          <input :ref="el => setSceneImageInput(scene.id, el)" type="file" accept="image/*" class="hidden" @change="(e) => handleImageSelect(e, scene.id)">
+                          <UButton size="2xs" variant="soft" color="gray" icon="i-heroicons-photo" :loading="uploadingFor === scene.id" :disabled="!cloudinaryConfigured" @click="sceneImageInputs[scene.id]?.click()">
+                            {{ scene.imageUrl ? 'Change image' : 'Add image' }}
+                          </UButton>
+                          <UButton v-if="scene.imageUrl" size="2xs" variant="ghost" color="error" @click="scene.imageUrl = ''">Remove image</UButton>
+                        </div>
+
+                        <!-- Per-scene camera controls - same overrides as the
+                             Add a Scene panel above, editable after the fact. -->
+                        <div class="camera-controls-inline">
+                          <UFormField label="Position" size="xs">
+                            <USelect v-model="scene.position" :items="positionOptions" size="xs" class="w-full" />
+                          </UFormField>
+                          <UFormField label="Zoom %" size="xs">
+                            <UInput v-model.number="scene.zoomPercent" type="number" min="90" max="140" step="2" placeholder="Auto" size="xs" class="w-full" />
+                          </UFormField>
+                          <UFormField label="Hold sec" size="xs">
+                            <UInput v-model.number="scene.holdSeconds" type="number" min="1.5" max="10" step="0.5" placeholder="Auto" size="xs" class="w-full" />
+                          </UFormField>
+                        </div>
+                      </div>
+
+                      <UButton size="sm" variant="ghost" color="error" icon="i-heroicons-trash" class="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-2" @click="removeScene(index)" />
+                    </div>
+                  </TransitionGroup>
+                </div>
+              </div>
+            </template>
+
+            <!-- Section: Preview & Publish -->
+            <template v-else>
+              <div class="form-panel animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div class="flex items-center justify-between gap-4">
+                  <div class="min-w-0">
+                    <h2 class="text-base font-semibold text-white flex items-center gap-2">
+                      <UIcon name="i-heroicons-power" style="color: #e3b04a;" class="w-5 h-5" />
+                      VIP page is {{ vipEnabled ? 'on' : 'off' }}
+                    </h2>
+                    <p class="text-xs text-gray-400 mt-1">
+                      {{ vipEnabled ? 'Guests visiting the VIP link below will see the automatic cinematic invitation.' : "Turn this on once you're happy with your scenes - the link stays private until then." }}
                     </p>
                   </div>
+                  <USwitch v-model="vipEnabled" size="lg" />
                 </div>
+                <div v-if="wedding" class="mt-4 pt-4 border-t border-gray-800 flex flex-wrap items-center gap-3">
+                  <code class="text-xs text-gold-300 bg-black/30 px-3 py-1.5 rounded-lg break-all">{{ vipLinkPath }}</code>
+                  <UButton variant="soft" color="gray" size="xs" icon="i-heroicons-clipboard" @click="copyLink">Copy link</UButton>
+                  <UButton variant="link" color="gray" size="xs" :to="vipLinkPath" target="_blank" external :padded="false">
+                    Open Live <UIcon name="i-heroicons-arrow-top-right-on-square" class="ml-1 w-3 h-3" />
+                  </UButton>
+                </div>
+              </div>
 
-                <div class="text-center pt-2 pb-4">
-                  <p class="text-[0.6rem] tracking-[0.3em] uppercase mb-2" :style="{ color: 'var(--theme-accent)' }">Join Our Celebration</p>
-                  <span class="inline-block text-xs px-4 py-2 rounded-full" :style="{ background: 'var(--theme-accent)', color: '#150a20' }">RSVP Now</span>
+              <div class="form-panel animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100">
+                <h2 class="text-base font-semibold text-white mb-3 flex items-center gap-2">
+                  <UIcon name="i-heroicons-play-circle" style="color: #e3b04a;" class="w-5 h-5" />
+                  See the real thing before you switch it on
+                </h2>
+                <p class="text-sm text-gray-400 mb-4">
+                  This opens the actual guest page in a new tab, camera fly-through and all - it saves your latest changes first, so what you see is always current. You (the account owner) can always open it this way, even while the page is off for everyone else.
+                </p>
+                <UButton size="lg" variant="soft" color="neutral" icon="i-heroicons-play-circle" class="font-semibold" :loading="previewing" @click="previewLive">
+                  Preview Live Cinematic
+                </UButton>
+              </div>
+            </template>
+
+          </div>
+
+          <!-- Right Column: Preview -->
+          <div class="w-full lg:w-[360px] xl:w-[400px] shrink-0 flex flex-col items-center pb-8 lg:pb-0 overflow-y-auto hide-scrollbar order-1 lg:order-2">
+            <div class="flex items-center justify-between w-full mb-2 px-2">
+              <p class="text-xs font-semibold uppercase tracking-widest text-gold-200/70 flex items-center gap-2">
+                <UIcon name="i-heroicons-device-phone-mobile" class="w-4 h-4" /> Content Check (not animated)
+              </p>
+            </div>
+            <p class="text-xs text-white/40 mb-4 px-2 leading-relaxed">
+              This just stacks your text/photos in order so you can proofread them. It does not move or zoom like the real page -
+              use <b class="text-gold-300/80">Preview Live Cinematic</b> above to see the actual fly-through.
+            </p>
+
+            <!-- Smartphone Mockup Wrapper - a stacked preview of the scenes in
+                 order (the real guest page plays them one at a time with the
+                 automatic camera - see VipCinematicInvite.vue - but the stacked
+                 view here is enough to check your writing/photos at a glance,
+                 NOT to judge the animation itself). -->
+            <div class="phone-bezel w-full max-w-[360px] shadow-2xl shrink-0">
+              <div class="phone-notch"></div>
+              <div class="phone-screen hide-scrollbar relative flex flex-col p-5" :style="styleVars">
+                <div class="absolute inset-0 z-0" :style="{ background: 'linear-gradient(160deg, var(--theme-bg-from), var(--theme-bg-via), var(--theme-bg-to))' }"></div>
+
+                <div class="relative z-10 space-y-4 pb-8">
+                  <div class="text-center pt-4 pb-2">
+                    <p class="text-[0.6rem] tracking-[0.3em] uppercase mb-2" :style="{ color: 'var(--theme-accent)' }">You're Invited</p>
+                    <h2 class="text-2xl italic" :style="{ color: 'var(--theme-ink)', fontFamily: 'var(--theme-heading-font)' }">
+                      {{ wedding?.content.brideName }} &amp; {{ wedding?.content.groomName }}
+                    </h2>
+                  </div>
+
+                  <div v-if="scenes.length === 0" class="text-center text-sm opacity-50 mt-6 italic" :style="{ color: 'var(--theme-ink)' }">
+                    Your scenes will appear here...
+                  </div>
+
+                  <div v-for="scene in scenes" :key="scene.id" class="preview-card">
+                    <img v-if="scene.imageUrl" :src="scene.imageUrl" class="w-full h-28 object-cover rounded-t-xl" />
+                    <div class="p-3">
+                      <h3 v-if="scene.title" class="text-sm font-semibold mb-1" :style="{ color: 'var(--theme-ink)', fontFamily: 'var(--theme-heading-font)' }">{{ scene.title }}</h3>
+                      <p v-if="scene.body" class="text-xs opacity-70 leading-relaxed" :style="{ color: 'var(--theme-ink)' }">{{ scene.body }}</p>
+                      <p class="camera-badge">
+                        <UIcon name="i-heroicons-video-camera" class="w-3 h-3" />
+                        {{ cameraSummary(scene) }}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="text-center pt-2 pb-4">
+                    <p class="text-[0.6rem] tracking-[0.3em] uppercase mb-2" :style="{ color: 'var(--theme-accent)' }">Join Our Celebration</p>
+                    <span class="inline-block text-xs px-4 py-2 rounded-full" :style="{ background: 'var(--theme-accent)', color: '#150a20' }">RSVP Now</span>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
+        </div>
       </div>
     </div>
   </div>
@@ -327,6 +371,17 @@ const { wedding, loading, saving, updateVip, updateContent } = useMyWedding(toRe
 const { themeStyleVars } = useThemes()
 const { isConfigured: cloudinaryConfigured, uploadImage } = useCloudinary()
 const toast = useToast()
+
+// Left sidebar sections - mirrors the regular couple dashboard's sidebar
+// (Design Studio, Guest List, etc.) so everything editable has a clearly
+// named home instead of being one long scrolling page.
+type Section = 'details' | 'scenes' | 'publish'
+const section = ref<Section>('details')
+const sections: { id: Section; label: string; icon: string }[] = [
+  { id: 'details', label: 'Wedding Details', icon: 'i-heroicons-heart' },
+  { id: 'scenes', label: 'Your Scenes', icon: 'i-heroicons-film' },
+  { id: 'publish', label: 'Preview & Publish', icon: 'i-heroicons-rocket-launch' }
+]
 
 const details = reactive({
   brideName: '',
@@ -533,6 +588,32 @@ useSeoMeta({ title: 'VIP Cinematic — WeddingCard' })
 </script>
 
 <style scoped>
+.vip-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 1rem;
+  border-radius: 0.75rem;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.6);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.vip-nav-link:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: white;
+  border-color: rgba(255, 255, 255, 0.05);
+}
+
+.vip-nav-link-active {
+  background: rgba(212, 160, 23, 0.12);
+  color: #f3ddaa;
+  border-color: rgba(212, 160, 23, 0.2);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
 .form-panel {
   border-radius: 1.25rem;
   padding: 1.5rem;
@@ -573,6 +654,17 @@ useSeoMeta({ title: 'VIP Cinematic — WeddingCard' })
 .camera-controls {
   border-radius: 0.85rem;
   padding: 0.85rem;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px dashed #374151;
+}
+
+.camera-controls-inline {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+  padding: 0.5rem;
+  border-radius: 0.65rem;
   background: rgba(0, 0, 0, 0.2);
   border: 1px dashed #374151;
 }
