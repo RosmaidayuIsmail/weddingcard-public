@@ -8,320 +8,340 @@
 
     <!-- Envelope gate: same tap-to-open ceremony as the classic layout. The
          tap is also the "user gesture" the browser needs to allow the music
-         to autoplay, and it's the moment that kicks off the whole camera
-         sequence below. -->
+         to autoplay, and it's the moment that kicks off the scene sequence
+         below. -->
     <div class="envelope-shell" :class="{ 'envelope-shell-collapsed': envelopeCollapsed, 'cine-embedded': embedded }">
       <EnvelopeIntro v-model:opened="opened" :guest-name="guestName" :content="wedding.content" />
     </div>
 
-    <!-- The cinematic canvas: everything below lives on one wide "world" the
-         camera pans and zooms across on its own timer - see runCamera().
-         Nothing here responds to scrolling or taps; it plays itself. -->
-    <div v-if="opened" class="cine-viewport" :class="{ 'cine-embedded': embedded }" ref="viewportEl">
-      <!-- A photo of the couple's own venue, fixed to the viewport (not
-           panned like the world below) so it reads as a constant backdrop
-           behind every scene - see vipBackgroundImageUrl on WeddingDoc and
-           the "Background Photo" upload on the Wedding Details page.
-           Falls back to nothing (just the gradient below) when unset. -->
+    <!-- The cinematic stage: a single fixed-size frame. Every scene below is
+         a full-frame layer stacked on top of the others (position:absolute;
+         inset:0) that crossfades in and out on its own timer - see goTo() /
+         sceneKeys in the script. Nothing pans or zooms around a canvas -
+         each scene is its own deliberately composed layout, always in the
+         same place, matching how the reference invitation actually works
+         (confirmed frame-by-frame against the couple's own reference
+         video: one fixed card, whole layouts crossfade in place). -->
+    <div v-if="opened" class="cine-viewport" :class="{ 'cine-embedded': embedded }">
+      <!-- The couple's own venue photo (optional), fixed behind every scene. -->
       <div v-if="wedding.vipBackgroundImageUrl" class="cine-photo-backdrop" :style="{ backgroundImage: `url(${wedding.vipBackgroundImageUrl})` }"></div>
+      <div class="cine-bg" :class="{ 'cine-bg-scrim': !!wedding.vipBackgroundImageUrl }"></div>
+      <PetalsBackground v-if="wedding.content.enablePetals !== false" :style-name="wedding.content.petalStyle" class="cine-petals" />
 
       <!-- Soft smoke/mist wipe that puffs across the screen at the start of
-           each camera move (see puffMist() below) - a stand-in for the
-           mist-transition look in the reference video, independent of any
-           couple's chosen theme colors so it reads the same everywhere. -->
+           each scene change (see puffMist() below). -->
       <div class="cine-mist" ref="mistEl"></div>
 
-      <div class="cine-world" ref="worldEl" :style="{ width: worldWidthPx + 'px' }">
-        <div class="cine-bg" :class="{ 'cine-bg-scrim': !!wedding.vipBackgroundImageUrl }" :style="{ width: worldWidthPx + 'px' }"></div>
+      <div class="cine-stage">
 
-        <PetalsBackground v-if="wedding.content.enablePetals !== false" :style-name="wedding.content.petalStyle" class="cine-petals" />
-
-        <!-- STOP: cover -->
-        <div class="cine-row cine-row-center">
-          <div class="cine-stop" :class="stopClass('cover')" :ref="el => setStopRef('cover', el)">
-            <!-- Template 1's ornamental-arch cover: only appears once the
-                 couple has uploaded a picture of themselves together (see
-                 the Couple Illustration panel on the Wedding Details page).
-                 Purely additive - every wedding without one keeps today's
-                 plain text frame below, unchanged. -->
-            <div v-if="wedding.content.coupleIllustrationUrl" class="cine-arch">
-              <svg class="cine-arch-corner cine-arch-corner-tl" viewBox="0 0 90 90" aria-hidden="true">
-                <path d="M4,2 C24,6 42,18 54,36" fill="none" stroke="var(--theme-accent)" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
-                <circle cx="18" cy="14" r="7" fill="var(--theme-accent)" opacity="0.85"/>
-                <circle cx="30" cy="26" r="5" fill="color-mix(in srgb, var(--theme-accent) 55%, white)" opacity="0.9"/>
-                <circle cx="10" cy="30" r="4" fill="color-mix(in srgb, var(--theme-accent) 55%, white)" opacity="0.9"/>
-                <path d="M40,10 C41,13 43,15 46,16 C43,17 41,19 40,22 C39,19 37,17 34,16 C37,15 39,13 40,10 Z" fill="var(--theme-ink, #f7ecf3)" opacity="0.6"/>
-              </svg>
-              <svg class="cine-arch-corner cine-arch-corner-tr" viewBox="0 0 90 90" aria-hidden="true">
-                <path d="M4,2 C24,6 42,18 54,36" fill="none" stroke="var(--theme-accent)" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
-                <circle cx="18" cy="14" r="7" fill="var(--theme-accent)" opacity="0.85"/>
-                <circle cx="30" cy="26" r="5" fill="color-mix(in srgb, var(--theme-accent) 55%, white)" opacity="0.9"/>
-                <circle cx="10" cy="30" r="4" fill="color-mix(in srgb, var(--theme-accent) 55%, white)" opacity="0.9"/>
-                <path d="M40,10 C41,13 43,15 46,16 C43,17 41,19 40,22 C39,19 37,17 34,16 C37,15 39,13 40,10 Z" fill="var(--theme-ink, #f7ecf3)" opacity="0.6"/>
-              </svg>
-              <div class="cine-arch-panel">
-                <svg class="cine-arch-motif" viewBox="0 0 46 30" aria-hidden="true">
-                  <path d="M17,15 A9,9 0 1 0 17,-3 A7,7 0 1 1 17,15 Z" fill="var(--theme-accent)" transform="translate(0,9)"/>
-                  <path d="M32,6 C32.6,7.6 33.9,8.7 35.6,8.9 C33.9,9.1 32.6,10.2 32,11.8 C31.4,10.2 30.1,9.1 28.4,8.9 C30.1,8.7 31.4,7.6 32,6 Z" fill="var(--theme-ink, #f7ecf3)"/>
-                </svg>
-                <div class="cine-arch-photo">
-                  <img :src="wedding.content.coupleIllustrationUrl" alt="">
-                </div>
-                <div class="cine-eyebrow">{{ wedding.content.innerGreeting || "You're Invited" }}</div>
-                <h1 class="cine-names">
-                  {{ wedding.content.brideName }}<span class="cine-amp">&amp;</span>{{ wedding.content.groomName }}
-                </h1>
-                <p class="cine-date">{{ wedding.content.dateLabel }}</p>
-              </div>
-            </div>
-            <template v-else>
-              <div class="cine-frame">
-                <div class="cine-eyebrow">{{ wedding.content.innerGreeting || "You're Invited" }}</div>
-                <h1 class="cine-names">
-                  {{ wedding.content.brideName }}<span class="cine-amp">&amp;</span>{{ wedding.content.groomName }}
-                </h1>
-              </div>
-              <p class="cine-date">{{ wedding.content.dateLabel }}</p>
-            </template>
-          </div>
-        </div>
-
-        <!-- STOP: venue diorama - a courtyard scene the couple "stands in",
-             right after the cover. Only appears once a couple picture is
-             uploaded (same gate as the cover's arch treatment above, and the
-             same picture) - without one there's no figure to put in the
-             scene, so it's skipped entirely rather than showing an empty
-             courtyard. -->
-        <div v-if="wedding.content.coupleIllustrationUrl" class="cine-row cine-row-center">
-          <div class="cine-stop cine-venue-stop" :class="stopClass('venue')" :ref="el => setStopRef('venue', el)">
-            <div class="cine-venue">
-              <div class="cine-venue-sky"></div>
-              <svg class="cine-venue-roof" viewBox="0 0 390 200" preserveAspectRatio="none" aria-hidden="true">
-                <path d="M-10,185 C10,130 35,85 66,74 C96,90 118,118 150,140 C172,155 195,160 195,160 C195,160 218,155 240,140 C272,118 294,90 324,74 C355,85 380,130 400,185 Z" fill="color-mix(in srgb, var(--theme-accent) 18%, #2c1608)"/>
-                <path d="M0,160 C14,92 34,32 62,18 C90,34 112,70 140,96 C164,114 176,120 195,122 C214,120 226,114 250,96 C278,70 300,34 328,18 C356,32 376,92 390,160 L390,200 L0,200 Z" fill="color-mix(in srgb, var(--theme-accent) 30%, #4a2a12)"/>
-                <path d="M0,166 C14,100 34,42 62,28 C90,44 112,78 140,102 C164,120 176,126 195,128 C214,126 226,120 250,102 C278,78 300,44 328,28 C356,42 376,100 390,166" fill="none" stroke="var(--theme-accent)" stroke-width="1.5" opacity=".5"/>
-                <path d="M62,110 L62,200 M328,110 L328,200 M195,122 L195,200" stroke="#2c1608" stroke-width="9" opacity=".8"/>
-              </svg>
-              <div class="cine-venue-floor"></div>
-              <div class="cine-venue-signage">
-                <div class="cine-eyebrow">{{ wedding.content.innerGreeting || "You're Invited" }}</div>
-                <div class="cine-venue-names">{{ wedding.content.brideName }} &amp; {{ wedding.content.groomName }}</div>
-              </div>
-              <svg class="cine-venue-arch" viewBox="0 0 220 90" aria-hidden="true">
-                <g opacity=".95">
-                  <circle cx="16" cy="32" r="14" fill="var(--theme-accent)"/><circle cx="36" cy="16" r="10" fill="color-mix(in srgb, var(--theme-accent) 60%, white)"/>
-                  <circle cx="6" cy="16" r="9" fill="color-mix(in srgb, var(--theme-accent) 70%, white)"/><circle cx="48" cy="36" r="8" fill="color-mix(in srgb, var(--theme-accent) 40%, #7a8f4a)"/>
-                  <circle cx="204" cy="30" r="14" fill="var(--theme-accent)"/><circle cx="184" cy="14" r="10" fill="color-mix(in srgb, var(--theme-accent) 60%, white)"/>
-                  <circle cx="214" cy="12" r="9" fill="color-mix(in srgb, var(--theme-accent) 70%, white)"/><circle cx="172" cy="34" r="8" fill="color-mix(in srgb, var(--theme-accent) 40%, #7a8f4a)"/>
-                </g>
-              </svg>
-              <div class="cine-venue-photo"><img :src="wedding.content.coupleIllustrationUrl" alt=""></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- STOP: greeting - the salutation card, right after the venue. -->
-        <div class="cine-row" :class="rowAlignClass('greeting')">
-          <div class="cine-stop cine-card-stop" :class="stopClass('greeting')" :ref="el => setStopRef('greeting', el)">
-            <div class="cine-card">
+        <!-- SCENE: cover - a bordered keepsake card: eyebrow, names, date,
+             address. Matches the reference invitation's opening card. -->
+        <div class="cine-scene cine-scene-frame" :class="{ 'cine-scene-active': currentKey === 'cover' }">
+          <div class="cine-bordered-card">
+            <svg class="cine-corner cine-corner-tl" viewBox="0 0 60 60" aria-hidden="true">
+              <path d="M4,2 C24,6 42,18 54,36" fill="none" stroke="var(--theme-accent)" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+              <circle cx="18" cy="14" r="7" fill="var(--theme-accent)" opacity="0.85"/>
+              <circle cx="30" cy="26" r="5" fill="color-mix(in srgb, var(--theme-accent) 55%, white)" opacity="0.9"/>
+              <circle cx="10" cy="30" r="4" fill="color-mix(in srgb, var(--theme-accent) 55%, white)" opacity="0.9"/>
+            </svg>
+            <svg class="cine-corner cine-corner-tr" viewBox="0 0 60 60" aria-hidden="true">
+              <path d="M4,2 C24,6 42,18 54,36" fill="none" stroke="var(--theme-accent)" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+              <circle cx="18" cy="14" r="7" fill="var(--theme-accent)" opacity="0.85"/>
+              <circle cx="30" cy="26" r="5" fill="color-mix(in srgb, var(--theme-accent) 55%, white)" opacity="0.9"/>
+              <circle cx="10" cy="30" r="4" fill="color-mix(in srgb, var(--theme-accent) 55%, white)" opacity="0.9"/>
+            </svg>
+            <svg class="cine-corner cine-corner-bl" viewBox="0 0 60 60" aria-hidden="true">
+              <path d="M4,2 C24,6 42,18 54,36" fill="none" stroke="var(--theme-accent)" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+              <circle cx="18" cy="14" r="7" fill="var(--theme-accent)" opacity="0.85"/>
+              <circle cx="30" cy="26" r="5" fill="color-mix(in srgb, var(--theme-accent) 55%, white)" opacity="0.9"/>
+              <circle cx="10" cy="30" r="4" fill="color-mix(in srgb, var(--theme-accent) 55%, white)" opacity="0.9"/>
+            </svg>
+            <svg class="cine-corner cine-corner-br" viewBox="0 0 60 60" aria-hidden="true">
+              <path d="M4,2 C24,6 42,18 54,36" fill="none" stroke="var(--theme-accent)" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+              <circle cx="18" cy="14" r="7" fill="var(--theme-accent)" opacity="0.85"/>
+              <circle cx="30" cy="26" r="5" fill="color-mix(in srgb, var(--theme-accent) 55%, white)" opacity="0.9"/>
+              <circle cx="10" cy="30" r="4" fill="color-mix(in srgb, var(--theme-accent) 55%, white)" opacity="0.9"/>
+            </svg>
+            <div class="cine-bordered-inner">
               <div class="cine-eyebrow">{{ wedding.content.innerGreeting || "You're Invited" }}</div>
-              <p class="cine-story-text">{{ wedding.content.story }}</p>
-              <h3 class="cine-greeting-names">{{ wedding.content.brideName }} &amp; {{ wedding.content.groomName }}</h3>
+              <h1 class="cine-names">{{ wedding.content.brideName }}<span class="cine-amp">&amp;</span>{{ wedding.content.groomName }}</h1>
+              <p class="cine-date">{{ wedding.content.dateLabel }}</p>
+              <p v-if="wedding.content.venueAddress" class="cine-cover-address">{{ wedding.content.venueAddress }}</p>
             </div>
           </div>
         </div>
 
-        <!-- STOP: bride biodata - her full name and parents' names, styled
-             as its own card. Reuses the brideFullName/brideParents fields
-             already collected on the Wedding Details page (Family Details
-             panel) and already shown on the classic layout's StoryInvite.vue
-             - just not previously rendered anywhere in the VIP fly-through.
-             Optional - skipped entirely when both fields are empty, same
-             "don't show a blank card" rule as every other optional stop. -->
-        <div v-if="wedding.content.brideFullName || wedding.content.brideParents" class="cine-row" :class="rowAlignClass('brideBio')">
-          <div class="cine-stop cine-card-stop" :class="stopClass('brideBio')" :ref="el => setStopRef('brideBio', el)">
-            <div class="cine-card cine-card-bio">
-              <svg class="cine-bio-motif" viewBox="0 0 46 30" aria-hidden="true">
-                <path d="M32,6 C32.6,7.6 33.9,8.7 35.6,8.9 C33.9,9.1 32.6,10.2 32,11.8 C31.4,10.2 30.1,9.1 28.4,8.9 C30.1,8.7 31.4,7.6 32,6 Z" fill="var(--theme-accent)"/>
-                <path d="M14,4 C14.8,6.4 16.7,8.1 19.2,8.5 C16.7,8.9 14.8,10.6 14,13 C13.2,10.6 11.3,8.9 8.8,8.5 C11.3,8.1 13.2,6.4 14,4 Z" fill="color-mix(in srgb, var(--theme-accent) 55%, white)"/>
-              </svg>
-              <div class="cine-bio-label">Bride</div>
-              <h3 class="cine-bio-name">{{ wedding.content.brideFullName || wedding.content.brideName }}</h3>
-              <p v-if="wedding.content.brideParents" class="cine-bio-parents">{{ wedding.content.childOfLabel || 'Child of' }}<br>{{ wedding.content.brideParents }}</p>
-            </div>
+        <!-- SCENE: couple - the same bordered card, this time holding only
+             the couple's own photo, no text at all - matching the reference
+             exactly. Only appears once a photo is uploaded. -->
+        <div v-if="wedding.content.coupleIllustrationUrl" class="cine-scene cine-scene-frame" :class="{ 'cine-scene-active': currentKey === 'couple' }">
+          <div class="cine-bordered-card cine-bordered-card-photo">
+            <svg class="cine-corner cine-corner-tl" viewBox="0 0 60 60" aria-hidden="true">
+              <path d="M4,2 C24,6 42,18 54,36" fill="none" stroke="var(--theme-accent)" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+              <circle cx="18" cy="14" r="7" fill="var(--theme-accent)" opacity="0.85"/>
+              <circle cx="30" cy="26" r="5" fill="color-mix(in srgb, var(--theme-accent) 55%, white)" opacity="0.9"/>
+              <circle cx="10" cy="30" r="4" fill="color-mix(in srgb, var(--theme-accent) 55%, white)" opacity="0.9"/>
+            </svg>
+            <svg class="cine-corner cine-corner-tr" viewBox="0 0 60 60" aria-hidden="true">
+              <path d="M4,2 C24,6 42,18 54,36" fill="none" stroke="var(--theme-accent)" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+              <circle cx="18" cy="14" r="7" fill="var(--theme-accent)" opacity="0.85"/>
+              <circle cx="30" cy="26" r="5" fill="color-mix(in srgb, var(--theme-accent) 55%, white)" opacity="0.9"/>
+              <circle cx="10" cy="30" r="4" fill="color-mix(in srgb, var(--theme-accent) 55%, white)" opacity="0.9"/>
+            </svg>
+            <svg class="cine-corner cine-corner-bl" viewBox="0 0 60 60" aria-hidden="true">
+              <path d="M4,2 C24,6 42,18 54,36" fill="none" stroke="var(--theme-accent)" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+              <circle cx="18" cy="14" r="7" fill="var(--theme-accent)" opacity="0.85"/>
+              <circle cx="30" cy="26" r="5" fill="color-mix(in srgb, var(--theme-accent) 55%, white)" opacity="0.9"/>
+              <circle cx="10" cy="30" r="4" fill="color-mix(in srgb, var(--theme-accent) 55%, white)" opacity="0.9"/>
+            </svg>
+            <svg class="cine-corner cine-corner-br" viewBox="0 0 60 60" aria-hidden="true">
+              <path d="M4,2 C24,6 42,18 54,36" fill="none" stroke="var(--theme-accent)" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+              <circle cx="18" cy="14" r="7" fill="var(--theme-accent)" opacity="0.85"/>
+              <circle cx="30" cy="26" r="5" fill="color-mix(in srgb, var(--theme-accent) 55%, white)" opacity="0.9"/>
+              <circle cx="10" cy="30" r="4" fill="color-mix(in srgb, var(--theme-accent) 55%, white)" opacity="0.9"/>
+            </svg>
+            <div class="cine-couple-photo"><img :src="wedding.content.coupleIllustrationUrl" alt=""></div>
           </div>
         </div>
 
-        <!-- STOP: groom biodata - same treatment, mirrored (see brideBio
-             above), using groomFullName/groomParents. -->
-        <div v-if="wedding.content.groomFullName || wedding.content.groomParents" class="cine-row" :class="rowAlignClass('groomBio')">
-          <div class="cine-stop cine-card-stop" :class="stopClass('groomBio')" :ref="el => setStopRef('groomBio', el)">
-            <div class="cine-card cine-card-bio">
-              <svg class="cine-bio-motif" viewBox="0 0 46 30" aria-hidden="true">
-                <path d="M32,6 C32.6,7.6 33.9,8.7 35.6,8.9 C33.9,9.1 32.6,10.2 32,11.8 C31.4,10.2 30.1,9.1 28.4,8.9 C30.1,8.7 31.4,7.6 32,6 Z" fill="var(--theme-accent)"/>
-                <path d="M14,4 C14.8,6.4 16.7,8.1 19.2,8.5 C16.7,8.9 14.8,10.6 14,13 C13.2,10.6 11.3,8.9 8.8,8.5 C11.3,8.1 13.2,6.4 14,4 Z" fill="color-mix(in srgb, var(--theme-accent) 55%, white)"/>
-              </svg>
-              <div class="cine-bio-label">Groom</div>
-              <h3 class="cine-bio-name">{{ wedding.content.groomFullName || wedding.content.groomName }}</h3>
-              <p v-if="wedding.content.groomParents" class="cine-bio-parents">{{ wedding.content.childOfLabel || 'Child of' }}<br>{{ wedding.content.groomParents }}</p>
-            </div>
+        <!-- SCENE: greeting - the couple's own words to their guests. -->
+        <div class="cine-scene cine-scene-flat" :class="{ 'cine-scene-active': currentKey === 'greeting' }">
+          <div class="cine-card">
+            <div class="cine-eyebrow">{{ wedding.content.innerGreeting || "You're Invited" }}</div>
+            <p class="cine-story-text">{{ wedding.content.story }}</p>
+            <h3 class="cine-greeting-names">{{ wedding.content.brideName }} &amp; {{ wedding.content.groomName }}</h3>
           </div>
         </div>
 
-        <!-- STOPS: VIP scenes - the couple's own narrative content, written
+        <!-- SCENE: bride biodata - her portrait (cropped from the couple's
+             own photo, if there is one) on one side, her full name +
+             parents on the other, a flat themed background with no border -
+             matching the reference's solo bride card exactly. Optional -
+             skipped when both fields are empty. -->
+        <div v-if="wedding.content.brideFullName || wedding.content.brideParents" class="cine-scene cine-scene-bio" :class="{ 'cine-scene-active': currentKey === 'brideBio' }">
+          <svg class="cine-bio-branch" viewBox="0 0 200 400" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M-10,20 C40,60 20,140 90,180 C160,220 130,300 190,410" fill="none" stroke="var(--theme-accent)" stroke-width="2" opacity="0.16"/>
+            <ellipse cx="55" cy="88" rx="16" ry="8" fill="var(--theme-accent)" opacity="0.14" transform="rotate(35 55 88)"/>
+            <ellipse cx="95" cy="176" rx="18" ry="9" fill="var(--theme-accent)" opacity="0.14" transform="rotate(-25 95 176)"/>
+            <ellipse cx="150" cy="260" rx="16" ry="8" fill="var(--theme-accent)" opacity="0.14" transform="rotate(40 150 260)"/>
+            <ellipse cx="170" cy="360" rx="18" ry="9" fill="var(--theme-accent)" opacity="0.14" transform="rotate(-20 170 360)"/>
+          </svg>
+          <div v-if="wedding.content.coupleIllustrationUrl" class="cine-bio-portrait">
+            <img :src="wedding.content.coupleIllustrationUrl" style="object-position: 80% 12%;" alt="">
+          </div>
+          <div class="cine-bio-text">
+            <div class="cine-bio-label">Bride</div>
+            <h2 class="cine-bio-name">{{ wedding.content.brideFullName || wedding.content.brideName }}</h2>
+            <p v-if="wedding.content.brideParents" class="cine-bio-parents">{{ wedding.content.childOfLabel || 'Child of' }}<br>{{ wedding.content.brideParents }}</p>
+          </div>
+        </div>
+
+        <!-- SCENE: groom biodata - mirrored (see brideBio above), plus a
+             faint mosque-dome watermark, matching the reference's groom
+             card. Optional - skipped when both fields are empty. -->
+        <div v-if="wedding.content.groomFullName || wedding.content.groomParents" class="cine-scene cine-scene-bio cine-scene-bio-mirror" :class="{ 'cine-scene-active': currentKey === 'groomBio' }">
+          <svg class="cine-bio-branch" viewBox="0 0 200 400" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M-10,20 C40,60 20,140 90,180 C160,220 130,300 190,410" fill="none" stroke="var(--theme-accent)" stroke-width="2" opacity="0.16"/>
+            <ellipse cx="55" cy="88" rx="16" ry="8" fill="var(--theme-accent)" opacity="0.14" transform="rotate(35 55 88)"/>
+            <ellipse cx="95" cy="176" rx="18" ry="9" fill="var(--theme-accent)" opacity="0.14" transform="rotate(-25 95 176)"/>
+            <ellipse cx="150" cy="260" rx="16" ry="8" fill="var(--theme-accent)" opacity="0.14" transform="rotate(40 150 260)"/>
+            <ellipse cx="170" cy="360" rx="18" ry="9" fill="var(--theme-accent)" opacity="0.14" transform="rotate(-20 170 360)"/>
+          </svg>
+          <svg class="cine-bio-dome" viewBox="0 0 200 120" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
+            <path d="M60,120 L60,70 A40,40 0 0 1 140,70 L140,120 Z" fill="var(--theme-accent)"/>
+            <rect x="96" y="30" width="8" height="26" fill="var(--theme-accent)"/>
+            <circle cx="100" cy="24" r="7" fill="none" stroke="var(--theme-accent)" stroke-width="3"/>
+          </svg>
+          <div v-if="wedding.content.coupleIllustrationUrl" class="cine-bio-portrait">
+            <img :src="wedding.content.coupleIllustrationUrl" style="object-position: 20% 12%;" alt="">
+          </div>
+          <div class="cine-bio-text">
+            <div class="cine-bio-label">Groom</div>
+            <h2 class="cine-bio-name">{{ wedding.content.groomFullName || wedding.content.groomName }}</h2>
+            <p v-if="wedding.content.groomParents" class="cine-bio-parents">{{ wedding.content.childOfLabel || 'Child of' }}<br>{{ wedding.content.groomParents }}</p>
+          </div>
+        </div>
+
+        <!-- SCENES: VIP scenes - the couple's own narrative content, written
              and ordered from the admin's Full Scene Manager (see
              VipScenesPanel.vue). Rendered generically: an optional image,
              a title, and body text - whatever the couple wrote. -->
         <div
-          v-for="(scene, sceneIndex) in vipScenes"
+          v-for="scene in vipScenes"
           :key="scene.id"
-          class="cine-row"
-          :class="rowAlignClass('vip-' + scene.id)"
+          class="cine-scene cine-scene-flat"
+          :class="{ 'cine-scene-active': currentKey === ('vip-' + scene.id) }"
         >
-          <div class="cine-stop cine-card-stop" :class="stopClass('vip-' + scene.id)" :ref="el => setStopRef('vip-' + scene.id, el)">
-            <div class="cine-card">
-              <img v-if="scene.imageUrl" :src="scene.imageUrl" alt="" class="cine-scene-img">
-              <h3 v-if="scene.title">{{ scene.title }}</h3>
-              <p v-if="scene.body" class="cine-story-text">{{ scene.body }}</p>
+          <div class="cine-card">
+            <img v-if="scene.imageUrl" :src="scene.imageUrl" alt="" class="cine-scene-img">
+            <h3 v-if="scene.title">{{ scene.title }}</h3>
+            <p v-if="scene.body" class="cine-story-text">{{ scene.body }}</p>
+          </div>
+        </div>
+
+        <!-- SCENE: event details -->
+        <div class="cine-scene cine-scene-flat" :class="{ 'cine-scene-active': currentKey === 'event' }">
+          <div class="cine-card">
+            <h3>{{ wedding.content.detailsHeading || 'The Details' }}</h3>
+            <p v-if="wedding.content.timeLabel">{{ wedding.content.timeLabel }}</p>
+            <p v-if="wedding.content.venueName" class="cine-strong">{{ wedding.content.venueName }}</p>
+            <p v-if="wedding.content.venueAddress" class="cine-dim">{{ wedding.content.venueAddress }}</p>
+            <div class="cine-countdown" v-if="wedding.content.dateISO">
+              <div class="cine-cell"><b>{{ countdown.days }}</b><span>Days</span></div>
+              <div class="cine-cell"><b>{{ countdown.hours }}</b><span>Hrs</span></div>
+              <div class="cine-cell"><b>{{ countdown.minutes }}</b><span>Min</span></div>
+            </div>
+            <div class="cine-cal">
+              <AddToCalendarButton
+                :bride-name="wedding.content.brideName"
+                :groom-name="wedding.content.groomName"
+                :date-iso="wedding.content.dateISO"
+                :venue-name="wedding.content.venueName"
+                :venue-address="wedding.content.venueAddress"
+                :rsvp-deadline-label="wedding.content.rsvpDeadlineLabel"
+                :label="wedding.content.calendarButtonLabel"
+                class="rounded-full shadow-lg"
+              />
             </div>
           </div>
         </div>
 
-        <!-- STOP: event details -->
-        <div class="cine-row" :class="rowAlignClass('event')">
-          <div class="cine-stop cine-card-stop" :class="stopClass('event')" :ref="el => setStopRef('event', el)">
-            <div class="cine-card">
-              <h3>{{ wedding.content.detailsHeading || 'The Details' }}</h3>
-              <p v-if="wedding.content.timeLabel">{{ wedding.content.timeLabel }}</p>
-              <p v-if="wedding.content.venueName" class="cine-strong">{{ wedding.content.venueName }}</p>
-              <p v-if="wedding.content.venueAddress" class="cine-dim">{{ wedding.content.venueAddress }}</p>
-              <div class="cine-countdown" v-if="wedding.content.dateISO">
-                <div class="cine-cell"><b>{{ countdown.days }}</b><span>Days</span></div>
-                <div class="cine-cell"><b>{{ countdown.hours }}</b><span>Hrs</span></div>
-                <div class="cine-cell"><b>{{ countdown.minutes }}</b><span>Min</span></div>
-              </div>
-              <div class="cine-cal">
-                <AddToCalendarButton
-                  :bride-name="wedding.content.brideName"
-                  :groom-name="wedding.content.groomName"
-                  :date-iso="wedding.content.dateISO"
-                  :venue-name="wedding.content.venueName"
-                  :venue-address="wedding.content.venueAddress"
-                  :rsvp-deadline-label="wedding.content.rsvpDeadlineLabel"
-                  :label="wedding.content.calendarButtonLabel"
-                  class="rounded-full shadow-lg"
-                />
-              </div>
+        <!-- SCENE: doa (prayer) - optional, off by default (see enableDoa on
+             the Wedding Details page). -->
+        <div v-if="wedding.content.enableDoa" class="cine-scene cine-scene-flat" :class="{ 'cine-scene-active': currentKey === 'doa' }">
+          <div class="cine-card cine-card-doa">
+            <svg class="cine-doa-motif" viewBox="0 0 46 30" aria-hidden="true">
+              <path d="M17,15 A9,9 0 1 0 17,-3 A7,7 0 1 1 17,15 Z" fill="var(--theme-accent)" transform="translate(0,9)"/>
+              <path d="M32,6 C32.6,7.6 33.9,8.7 35.6,8.9 C33.9,9.1 32.6,10.2 32,11.8 C31.4,10.2 30.1,9.1 28.4,8.9 C30.1,8.7 31.4,7.6 32,6 Z" fill="var(--theme-ink, #f7ecf3)"/>
+            </svg>
+            <p class="cine-story-text">{{ wedding.content.doaText || defaultDoaText }}</p>
+            <p class="cine-doa-amin">Amin Ya Rabbal 'Alamin</p>
+          </div>
+        </div>
+
+        <!-- SCENE: photo frames - reuses the couple's own photo (there's no
+             separate individual bride/groom upload in the VIP dashboard
+             yet), cropped to two focal points so each frame reads as its
+             own portrait. -->
+        <div v-if="wedding.content.coupleIllustrationUrl" class="cine-scene cine-scene-flat" :class="{ 'cine-scene-active': currentKey === 'frames' }">
+          <div class="cine-frames">
+            <svg class="cine-frames-ribbon" viewBox="0 0 70 44" aria-hidden="true">
+              <path d="M35,10 L15,40 L25,34 L35,42 L45,34 L55,40 Z" fill="var(--theme-accent)"/>
+              <circle cx="35" cy="10" r="10" fill="color-mix(in srgb, var(--theme-accent) 70%, white)"/>
+            </svg>
+            <div class="cine-frames-row">
+              <div class="cine-frame-box"><img :src="wedding.content.coupleIllustrationUrl" style="object-position: 15% 20%;" alt="" /></div>
+              <div class="cine-frame-box"><img :src="wedding.content.coupleIllustrationUrl" style="object-position: 85% 20%;" alt="" /></div>
             </div>
           </div>
         </div>
 
-        <!-- STOP: doa (prayer) - optional, off by default (see enableDoa on
-             the Wedding Details page). When turned on with no custom text,
-             defaultDoaText below fills in a generic Malay wedding doa. -->
-        <div v-if="wedding.content.enableDoa" class="cine-row" :class="rowAlignClass('doa')">
-          <div class="cine-stop cine-card-stop" :class="stopClass('doa')" :ref="el => setStopRef('doa', el)">
-            <div class="cine-card cine-card-doa">
-              <svg class="cine-doa-motif" viewBox="0 0 46 30" aria-hidden="true">
-                <path d="M17,15 A9,9 0 1 0 17,-3 A7,7 0 1 1 17,15 Z" fill="var(--theme-accent)" transform="translate(0,9)"/>
-                <path d="M32,6 C32.6,7.6 33.9,8.7 35.6,8.9 C33.9,9.1 32.6,10.2 32,11.8 C31.4,10.2 30.1,9.1 28.4,8.9 C30.1,8.7 31.4,7.6 32,6 Z" fill="var(--theme-ink, #f7ecf3)"/>
-              </svg>
-              <p class="cine-story-text">{{ wedding.content.doaText || defaultDoaText }}</p>
-              <p class="cine-doa-amin">Amin Ya Rabbal 'Alamin</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- STOP: photo frames - reuses the same couple picture as the cover
-             (there's no separate individual bride/groom upload in the VIP
-             dashboard yet), cropped to two different focal points so each
-             frame reads as its own portrait rather than a repeated image. -->
-        <div v-if="wedding.content.coupleIllustrationUrl" class="cine-row" :class="rowAlignClass('frames')">
-          <div class="cine-stop" :class="stopClass('frames')" :ref="el => setStopRef('frames', el)">
-            <div class="cine-frames">
-              <svg class="cine-frames-ribbon" viewBox="0 0 70 44" aria-hidden="true">
-                <path d="M35,10 L15,40 L25,34 L35,42 L45,34 L55,40 Z" fill="var(--theme-accent)"/>
-                <circle cx="35" cy="10" r="10" fill="color-mix(in srgb, var(--theme-accent) 70%, white)"/>
-              </svg>
-              <div class="cine-frames-row">
-                <div class="cine-frame-box"><img :src="wedding.content.coupleIllustrationUrl" style="object-position: 15% 20%;" alt="" /></div>
-                <div class="cine-frame-box"><img :src="wedding.content.coupleIllustrationUrl" style="object-position: 85% 20%;" alt="" /></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- STOP: location / QR -->
-        <div v-if="wedding.content.mapUrl" class="cine-row" :class="rowAlignClass('location')">
-          <div class="cine-stop cine-card-stop" :class="stopClass('location')" :ref="el => setStopRef('location', el)">
-            <div class="cine-card">
-              <h3>{{ wedding.content.locationHeading || 'Find Us' }}</h3>
-              <p>{{ wedding.content.locationSubtitle || 'Scan to open in Maps' }}</p>
-              <div class="cine-qr"><img :src="qrCodeUrl" alt="QR code linking to the venue" loading="lazy"></div>
-              <UButton :to="wedding.content.mapUrl" target="_blank" external icon="i-heroicons-map-pin" color="primary" class="rounded-full mt-3">
-                {{ wedding.content.locationMapsButtonLabel || 'Google Maps' }}
-              </UButton>
-            </div>
-          </div>
-        </div>
-
-        <!-- STOP: gift -->
-        <div v-if="hasGift" class="cine-row" :class="rowAlignClass('gift')">
-          <div class="cine-stop cine-card-stop" :class="stopClass('gift')" :ref="el => setStopRef('gift', el)">
-            <div class="cine-card">
-              <h3>A Gift of Love</h3>
-              <GiftCard :banks="[wedding.content.bank, wedding.content.bank2]" />
-            </div>
-          </div>
-        </div>
-
-        <!-- STOP: flow -->
-        <div v-if="wedding.flow?.length" class="cine-row" :class="rowAlignClass('flow')">
-          <div class="cine-stop cine-card-stop" :class="stopClass('flow')" :ref="el => setStopRef('flow', el)">
-            <div class="cine-card">
-              <h3>{{ wedding.content.eventFlowHeading || 'Event Flow' }}</h3>
-              <FlowTimeline :items="wedding.flow" />
-            </div>
-          </div>
-        </div>
-
-        <!-- STOP: closing / RSVP - camera pulls back and settles here. Extra
-             top padding (vs. the other rows) keeps the previous stop's card
-             from peeking into frame once the camera zooms out for this
-             finale shot. -->
-        <div class="cine-row cine-row-center cine-row-finale">
-          <div class="cine-stop" :class="stopClass('closing')" :ref="el => setStopRef('closing', el)">
-            <div class="cine-frame cine-frame-wide">
-              <div class="cine-eyebrow">Join Our Celebration</div>
-              <h2 class="cine-subnames" style="font-size:2rem;">{{ wedding.content.brideName }} &amp; {{ wedding.content.groomName }}</h2>
-            </div>
-            <UButton v-if="wedding.content.rsvpEnabled !== false" :to="rsvpLink" size="xl" color="primary" class="cine-cta">
-              {{ wedding.content.btnRsvp || 'RSVP Now' }}
+        <!-- SCENE: location - a mosque-dome-and-minaret skyline silhouette,
+             matching the reference's closing/location card, plus a real
+             scannable QR code (the reference is a generic template with no
+             real functionality behind it - guests actually need this). -->
+        <div v-if="wedding.content.mapUrl" class="cine-scene cine-scene-location" :class="{ 'cine-scene-active': currentKey === 'location' }">
+          <div class="cine-location-sky"></div>
+          <svg class="cine-location-skyline" viewBox="0 0 400 180" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+            <defs>
+              <linearGradient id="skylineFade" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="color-mix(in srgb, var(--theme-accent) 55%, #b5652f)" stop-opacity="0"/>
+                <stop offset="35%" stop-color="color-mix(in srgb, var(--theme-accent) 55%, #b5652f)" stop-opacity="1"/>
+              </linearGradient>
+            </defs>
+            <path d="M0,180 L0,140 C20,140 20,110 40,110 C46,90 60,78 70,78 C74,58 90,40 100,40 C110,40 126,58 130,78 C140,78 154,90 160,110 C180,110 180,140 200,140 C220,140 220,110 240,110 C246,90 260,78 270,78 C274,58 290,40 300,40 C310,40 326,58 330,78 C340,78 354,90 360,110 C380,110 380,140 400,140 L400,180 Z" fill="url(#skylineFade)"/>
+            <circle cx="100" cy="26" r="6" fill="color-mix(in srgb, var(--theme-accent) 70%, white)"/>
+            <circle cx="300" cy="26" r="6" fill="color-mix(in srgb, var(--theme-accent) 70%, white)"/>
+            <path d="M92,20 A8,8 0 1 0 100,8 A6,6 0 1 1 92,20 Z" fill="color-mix(in srgb, var(--theme-accent) 80%, white)"/>
+          </svg>
+          <div class="cine-location-content">
+            <div class="cine-eyebrow">{{ wedding.content.locationHeading || 'Location' }}</div>
+            <p class="cine-location-address">
+              <template v-if="wedding.content.venueName">{{ wedding.content.venueName }}<br></template>{{ wedding.content.venueAddress }}
+            </p>
+            <p v-if="wedding.content.dateLabel" class="cine-location-date">{{ wedding.content.dateLabel }}</p>
+            <div class="cine-qr"><img :src="qrCodeUrl" alt="QR code linking to the venue" loading="lazy"></div>
+            <UButton :to="wedding.content.mapUrl" target="_blank" external icon="i-heroicons-map-pin" color="primary" class="rounded-full mt-3">
+              {{ wedding.content.locationMapsButtonLabel || 'Google Maps' }}
             </UButton>
-            <div class="mt-5 opacity-85"><ShareButtons :bride-name="wedding.content.brideName" :groom-name="wedding.content.groomName" :date-label="wedding.content.dateLabel" :share-message="wedding.content.shareMessage" /></div>
           </div>
         </div>
 
-        <CustomCodeBlock v-if="customCode.position !== 'top'" class="cine-row cine-row-center" />
+        <!-- SCENE: gift -->
+        <div v-if="hasGift" class="cine-scene cine-scene-flat" :class="{ 'cine-scene-active': currentKey === 'gift' }">
+          <div class="cine-card">
+            <h3>A Gift of Love</h3>
+            <GiftCard :banks="[wedding.content.bank, wedding.content.bank2]" />
+          </div>
+        </div>
+
+        <!-- SCENE: flow -->
+        <div v-if="wedding.flow?.length" class="cine-scene cine-scene-flat" :class="{ 'cine-scene-active': currentKey === 'flow' }">
+          <div class="cine-card">
+            <h3>{{ wedding.content.eventFlowHeading || 'Event Flow' }}</h3>
+            <FlowTimeline :items="wedding.flow" />
+          </div>
+        </div>
+
+        <!-- SCENE: closing / RSVP - the sequence settles here. -->
+        <div class="cine-scene cine-scene-frame" :class="{ 'cine-scene-active': currentKey === 'closing' }">
+          <div class="cine-bordered-card cine-bordered-card-wide">
+            <svg class="cine-corner cine-corner-tl" viewBox="0 0 60 60" aria-hidden="true">
+              <path d="M4,2 C24,6 42,18 54,36" fill="none" stroke="var(--theme-accent)" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+              <circle cx="18" cy="14" r="7" fill="var(--theme-accent)" opacity="0.85"/>
+              <circle cx="30" cy="26" r="5" fill="color-mix(in srgb, var(--theme-accent) 55%, white)" opacity="0.9"/>
+              <circle cx="10" cy="30" r="4" fill="color-mix(in srgb, var(--theme-accent) 55%, white)" opacity="0.9"/>
+            </svg>
+            <svg class="cine-corner cine-corner-tr" viewBox="0 0 60 60" aria-hidden="true">
+              <path d="M4,2 C24,6 42,18 54,36" fill="none" stroke="var(--theme-accent)" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+              <circle cx="18" cy="14" r="7" fill="var(--theme-accent)" opacity="0.85"/>
+              <circle cx="30" cy="26" r="5" fill="color-mix(in srgb, var(--theme-accent) 55%, white)" opacity="0.9"/>
+              <circle cx="10" cy="30" r="4" fill="color-mix(in srgb, var(--theme-accent) 55%, white)" opacity="0.9"/>
+            </svg>
+            <svg class="cine-corner cine-corner-bl" viewBox="0 0 60 60" aria-hidden="true">
+              <path d="M4,2 C24,6 42,18 54,36" fill="none" stroke="var(--theme-accent)" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+              <circle cx="18" cy="14" r="7" fill="var(--theme-accent)" opacity="0.85"/>
+              <circle cx="30" cy="26" r="5" fill="color-mix(in srgb, var(--theme-accent) 55%, white)" opacity="0.9"/>
+              <circle cx="10" cy="30" r="4" fill="color-mix(in srgb, var(--theme-accent) 55%, white)" opacity="0.9"/>
+            </svg>
+            <svg class="cine-corner cine-corner-br" viewBox="0 0 60 60" aria-hidden="true">
+              <path d="M4,2 C24,6 42,18 54,36" fill="none" stroke="var(--theme-accent)" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+              <circle cx="18" cy="14" r="7" fill="var(--theme-accent)" opacity="0.85"/>
+              <circle cx="30" cy="26" r="5" fill="color-mix(in srgb, var(--theme-accent) 55%, white)" opacity="0.9"/>
+              <circle cx="10" cy="30" r="4" fill="color-mix(in srgb, var(--theme-accent) 55%, white)" opacity="0.9"/>
+            </svg>
+            <div class="cine-bordered-inner">
+              <div class="cine-eyebrow">Join Our Celebration</div>
+              <h2 class="cine-subnames">{{ wedding.content.brideName }} &amp; {{ wedding.content.groomName }}</h2>
+              <UButton v-if="wedding.content.rsvpEnabled !== false" :to="rsvpLink" size="lg" color="primary" class="cine-cta">
+                {{ wedding.content.btnRsvp || 'RSVP Now' }}
+              </UButton>
+              <div class="mt-4 opacity-85"><ShareButtons :bride-name="wedding.content.brideName" :groom-name="wedding.content.groomName" :date-label="wedding.content.dateLabel" :share-message="wedding.content.shareMessage" /></div>
+            </div>
+          </div>
+        </div>
+
+        <CustomCodeBlock v-if="customCode.position !== 'top'" class="cine-scene cine-scene-flat" />
       </div>
 
       <div class="cine-hud">
-        <span v-for="(s, i) in stopOrder" :key="s" class="cine-dot" :class="{ on: i === currentIndex }"></span>
+        <span v-for="(key, i) in sceneKeys" :key="key" class="cine-dot" :class="{ on: i === currentIndex }"></span>
       </div>
-      <button v-if="currentIndex < stopOrder.length - 1" type="button" class="cine-skip" @click="skipToEnd">Skip to RSVP &rarr;</button>
+      <button v-if="currentIndex < sceneKeys.length - 1" type="button" class="cine-skip" @click="skipToEnd">Skip to RSVP &rarr;</button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-// The VIP "cinematic" layout: after the envelope opens, an automatic camera
-// pans and zooms across one wide canvas of the wedding's own content on a
-// timer - no scrolling, no taps required from the guest. See runCamera().
-//
-// Every stop's screen position is MEASURED from the real rendered DOM after
-// mount (not hardcoded), so the sequence adapts automatically to however
-// much content a given wedding actually has (a long "story" paragraph gets
-// a longer hold; a wedding with no gift info just skips that stop).
+// The VIP "cinematic" layout: after the envelope opens, a sequence of
+// fixed, full-frame scenes crossfade in and out on their own timer - no
+// scrolling, no taps required from the guest, no camera panning across a
+// canvas. Each scene is its own deliberately composed layout (see the
+// SCENE comments in the template) instead of one shared card template
+// reused everywhere - matching how the reference invitation is actually
+// built (confirmed frame-by-frame against the couple's own reference
+// video: one fixed card, whole layouts crossfade in place, not a camera
+// moving through space).
 import type { WeddingDoc } from '~/composables/useWeddingTypes'
 
 const props = withDefaults(defineProps<{
@@ -330,16 +350,14 @@ const props = withDefaults(defineProps<{
   rsvpLink: string
   /**
    * True when this instance is mounted inside a small dashboard preview
-   * frame (see the "Live Preview" panel on Your Scenes) instead of the real
-   * full-screen guest page. Everything about the camera engine already
-   * measures its own container's actual size, so no math changes - the only
-   * real difference is that .envelope-shell/.cine-viewport normally reserve
-   * `100dvh` (the real device screen), which would blow out of a small
-   * bezel. In embedded mode they reserve `100%` of their own parent
-   * instead, so the exact same component fits inside a small phone frame.
-   * The couple's real wedding.content, vipScenes, and theme all render
-   * completely unchanged - this is the same component and same data as the
-   * live guest page, not a second reimplementation to keep in sync.
+   * frame (see the "Live Preview" panels across the VIP dashboard) instead
+   * of the real full-screen guest page. The only real difference is that
+   * .envelope-shell/.cine-viewport normally reserve `100dvh` (the real
+   * device screen), which would blow out of a small bezel - in embedded
+   * mode they reserve `100%` of their own parent instead. Everything else
+   * (scene content, theme, sequencing) is the exact same component doing
+   * the exact same thing at a smaller size - this is the same component as
+   * the live guest page, not a second reimplementation to keep in sync.
    */
   embedded?: boolean
 }>(), {
@@ -365,18 +383,10 @@ const styleVars = computed(() =>
 const opened = ref(false)
 
 // EnvelopeIntro's own wrapper reserves a full 100dvh so the closed envelope
-// has room to sit and its open animation has room to play. But that 100dvh
-// block was staying in the document FOREVER, even once the envelope itself
-// had fully animated away and unmounted - which meant the actual cinematic
-// viewport below it started off-screen, and guests had to manually scroll
-// past an empty full-screen block to ever see the camera fly-through. That
-// defeats the entire point of this page ("plays itself, no scrolling") and
-// is why the camera looked like it had already jumped ahead by the time
-// anyone scrolled down to it: the timer had been running the whole time,
-// unseen. envelopeCollapsed flips once EnvelopeIntro's slowest close
-// animation (the wax-seal style, ~1.8s) has had time to fully finish, and
-// the now-empty wrapper collapses out of the way so .cine-viewport takes
-// over the screen immediately.
+// has room to sit and its open animation has room to play. envelopeCollapsed
+// flips once its slowest close animation has had time to finish, and the
+// now-empty wrapper collapses out of the way so .cine-viewport takes over
+// the screen immediately instead of leaving a blank block to scroll past.
 const envelopeCollapsed = ref(false)
 watch(opened, (value) => {
   if (!value) return
@@ -399,9 +409,9 @@ const hasGift = computed(() => {
   ))
 })
 
-// Simple static countdown snapshot for the event-details stop - the full
-// live-ticking CountdownTimer isn't needed here since the camera only
-// lingers on this stop for a few seconds.
+// Simple static countdown snapshot for the event-details scene - the full
+// live-ticking CountdownTimer isn't needed here since it only shows for a
+// few seconds.
 const countdown = computed(() => {
   const target = props.wedding.content.dateISO ? new Date(props.wedding.content.dateISO).getTime() : NaN
   const diff = Math.max(0, target - Date.now())
@@ -413,169 +423,100 @@ const countdown = computed(() => {
 })
 
 // The couple's own admin-authored scenes (see VipScenesPanel.vue), rendered
-// generically between the automatic cover and the automatic data-bound
-// stops (event/location/gift/flow/closing) below.
+// generically between the automatic bride/groom bio scenes and the
+// automatic data-bound scenes (event/location/gift/flow/closing) below.
 const vipScenes = computed(() => props.wedding.vipScenes || [])
 
-// ---- alternating left/right pan pattern + zoom scale for the middle stops ----
-// cover and closing are always centered (bookends); everything between
-// alternates so the camera visibly travels left/right, not just down - unless
-// the couple explicitly chose a position/zoom for one of their own VIP
-// scenes in VipScenesPanel.vue, in which case that override wins. Kept in a
-// deliberately narrow, calm range (scale 1.0-1.15) so the automatic default
-// never feels like a jarring lurch even when nothing is overridden.
-const alignByKey: Record<string, 'left' | 'right' | 'center'> = { cover: 'center', venue: 'center', closing: 'center' }
-const scaleByKey: Record<string, number> = { cover: 1.0, venue: 1.0, closing: 0.94 }
-const holdOverrideMsByKey: Record<string, number> = {}
-const DEFAULT_SCALE: Record<string, number> = { greeting: 1.05, brideBio: 1.05, groomBio: 1.05, event: 1.08, doa: 1.06, frames: 1.05, location: 1.12, gift: 1.06, flow: 1.04 }
-const MIDDLE_KEYS: string[] = [
-  'greeting',
-  'brideBio', 'groomBio',
-  ...vipScenes.value.map((scene) => `vip-${scene.id}`),
-  'event', 'doa', 'frames', 'location', 'gift', 'flow'
-]
-MIDDLE_KEYS.forEach((key, i) => {
-  const sceneId = key.startsWith('vip-') ? key.slice(4) : null
-  const scene = sceneId ? vipScenes.value.find((s) => s.id === sceneId) : null
-  const defaultAlign: 'left' | 'right' = i % 2 === 0 ? 'right' : 'left'
-  const defaultScale = sceneId ? (i % 2 === 0 ? 1.06 : 1.04) : (DEFAULT_SCALE[key] ?? 1.06)
-  alignByKey[key] = (scene?.position && scene.position !== 'auto') ? scene.position : defaultAlign
-  scaleByKey[key] = scene?.zoomPercent ? scene.zoomPercent / 100 : defaultScale
-  if (scene?.holdSeconds) holdOverrideMsByKey[key] = scene.holdSeconds * 1000
+// ---- scene sequence ----
+// The full ordered list of possible scenes, each with the same visibility
+// rule as its `v-if` in the template above (kept side by side on purpose -
+// if one changes, find the matching SCENE comment and update the other).
+// sceneKeys is just this list filtered down to what this couple actually
+// has filled in.
+const sceneDefs = computed(() => {
+  const c = props.wedding.content
+  const defs: Array<{ key: string; visible: boolean }> = [
+    { key: 'cover', visible: true },
+    { key: 'couple', visible: !!c.coupleIllustrationUrl },
+    { key: 'greeting', visible: true },
+    { key: 'brideBio', visible: !!(c.brideFullName || c.brideParents) },
+    { key: 'groomBio', visible: !!(c.groomFullName || c.groomParents) },
+    ...vipScenes.value.map((scene) => ({ key: `vip-${scene.id}`, visible: true })),
+    { key: 'event', visible: true },
+    { key: 'doa', visible: !!c.enableDoa },
+    { key: 'frames', visible: !!c.coupleIllustrationUrl },
+    { key: 'location', visible: !!c.mapUrl },
+    { key: 'gift', visible: hasGift.value },
+    { key: 'flow', visible: !!(props.wedding.flow && props.wedding.flow.length) },
+    { key: 'closing', visible: true }
+  ]
+  return defs.filter((d) => d.visible)
 })
-function rowAlignClass(key: string) {
-  return 'cine-row-' + (alignByKey[key] || 'center')
+const sceneKeys = computed(() => sceneDefs.value.map((d) => d.key))
+const currentIndex = ref(0)
+const currentKey = computed(() => sceneKeys.value[currentIndex.value])
+
+// How long each scene type holds before crossfading to the next - tuned to
+// match the reference video's own pacing (roughly 3-4 seconds per beat).
+// VIP custom scenes use the couple's own explicit hold (see
+// VipScenesPanel.vue) when set, or an auto value based on how much they
+// wrote.
+const HOLD_MS: Record<string, number> = {
+  cover: 4200, couple: 3200, greeting: 3600, brideBio: 3800, groomBio: 3800,
+  event: 4200, doa: 3800, frames: 3400, location: 4600, gift: 3800, flow: 4000
+}
+function holdFor(key: string) {
+  if (key.startsWith('vip-')) {
+    const id = key.slice(4)
+    const scene = vipScenes.value.find((s) => s.id === id)
+    if (scene?.holdSeconds) return scene.holdSeconds * 1000
+    const len = ((scene?.title || '') + (scene?.body || '')).trim().length
+    return Math.min(5200, Math.max(2600, len * 30))
+  }
+  return HOLD_MS[key] ?? 3600
 }
 
-// Reveal effect - "the content show, then gone" as the camera moves between
-// stops (the reference behavior asked for): a stop is faded low while the
-// camera is elsewhere and only comes to full opacity once it's the one the
-// camera has actually arrived at, instead of every scene sitting fully
-// visible in world-space all the time.
-function stopClass(key: string) {
-  return { 'cine-stop-active': stopOrder.value[currentIndex.value] === key }
-}
-
-// ---- camera engine ----
-const viewportEl = ref<HTMLElement | null>(null)
-const worldEl = ref<HTMLElement | null>(null)
-const mistEl = ref<HTMLElement | null>(null)
-const worldWidthPx = ref(600)
-
-// A brief smoke/mist puff at the start of each automatic camera move (not
+// A brief smoke/mist puff at the start of each automatic scene change (not
 // the very first instant jump, and not the instant jump from Skip to RSVP -
-// both of those are meant to feel immediate, not misty). Mirrors the
-// reference video's soft transitions between scenes.
+// both of those are meant to feel immediate, not misty).
+const mistEl = ref<HTMLElement | null>(null)
 function puffMist() {
   const el = mistEl.value
   if (!el) return
   el.classList.add('cine-mist-active')
   setTimeout(() => { el.classList.remove('cine-mist-active') }, 900)
 }
-const stopRefs: Record<string, HTMLElement> = {}
-function setStopRef(key: string, el: Element | null) {
-  if (el) stopRefs[key] = el as HTMLElement
-}
 
-const stopOrder = ref<string[]>([])
-const currentIndex = ref(0)
-let stops: Array<{ x: number; y: number; scale: number; hold: number }> = []
 let timer: ReturnType<typeof setTimeout> | null = null
-// Slightly longer + eased than a typical UI transition on purpose - this is
-// meant to read as a slow, deliberate camera move, not a snap-cut. Must stay
-// in sync with .cine-world's CSS transition duration below.
-const TRANSITION_MS = 1900
+// Must stay in sync with .cine-scene's CSS transition duration below.
+const TRANSITION_MS = 1000
 
-function measureStops() {
-  if (!worldEl.value) return
-  const worldRect = worldEl.value.getBoundingClientRect()
-  const order = Object.keys(stopRefs).filter((k) => stopRefs[k])
-  // Preserve document order (the order the stops actually render in), not
-  // object-insertion order, since v-if can skip keys.
-  order.sort((a, b) => {
-    const ra = stopRefs[a].getBoundingClientRect()
-    const rb = stopRefs[b].getBoundingClientRect()
-    return ra.top - rb.top
-  })
-  stopOrder.value = order
-  stops = order.map((key) => {
-    const el = stopRefs[key]
-    const r = el.getBoundingClientRect()
-    const x = r.left - worldRect.left + r.width / 2
-    const y = r.top - worldRect.top + r.height / 2
-    const textLen = (el.textContent || '').trim().length
-    const autoHold = Math.min(5200, Math.max(2200, textLen * 30))
-    const hold = holdOverrideMsByKey[key] ?? autoHold
-    return { x, y, scale: scaleByKey[key] ?? 1.05, hold }
-  })
-}
-
-function applyCamera(i: number, instant: boolean) {
-  const s = stops[i]
-  const vp = viewportEl.value
-  if (!s || !vp || !worldEl.value) return
-  const vw = vp.clientWidth
-  const vh = vp.clientHeight
-  const tx = vw / 2 - s.x * s.scale
-  const ty = vh / 2 - s.y * s.scale
-  const world = worldEl.value
-  if (instant) {
-    world.style.transition = 'none'
-    world.style.transform = `translate(${tx}px, ${ty}px) scale(${s.scale})`
-    void world.offsetHeight
-    world.style.transition = ''
-  } else {
-    world.style.transform = `translate(${tx}px, ${ty}px) scale(${s.scale})`
-  }
-  currentIndex.value = i
-}
-
-function runCamera(i: number, instant?: boolean) {
+function goTo(i: number, instant?: boolean) {
   if (timer) clearTimeout(timer)
+  currentIndex.value = i
   if (!instant) puffMist()
-  applyCamera(i, !!instant)
-  if (i >= stops.length - 1) return
-  timer = setTimeout(() => runCamera(i + 1), TRANSITION_MS + stops[i].hold)
+  if (i >= sceneKeys.value.length - 1) return
+  timer = setTimeout(() => goTo(i + 1), TRANSITION_MS + holdFor(sceneKeys.value[i]))
 }
 
 function skipToEnd() {
-  runCamera(stops.length - 1, true)
-}
-
-let resizeRaf = 0
-function onResize() {
-  if (!worldEl.value || !viewportEl.value) return
-  cancelAnimationFrame(resizeRaf)
-  resizeRaf = requestAnimationFrame(() => {
-    worldWidthPx.value = Math.round(viewportEl.value!.clientWidth * 1.6)
-    nextTick(() => {
-      measureStops()
-      applyCamera(Math.min(currentIndex.value, stops.length - 1), true)
-    })
-  })
+  goTo(sceneKeys.value.length - 1, true)
 }
 
 const reduceMotion = ref(false)
-
 watch(opened, async (value) => {
   if (!value) return
   await nextTick()
-  if (!viewportEl.value) return
-  worldWidthPx.value = Math.round(viewportEl.value.clientWidth * 1.6)
-  await nextTick()
-  measureStops()
   reduceMotion.value = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   if (reduceMotion.value) {
-    runCamera(stops.length - 1, true)
+    goTo(sceneKeys.value.length - 1, true)
   } else {
-    runCamera(0, true)
+    goTo(0, true)
   }
-  window.addEventListener('resize', onResize)
 })
 
 onBeforeUnmount(() => {
   if (timer) clearTimeout(timer)
-  window.removeEventListener('resize', onResize)
 })
 </script>
 
@@ -583,9 +524,7 @@ onBeforeUnmount(() => {
 /* Embedded mode (see the `embedded` prop above) - a small dashboard preview
    frame has a fixed pixel height, not a real device screen, so `100dvh`
    would blow out of it. These three rules are the ONLY difference between
-   the embedded and real full-screen render; everything else (camera math,
-   theme colors, content) is the exact same component doing the exact same
-   thing at a smaller size. */
+   the embedded and real full-screen render. */
 .cine-embedded-root {
   height: 100%;
 }
@@ -604,12 +543,6 @@ onBeforeUnmount(() => {
   min-height: 100dvh;
   transition: min-height 0.4s ease;
 }
-
-/* Once the envelope has fully animated away (see envelopeCollapsed in the
-   script above), this wrapper is empty - collapsing its reserved height
-   lets .cine-viewport slide up to fill the screen on its own, instead of
-   sitting below a permanent blank 100dvh block the guest would otherwise
-   have to scroll past manually. */
 .envelope-shell-collapsed {
   min-height: 0;
 }
@@ -621,23 +554,6 @@ onBeforeUnmount(() => {
   overflow: hidden;
 }
 
-.cine-world {
-  /* absolute (not relative/static) so this very tall canvas is removed from
-     normal flow and never inflates .cine-viewport's own height - otherwise
-     the "camera window" isn't a fixed-size window at all, and every camera
-     calculation below is wrong (verified against a standalone harness). */
-  position: absolute;
-  top: 0;
-  left: 0;
-  transform-origin: 0 0;
-  transition: transform 1.9s cubic-bezier(.45, 0, .15, 1);
-  will-change: transform;
-}
-
-/* The couple's own venue photo (optional) - fixed to the viewport, not
-   panned with .cine-world, so it reads as one constant backdrop the whole
-   fly-through plays over. Sits behind .cine-world in paint order purely by
-   DOM order (it's the earlier sibling), no z-index tug-of-war needed. */
 .cine-photo-backdrop {
   position: fixed;
   inset: 0;
@@ -649,9 +565,7 @@ onBeforeUnmount(() => {
 
 .cine-bg {
   position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 100%;
-  min-height: 4000px;
+  inset: 0;
   background:
     radial-gradient(600px 500px at 30% 4%, rgba(227, 176, 74, .14), transparent 60%),
     radial-gradient(700px 600px at 70% 22%, rgba(201, 120, 150, .10), transparent 60%),
@@ -659,10 +573,6 @@ onBeforeUnmount(() => {
     linear-gradient(175deg, var(--theme-bg-from, #2a1245), var(--theme-bg-via, #1c0f2e) 45%, var(--theme-bg-to, #150a20) 100%);
   z-index: 0;
 }
-
-/* When a background photo is set, .cine-bg switches from an opaque gradient
-   to a translucent color scrim so the photo shows through while text stays
-   readable - see the :class binding on .cine-bg in the template. */
 .cine-bg-scrim {
   background:
     radial-gradient(600px 500px at 30% 4%, rgba(227, 176, 74, .12), transparent 60%),
@@ -672,9 +582,6 @@ onBeforeUnmount(() => {
 
 .cine-petals { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
 
-/* Smoke/mist wipe - see puffMist() in the script. Sits above the world but
-   below the HUD, fixed to the viewport (not panned), so it reads as
-   something drifting across the screen rather than part of the scene. */
 .cine-mist {
   position: absolute;
   inset: -10%;
@@ -689,135 +596,97 @@ onBeforeUnmount(() => {
 }
 .cine-mist-active { opacity: 1; }
 
-/* A light ornamental frame around the cover/closing names - an arch-shaped
-   ring in the couple's own accent color, with two soft color blooms at its
-   corners, so the bookend stops feel like they sit inside something rather
-   than just being centered text. Deliberately simple so it holds up across
-   every theme's color palette, not just one. */
-.cine-frame {
-  position: relative;
-  padding: 34px 26px 26px;
-  border: 1px solid var(--theme-accent, #e3b04a);
-  border-radius: 120px 120px 14px 14px;
-  background: radial-gradient(circle at 50% 22%, color-mix(in srgb, var(--theme-accent, #e3b04a) 16%, transparent), transparent 65%);
-}
-.cine-frame::before,
-.cine-frame::after {
-  content: '';
+/* The stage: every scene is a full-frame layer stacked here, one active at
+   a time - see currentKey in the script. This replaces the old
+   camera-pans-across-a-canvas engine: now each scene is its own fixed,
+   deliberately composed layout that simply crossfades in and out in place. */
+.cine-stage { position: absolute; inset: 0; z-index: 2; }
+
+.cine-scene {
   position: absolute;
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  opacity: 0.6;
-  filter: blur(1px);
-}
-.cine-frame::before {
-  top: -8px;
-  left: -10px;
-  background: radial-gradient(circle, var(--theme-accent, #e3b04a), transparent 70%);
-}
-.cine-frame::after {
-  bottom: -10px;
-  right: -8px;
-  background: radial-gradient(circle, rgba(201, 120, 150, .8), transparent 70%);
-}
-.cine-frame-wide { border-radius: 24px; padding: 26px 30px; }
-
-/* Template 1's ornamental-arch cover (see coupleIllustrationUrl above) - an
-   arch-shaped panel in the couple's own theme colors, with two small
-   floral sprigs at its outer corners and a crescent moon + star motif at
-   the top. Purely decorative around the same eyebrow/names/date content
-   the plain .cine-frame already shows, so nothing here depends on any
-   field that could be missing. */
-.cine-arch { position: relative; width: 100%; max-width: 280px; }
-.cine-arch-corner { position: absolute; width: 58px; height: 58px; top: -6px; z-index: 1; filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.3)); }
-.cine-arch-corner-tl { left: -12px; }
-.cine-arch-corner-tr { right: -12px; transform: scaleX(-1); }
-.cine-arch-panel {
-  position: relative;
+  inset: 0;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  padding: 36px 22px 22px;
-  color: var(--theme-ink, #f7ecf3);
-  background: linear-gradient(165deg, color-mix(in srgb, var(--theme-accent) 20%, var(--theme-bg-via, #1c0f2e)) 0%, var(--theme-bg-via, #1c0f2e) 55%, var(--theme-bg-to, #150a20) 100%);
-  border: 1px solid color-mix(in srgb, var(--theme-accent) 55%, transparent);
-  clip-path: path('M0,250 C0,102 30,0 140,0 C250,0 280,102 280,250 L280,430 L0,430 Z');
+  justify-content: center;
+  padding: 40px 24px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 1s ease;
 }
-.cine-arch-motif { width: 38px; height: 25px; margin-bottom: 6px; flex-shrink: 0; }
-.cine-arch-photo {
-  width: 64%;
-  max-width: 168px;
-  margin: 2px 0 10px;
-  -webkit-mask-image: linear-gradient(180deg, #000 78%, transparent 100%);
-  mask-image: linear-gradient(180deg, #000 78%, transparent 100%);
-}
-.cine-arch-photo img { display: block; width: 100%; height: auto; filter: drop-shadow(0 12px 16px rgba(0, 0, 0, 0.35)); }
-.cine-arch-panel .cine-eyebrow { margin-bottom: 8px; }
-.cine-arch-panel .cine-names {
-  font-size: 1.55rem;
-  line-height: 1.2;
-  margin-bottom: 8px;
-  max-width: 100%;
-  overflow-wrap: break-word;
-}
-.cine-arch-panel .cine-date { margin-top: 2px; }
+.cine-scene-active { opacity: 1; pointer-events: auto; z-index: 1; }
+.cine-scene-flat { flex-direction: column; }
 
-/* Venue diorama (see the venue stop above) - a small courtyard scene built
-   from the couple's own theme accent color via color-mix(), so it reads
-   correctly across every theme, not just one palette. Sits right after the
-   cover, before the couple's own written scenes. */
-.cine-venue-stop { width: 300px; }
-.cine-venue { position: relative; width: 100%; aspect-ratio: 3 / 4; border-radius: 14px; overflow: hidden; box-shadow: 0 20px 40px -14px rgba(0,0,0,.6); }
-.cine-venue-sky { position: absolute; inset: 0; background: linear-gradient(180deg, color-mix(in srgb, var(--theme-accent) 22%, #f6d29c) 0%, color-mix(in srgb, var(--theme-accent) 30%, #dd8548) 45%, color-mix(in srgb, var(--theme-accent) 15%, #9c4526) 100%); }
-.cine-venue-roof { position: absolute; left: 0; right: 0; top: 22%; height: 36%; width: 100%; }
-.cine-venue-floor {
-  position: absolute; left: 0; right: 0; bottom: 0; height: 46%;
-  background:
-    repeating-linear-gradient(135deg, rgba(0,0,0,.06) 0 2px, transparent 2px 30px),
-    repeating-linear-gradient(45deg, rgba(0,0,0,.06) 0 2px, transparent 2px 30px),
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-accent) 20%, #c1663a) 0%, color-mix(in srgb, var(--theme-accent) 10%, #9c4c28) 100%);
+/* Bordered keepsake card - cover, couple photo, and closing all share this
+   frame, the way the reference invitation's cover and couple pages share
+   one bordered card. A double ring (accent color, a gap, a second accent
+   ring) stands in for a woven border, with a small floral sprig at each
+   corner. */
+.cine-bordered-card {
+  position: relative;
+  width: 100%;
+  max-width: 280px;
+  padding: 36px 24px 30px;
+  border-radius: 4px;
+  text-align: center;
+  background: linear-gradient(165deg, color-mix(in srgb, var(--theme-accent) 14%, var(--theme-bg-via, #1c0f2e)) 0%, var(--theme-bg-via, #1c0f2e) 55%, var(--theme-bg-to, #150a20) 100%);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--theme-accent) 70%, transparent),
+    0 0 0 7px var(--theme-bg-to, #150a20),
+    0 0 0 8px color-mix(in srgb, var(--theme-accent) 45%, transparent),
+    0 25px 55px -20px rgba(0, 0, 0, .7);
 }
-.cine-venue-signage {
-  position: absolute; left: 50%; top: 47%; transform: translateX(-50%); text-align: center;
-  background: rgba(0,0,0,.12); padding: 8px 14px; border-radius: 8px; backdrop-filter: blur(2px);
+.cine-bordered-card-wide { max-width: 300px; }
+.cine-bordered-card-photo { padding: 16px; }
+
+.cine-corner { position: absolute; width: 42px; height: 42px; z-index: 1; filter: drop-shadow(0 2px 4px rgba(0,0,0,.3)); }
+.cine-corner-tl { top: 6px; left: 6px; }
+.cine-corner-tr { top: 6px; right: 6px; transform: scaleX(-1); }
+.cine-corner-bl { bottom: 6px; left: 6px; transform: scaleY(-1); }
+.cine-corner-br { bottom: 6px; right: 6px; transform: scale(-1, -1); }
+
+.cine-bordered-inner { position: relative; }
+.cine-cover-address { margin-top: 10px; font-size: .74rem; color: rgba(247,236,243,.55); letter-spacing: .03em; }
+
+.cine-couple-photo { border-radius: 2px; overflow: hidden; }
+.cine-couple-photo img { width: 100%; display: block; }
+
+/* Bride/groom biodata - flat themed background (no border, matching the
+   reference), a portrait cropped from the couple's own photo on one side,
+   name + parents on the other. .cine-scene-bio-mirror flips the layout for
+   the groom, matching the reference's mirrored bride/groom pair. */
+.cine-scene-bio {
+  flex-direction: row-reverse;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 0 20px;
+  text-align: left;
+  overflow: hidden;
 }
-.cine-venue-signage .cine-eyebrow { margin-bottom: 4px; }
-.cine-venue-names { font-family: var(--theme-heading-font, serif); font-style: italic; font-weight: 600; font-size: 1.05rem; color: #2c1608; }
-.cine-venue-arch { position: absolute; left: 50%; top: 33%; transform: translateX(-50%); width: 58%; filter: drop-shadow(0 8px 12px rgba(0,0,0,.3)); }
-.cine-venue-photo {
-  position: absolute; left: 50%; bottom: 4%; transform: translateX(-50%); width: 44%;
-  -webkit-mask-image: linear-gradient(180deg, #000 88%, transparent 100%);
-  mask-image: linear-gradient(180deg, #000 88%, transparent 100%);
+.cine-scene-bio-mirror { flex-direction: row; text-align: right; }
+.cine-bio-branch { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; }
+.cine-scene-bio-mirror .cine-bio-branch { transform: scaleX(-1); }
+.cine-bio-dome { position: absolute; top: 6%; left: 50%; transform: translateX(-50%); width: 55%; opacity: .1; z-index: 0; }
+.cine-bio-portrait {
+  position: relative; z-index: 1; width: 44%; max-width: 160px; align-self: flex-end; margin-bottom: 6%;
+  -webkit-mask-image: linear-gradient(180deg, #000 82%, transparent 100%);
+  mask-image: linear-gradient(180deg, #000 82%, transparent 100%);
 }
-.cine-venue-photo img { width: 100%; display: block; filter: drop-shadow(0 14px 18px rgba(0,0,0,.4)); }
+.cine-bio-portrait img { width: 100%; display: block; filter: drop-shadow(0 16px 20px rgba(0,0,0,.4)); }
+.cine-bio-text { position: relative; z-index: 1; flex: 1; padding-bottom: 22%; }
+.cine-bio-label {
+  font-family: var(--theme-heading-font, serif); font-style: italic; font-weight: 500;
+  font-size: 1rem; letter-spacing: .04em; color: var(--theme-accent); margin-bottom: 6px;
+}
+.cine-bio-name { font-family: var(--theme-heading-font, serif); font-weight: 700; font-size: 1.55rem; line-height: 1.15; color: var(--theme-ink, #f7ecf3); margin: 0 0 10px; text-transform: uppercase; }
+.cine-bio-parents { font-size: .78rem; line-height: 1.65; color: rgba(247,236,243,.68); }
 
 .cine-greeting-names { margin-top: 14px; font-family: var(--theme-heading-font, serif); font-style: italic; font-size: 1.2rem; color: var(--theme-ink, #f7ecf3); }
 
-/* Bride/groom biodata cards - a quieter, centered variant of .cine-card,
-   one "Bride"/"Groom" label in the heading font, the full name large and
-   bold, and the parents' names beneath. See brideBio/groomBio stops above -
-   each is entirely optional and only appears once its fields are filled. */
-.cine-card-bio { text-align: center; padding-top: 28px; }
-.cine-card-bio::before, .cine-card-bio::after { display: none; }
-.cine-bio-motif { width: 30px; height: 20px; margin: 0 auto 10px; display: block; }
-.cine-bio-label {
-  font-family: var(--theme-heading-font, serif); font-style: italic; font-weight: 500;
-  font-size: .95rem; letter-spacing: .04em; color: var(--theme-accent); margin-bottom: 6px;
-}
-.cine-bio-name { font-family: var(--theme-heading-font, serif); font-weight: 600; font-size: 1.45rem; color: var(--theme-ink, #f7ecf3); margin: 0 0 8px; }
-.cine-bio-parents { font-size: .8rem; line-height: 1.65; color: rgba(247,236,243,.68); }
-
-/* Doa (prayer) card - a lighter double-border variant of .cine-card so it
-   reads as its own quieter moment rather than another event-details box. */
 .cine-card-doa { text-align: center; padding-top: 30px; }
-.cine-card-doa::before, .cine-card-doa::after { display: none; }
 .cine-doa-motif { width: 30px; height: 20px; margin: 0 auto 12px; display: block; }
 .cine-doa-amin { margin-top: 10px; font-style: italic; color: var(--theme-accent); font-size: .82rem; }
 
-/* Photo frames stop - two ornate frames with a ribbon bow, sharing the same
-   couple picture as the cover (cropped to two focal points) since there's
-   no separate solo bride/groom upload in the VIP dashboard yet. */
 .cine-frames { position: relative; padding-top: 24px; }
 .cine-frames-ribbon { position: absolute; top: -6px; left: 50%; transform: translateX(-50%); width: 60px; height: 38px; z-index: 1; }
 .cine-frames-row { display: flex; gap: 12px; }
@@ -828,47 +697,39 @@ onBeforeUnmount(() => {
 }
 .cine-frame-box img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
-.cine-row {
-  position: relative;
-  z-index: 2;
-  display: flex;
-  padding: 90px 24px;
+/* Location - a mosque-dome-and-minaret skyline silhouette, matching the
+   reference's closing card, with the couple's real address/date and a
+   scannable QR code (real functionality the generic reference template
+   doesn't need, but guests do). */
+.cine-scene-location { flex-direction: column; justify-content: flex-end; padding-bottom: 34px; text-align: center; overflow: hidden; }
+.cine-location-sky {
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--theme-accent) 10%, var(--theme-bg-from, #2a1245)) 0%, color-mix(in srgb, var(--theme-accent) 22%, var(--theme-bg-to, #150a20)) 100%);
 }
-.cine-row-center { justify-content: center; }
-.cine-row-left { justify-content: flex-start; }
-.cine-row-right { justify-content: flex-end; }
-.cine-row-finale { padding-top: 220px; padding-bottom: 140px; }
-
-/* Reveal effect: dim while the camera is elsewhere, come to full opacity
-   only once the camera has actually arrived - "the content show, then
-   gone" as the camera moves between stops, instead of every scene sitting
-   fully visible the whole time. See stopClass() in the script. */
-.cine-stop { max-width: 320px; text-align: center; opacity: 0.2; transition: opacity 1.3s ease; }
-.cine-stop-active { opacity: 1; }
-.cine-card-stop { width: 300px; }
+.cine-location-skyline { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 38%; opacity: .85; }
+.cine-location-content { position: relative; z-index: 1; }
+.cine-location-address { font-weight: 600; font-size: .95rem; line-height: 1.5; color: var(--theme-ink, #f7ecf3); }
+.cine-location-date { margin-top: 4px; font-size: .74rem; letter-spacing: .05em; color: rgba(247,236,243,.6); }
 
 .cine-eyebrow { font-size: .66rem; letter-spacing: .32em; text-transform: uppercase; color: var(--theme-accent); margin-bottom: 10px; }
-.cine-names { font-family: var(--theme-heading-font, serif); font-style: italic; font-weight: 500; font-size: 2.6rem; line-height: 1.05; margin: 0 0 10px; color: var(--theme-ink, #f7ecf3); }
+.cine-names { font-family: var(--theme-heading-font, serif); font-style: italic; font-weight: 500; font-size: 2.3rem; line-height: 1.1; margin: 0 0 10px; color: var(--theme-ink, #f7ecf3); overflow-wrap: break-word; }
 .cine-amp { color: var(--theme-accent); font-size: .6em; margin: 0 .12em; }
 .cine-date { font-size: .82rem; color: rgba(247, 236, 243, .7); letter-spacing: .06em; }
 
-.cine-subnames { font-family: var(--theme-heading-font, serif); font-weight: 500; font-size: 1.7rem; margin: 4px 0; color: var(--theme-ink, #f7ecf3); }
-.cine-mono { margin-top: 10px; font-size: 1.4rem; color: var(--theme-accent); }
-.cine-mono-img { width: 44px; height: 44px; object-fit: contain; margin: 0 auto; }
-
-.cine-photo-pair { display: flex; justify-content: center; gap: 12px; margin-bottom: 14px; }
-.cine-photo { width: 108px; height: 108px; border-radius: 50%; object-fit: cover; border: 2px solid var(--theme-accent); box-shadow: 0 14px 30px -10px rgba(0,0,0,.6); }
-.cine-medallion { width: 130px; height: 130px; border-radius: 50%; margin: 0 auto 14px; border: 2px solid var(--theme-accent); background: linear-gradient(150deg, rgba(227,176,74,.35), rgba(0,0,0,.2)); }
+.cine-subnames { font-family: var(--theme-heading-font, serif); font-weight: 500; font-size: 1.4rem; margin: 6px 0 16px; color: var(--theme-ink, #f7ecf3); }
 
 .cine-scene-img { width: 100%; max-height: 220px; object-fit: cover; border-radius: 12px; margin-bottom: 14px; display: block; }
 
 .cine-card {
   position: relative;
+  width: 300px;
+  max-width: 100%;
   background: rgba(20, 10, 24, .55);
   backdrop-filter: blur(8px);
   border: 1px solid rgba(227,176,74,.3);
   border-radius: 6px;
   padding: 26px 24px 24px;
+  text-align: center;
   box-shadow: 0 16px 30px -14px rgba(0, 0, 0, 0.6);
 }
 /* Rolled top/bottom edges - reads as a hanging scroll or card propped in
@@ -886,24 +747,12 @@ onBeforeUnmount(() => {
 }
 .cine-card::before { top: -6px; }
 .cine-card::after { bottom: -6px; }
-/* The thread it hangs from - a faint vertical line up into the scene. */
-.cine-card-stop { position: relative; }
-.cine-card-stop::before {
-  content: '';
-  position: absolute;
-  top: -34px;
-  left: 50%;
-  width: 1px;
-  height: 34px;
-  background: rgba(255, 255, 255, 0.28);
-}
+.cine-card-doa::before, .cine-card-doa::after { display: none; }
 .cine-card h3 { font-family: var(--theme-heading-font, serif); font-weight: 500; font-size: 1.4rem; margin: 0 0 10px; color: var(--theme-ink, #f7ecf3); }
 .cine-card p { font-size: .84rem; line-height: 1.7; color: rgba(247,236,243,.72); margin: 4px 0; }
 .cine-story-text { white-space: pre-line; }
-.cine-label { font-size: .62rem; letter-spacing: .1em; text-transform: uppercase; color: var(--theme-accent); margin-bottom: 2px; }
 .cine-strong { font-weight: 600; color: var(--theme-ink, #f7ecf3); }
 .cine-dim { color: rgba(247,236,243,.6); }
-.cine-hr { height: 1px; background: rgba(255,255,255,.12); margin: 14px 0; }
 
 .cine-countdown { display: flex; justify-content: center; gap: 8px; margin: 14px 0 4px; }
 .cine-cell { background: rgba(255,255,255,.06); border: 1px solid rgba(227,176,74,.3); border-radius: 10px; padding: 8px 4px; width: 56px; }
@@ -930,6 +779,6 @@ onBeforeUnmount(() => {
 .cine-skip:hover { color: #fff; border-color: rgba(255,255,255,.4); }
 
 @media (prefers-reduced-motion: reduce) {
-  .cine-world { transition: none !important; }
+  .cine-scene { transition: none !important; }
 }
 </style>
