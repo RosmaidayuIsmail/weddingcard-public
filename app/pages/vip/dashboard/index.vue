@@ -196,75 +196,23 @@
         </UFormField>
       </div>
 
-      <!-- Opening Style - the tap-to-open screen a guest sees first, before
-           the cinematic fly-through starts. Same style catalog as the
-           classic dashboard's Opening Design page (see
-           DashboardOpeningPanel.vue) so VIP couples get the same choice,
-           just condensed to what matters here: pick a style, and upload a
-           picture if that style uses one. -->
-      <div class="form-panel">
-        <h2 class="text-base font-semibold text-white mb-1 flex items-center gap-2">
-          <UIcon name="i-heroicons-envelope-open" style="color: #e3b04a;" class="w-5 h-5" />
-          Opening Style
-        </h2>
-        <p class="text-xs text-gray-400 mb-4">The first screen a guest taps to open, before the fly-through begins.</p>
-        <div class="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
-          <button
-            v-for="opt in enabledOpeningStyles"
-            :key="opt.value"
-            type="button"
-            class="opening-card"
-            :class="{ 'opening-card-active': details.openingStyle === opt.value }"
-            @click="details.openingStyle = opt.value"
-          >
-            <UIcon :name="opt.icon" class="w-5 h-5" :style="{ color: details.openingStyle === opt.value ? '#e3b04a' : undefined }" />
-            <span class="text-[0.68rem] font-medium leading-tight text-center">{{ opt.label }}</span>
-          </button>
-        </div>
-
-        <div v-if="details.openingStyle === 'modern-dark'" class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2">
-          <button
-            v-for="palette in modernDarkPaletteCatalog"
-            :key="palette.id"
-            type="button"
-            class="palette-swatch"
-            :class="{ 'palette-swatch-active': (details.openingModernDarkPalette || modernDarkPaletteCatalog[0].id) === palette.id }"
-            @click="details.openingModernDarkPalette = palette.id"
-          >
-            <span class="palette-dot" :style="{ background: palette.swatch }" />
-            <span class="text-xs">{{ palette.label }}</span>
-          </button>
-        </div>
-        <div v-else-if="details.openingStyle === 'minimal-light'" class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2">
-          <button
-            v-for="palette in minimalLightPaletteCatalog"
-            :key="palette.id"
-            type="button"
-            class="palette-swatch"
-            :class="{ 'palette-swatch-active': (details.openingMinimalLightPalette || minimalLightPaletteCatalog[0].id) === palette.id }"
-            @click="details.openingMinimalLightPalette = palette.id"
-          >
-            <span class="palette-dot" :style="{ background: palette.swatch }" />
-            <span class="text-xs">{{ palette.label }}</span>
-          </button>
-        </div>
-
-        <div v-if="showOpeningBgUpload" class="mt-4 pt-4 border-t border-gray-800">
-          <p class="text-xs text-gray-400 mb-3">{{ openingBgCopy }}</p>
-          <div class="flex items-center gap-4">
-            <div v-if="details.openingBgUrl" class="w-16 h-24 rounded-lg overflow-hidden border border-gray-700 shrink-0 shadow-md">
-              <img :src="details.openingBgUrl" class="w-full h-full object-cover" />
-            </div>
-            <input ref="openingBgInput" type="file" accept="image/*" class="hidden" @change="handleOpeningBgSelect">
-            <div class="flex flex-wrap gap-2">
-              <UButton size="sm" variant="soft" color="gray" icon="i-heroicons-arrow-up-tray" :loading="uploadingOpeningBg" :disabled="!cloudinaryConfigured" @click="openingBgInput?.click()">
-                {{ details.openingBgUrl ? 'Change Picture' : 'Upload Picture' }}
-              </UButton>
-              <UButton v-if="details.openingBgUrl" size="sm" variant="ghost" color="error" icon="i-heroicons-trash" @click="details.openingBgUrl = ''" />
-            </div>
+      <!-- Opening Style moved to its own "Opening Screen" page (full text,
+           translation, and per-element font/color control - not just style
+           + picture), same shared component as the classic dashboard's
+           Opening Design page. This is just a hand-off link so it isn't
+           edited in two places. -->
+      <NuxtLink to="/vip/dashboard/opening" class="form-panel opening-linkout">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="p-2.5 rounded-lg bg-gold-400/10 border border-gold-400/20 shrink-0">
+            <UIcon name="i-heroicons-envelope-open" class="w-5 h-5" style="color: #e3b04a;" />
+          </div>
+          <div class="min-w-0">
+            <h2 class="text-base font-semibold text-white">Opening Screen</h2>
+            <p class="text-xs text-gray-400 mt-0.5">Style, background picture, wording, and translation for the first screen a guest taps to open.</p>
           </div>
         </div>
-      </div>
+        <UIcon name="i-heroicons-arrow-right" class="w-5 h-5 text-gray-500 shrink-0" />
+      </NuxtLink>
 
       <!-- Background Photo - a photo of the couple's own venue/place, used
            as a fixed backdrop behind the whole fly-through instead of the
@@ -334,7 +282,6 @@ definePageMeta({ layout: 'vip-dashboard', middleware: 'vip' })
 const { profile, requestVipStatus } = useAuth()
 const { wedding, loading, saving, createWedding, isSlugAvailable, updateContent, updateVipBackground, setPublished } = useMyWedding()
 const { isConfigured: cloudinaryConfigured, uploadImage } = useCloudinary()
-const { enabledOpeningStyles } = useThemes()
 const toast = useToast()
 
 const vipApprovalStatus = computed(() => profile.value?.vipApprovalStatus || 'pending')
@@ -411,7 +358,6 @@ async function handleCreate() {
 const details = reactive({
   brideName: '', groomName: '', dateISO: '', dateLabel: '', timeLabel: '',
   venueName: '', venueAddress: '', mapUrl: '', rsvpEnabled: true,
-  openingStyle: 'classic', openingBgUrl: '', openingModernDarkPalette: '', openingMinimalLightPalette: '',
   brideFullName: '', brideParents: '', groomFullName: '', groomParents: '', childOfLabel: '',
   coupleIllustrationUrl: '',
   enableDoa: false, doaText: ''
@@ -446,10 +392,6 @@ const previewWedding = computed(() => {
       groomFullName: details.groomFullName,
       groomParents: details.groomParents,
       childOfLabel: details.childOfLabel,
-      openingStyle: details.openingStyle,
-      openingBgUrl: details.openingBgUrl,
-      openingModernDarkPalette: details.openingModernDarkPalette,
-      openingMinimalLightPalette: details.openingMinimalLightPalette,
       coupleIllustrationUrl: details.coupleIllustrationUrl,
       enableDoa: details.enableDoa,
       doaText: details.doaText
@@ -457,34 +399,6 @@ const previewWedding = computed(() => {
   }
 })
 const rsvpLink = computed(() => (wedding.value ? `/w/${wedding.value.slug}/rsvp` : ''))
-
-// Same "which styles need an uploaded picture" logic as DashboardOpeningPanel.vue.
-const slideOpeningStyles = ['slide-up', 'slide-down', 'slide-left', 'slide-right']
-const showOpeningBgUpload = computed(() =>
-  details.openingStyle.includes('custom') || details.openingStyle === 'wax-seal' || slideOpeningStyles.includes(details.openingStyle)
-)
-const openingBgCopy = computed(() => {
-  if (details.openingStyle === 'wax-seal') return 'Optional - a vertical picture (1080x1920) shown behind the wax seal as it cracks open. Leave empty for a plain gradient.'
-  if (details.openingStyle === 'custom-split') return 'A vertical picture (1080x1920), sliced in half and slid open like double doors - make one in Canva if you like, then upload it here.'
-  if (slideOpeningStyles.includes(details.openingStyle)) return 'Optional - a vertical picture (1080x1920) used as the cover, which slides off-screen when tapped.'
-  return 'A vertical picture (1080x1920) used as the opening background - make one in Canva if you like, then upload it here.'
-})
-const openingBgInput = ref<HTMLInputElement | null>(null)
-const uploadingOpeningBg = ref(false)
-async function handleOpeningBgSelect(event: Event) {
-  const file = (event.target as HTMLInputElement).files?.[0]
-  if (!file || !wedding.value) return
-  uploadingOpeningBg.value = true
-  try {
-    details.openingBgUrl = await uploadImage(file, `weddings/${wedding.value.id}/opening`)
-    toast.add({ title: 'Picture uploaded', color: 'success' })
-  } catch (error) {
-    toast.add({ title: 'Upload failed', color: 'error' })
-  } finally {
-    uploadingOpeningBg.value = false
-  }
-  ;(event.target as HTMLInputElement).value = ''
-}
 
 let initialized = false
 watch(wedding, (value) => {
@@ -504,10 +418,6 @@ watch(wedding, (value) => {
   details.groomFullName = value.content.groomFullName || ''
   details.groomParents = value.content.groomParents || ''
   details.childOfLabel = value.content.childOfLabel || ''
-  details.openingStyle = value.content.openingStyle || 'classic'
-  details.openingBgUrl = value.content.openingBgUrl || ''
-  details.openingModernDarkPalette = value.content.openingModernDarkPalette || ''
-  details.openingMinimalLightPalette = value.content.openingMinimalLightPalette || ''
   details.coupleIllustrationUrl = value.content.coupleIllustrationUrl || ''
   details.enableDoa = value.content.enableDoa === true
   details.doaText = value.content.doaText || ''
@@ -562,10 +472,6 @@ async function save() {
     groomFullName: details.groomFullName.trim(),
     groomParents: details.groomParents.trim(),
     childOfLabel: details.childOfLabel.trim(),
-    openingStyle: details.openingStyle,
-    openingBgUrl: details.openingBgUrl,
-    openingModernDarkPalette: details.openingModernDarkPalette,
-    openingMinimalLightPalette: details.openingMinimalLightPalette,
     coupleIllustrationUrl: details.coupleIllustrationUrl,
     enableDoa: details.enableDoa,
     doaText: details.doaText.trim()
@@ -616,36 +522,15 @@ useSeoMeta({ title: 'Wedding Details — VIP Cinematic' })
   border-color: var(--color-gold-400, #d4a017);
 }
 
-.opening-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.35rem;
-  padding: 0.75rem 0.4rem;
-  border-radius: 0.75rem;
-  background: #1F2937;
-  border: 1px solid #374151;
-  color: #9CA3AF;
-  transition: all 0.2s ease;
-}
-.opening-card:hover { border-color: rgba(212, 160, 23, 0.4); color: white; }
-.opening-card-active { background: rgba(212, 160, 23, 0.1); border-color: var(--color-gold-400, #d4a017); color: #f3ddaa; }
-
-.palette-swatch {
+.opening-linkout {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  border-radius: 0.75rem;
-  background: #1F2937;
-  border: 1px solid #374151;
-  color: #9CA3AF;
+  justify-content: space-between;
+  gap: 1rem;
   transition: all 0.2s ease;
+  cursor: pointer;
 }
-.palette-swatch:hover { border-color: rgba(212, 160, 23, 0.4); color: white; }
-.palette-swatch-active { background: rgba(212, 160, 23, 0.1); border-color: var(--color-gold-400, #d4a017); color: #f3ddaa; }
-.palette-dot { width: 1rem; height: 1rem; border-radius: 50%; border: 1px solid rgba(255, 255, 255, 0.25); flex-shrink: 0; }
+.opening-linkout:hover { border-color: rgba(212, 160, 23, 0.4); }
 
 .phone-bezel {
   position: relative;

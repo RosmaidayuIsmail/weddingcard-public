@@ -130,7 +130,7 @@
             <img :src="wedding.content.coupleIllustrationUrl" style="object-position: 80% 12%;" alt="">
           </div>
           <div class="cine-bio-text">
-            <div class="cine-bio-label">Bride</div>
+            <div class="cine-bio-label">{{ wedding.content.familyBrideLabel || 'Bride' }}</div>
             <h2 class="cine-bio-name">{{ wedding.content.brideFullName || wedding.content.brideName }}</h2>
             <p v-if="wedding.content.brideParents" class="cine-bio-parents">{{ wedding.content.childOfLabel || 'Child of' }}<br>{{ wedding.content.brideParents }}</p>
           </div>
@@ -156,7 +156,7 @@
             <img :src="wedding.content.coupleIllustrationUrl" style="object-position: 20% 12%;" alt="">
           </div>
           <div class="cine-bio-text">
-            <div class="cine-bio-label">Groom</div>
+            <div class="cine-bio-label">{{ wedding.content.familyGroomLabel || 'Groom' }}</div>
             <h2 class="cine-bio-name">{{ wedding.content.groomFullName || wedding.content.groomName }}</h2>
             <p v-if="wedding.content.groomParents" class="cine-bio-parents">{{ wedding.content.childOfLabel || 'Child of' }}<br>{{ wedding.content.groomParents }}</p>
           </div>
@@ -260,6 +260,7 @@
               <template v-if="wedding.content.venueName">{{ wedding.content.venueName }}<br></template>{{ wedding.content.venueAddress }}
             </p>
             <p v-if="wedding.content.dateLabel" class="cine-location-date">{{ wedding.content.dateLabel }}</p>
+            <p class="cine-location-subtitle">{{ wedding.content.locationSubtitle || 'Scan or tap to open in Maps' }}</p>
             <div class="cine-qr"><img :src="qrCodeUrl" alt="QR code linking to the venue" loading="lazy"></div>
             <UButton :to="wedding.content.mapUrl" target="_blank" external icon="i-heroicons-map-pin" color="primary" class="rounded-full mt-3">
               {{ wedding.content.locationMapsButtonLabel || 'Google Maps' }}
@@ -710,6 +711,7 @@ onBeforeUnmount(() => {
 .cine-location-content { position: relative; z-index: 1; }
 .cine-location-address { font-weight: 600; font-size: .95rem; line-height: 1.5; color: var(--theme-ink, #f7ecf3); }
 .cine-location-date { margin-top: 4px; font-size: .74rem; letter-spacing: .05em; color: rgba(247,236,243,.6); }
+.cine-location-subtitle { margin-top: 10px; font-size: .72rem; opacity: .55; color: var(--theme-ink, #f7ecf3); }
 
 .cine-eyebrow { font-size: .66rem; letter-spacing: .32em; text-transform: uppercase; color: var(--theme-accent); margin-bottom: 10px; }
 .cine-names { font-family: var(--theme-heading-font, serif); font-style: italic; font-weight: 500; font-size: 2.3rem; line-height: 1.1; margin: 0 0 10px; color: var(--theme-ink, #f7ecf3); overflow-wrap: break-word; }

@@ -71,9 +71,16 @@ const { logOut } = useAuth()
 const { wedding } = useMyWedding()
 
 const navItems = [
+  { to: '/vip/dashboard/overview', label: 'Overview', icon: 'i-heroicons-squares-2x2' },
   { to: '/vip/dashboard', label: 'Wedding Details', icon: 'i-heroicons-heart' },
+  { to: '/vip/dashboard/opening', label: 'Opening Screen', icon: 'i-heroicons-envelope-open' },
+  { to: '/vip/dashboard/design', label: 'Design', icon: 'i-heroicons-swatch' },
   { to: '/vip/dashboard/scenes', label: 'Your Scenes', icon: 'i-heroicons-film' },
+  { to: '/vip/dashboard/flow', label: 'Event Flow', icon: 'i-heroicons-clock' },
+  { to: '/vip/dashboard/gift', label: 'Gift & Bank', icon: 'i-heroicons-gift' },
+  { to: '/vip/dashboard/guests', label: 'Guest List', icon: 'i-heroicons-users' },
   { to: '/vip/dashboard/rsvp', label: 'RSVP Text', icon: 'i-heroicons-chat-bubble-left-right' },
+  { to: '/vip/dashboard/labels', label: 'Page Text', icon: 'i-heroicons-language' },
   { to: '/vip/dashboard/publish', label: 'Preview & Publish', icon: 'i-heroicons-rocket-launch' }
 ]
 
