@@ -38,6 +38,17 @@
           </span>
           <UButton
             size="lg"
+            variant="soft"
+            color="neutral"
+            icon="i-heroicons-play-circle"
+            class="font-semibold w-full sm:w-auto"
+            :loading="previewing"
+            @click="previewLive"
+          >
+            Preview Live Cinematic
+          </UButton>
+          <UButton
+            size="lg"
             color="primary"
             class="font-semibold shadow-xl shadow-gold-500/20 transition-all hover:-translate-y-0.5 hover:shadow-gold-500/30 w-full sm:w-auto"
             :loading="saving"
@@ -45,6 +56,29 @@
           >
             Save changes
           </UButton>
+        </div>
+      </div>
+
+      <!-- How it works - added because the panels below give no indication
+           on their own of what a "scene" is, what order means, or how the
+           finished result actually looks (a plain form has no way to convey
+           "this becomes an automatic camera fly-through"). -->
+      <div class="how-it-works animate-in fade-in slide-in-from-bottom-4 duration-500 shrink-0 mb-6">
+        <button type="button" class="how-it-works-toggle" @click="showGuide = !showGuide">
+          <span class="flex items-center gap-2">
+            <UIcon name="i-heroicons-information-circle" style="color: #e3b04a;" class="w-5 h-5" />
+            How VIP Cinematic works
+          </span>
+          <UIcon :name="showGuide ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'" class="w-4 h-4 text-white/50" />
+        </button>
+        <div v-if="showGuide" class="how-it-works-body">
+          <ol class="space-y-2.5">
+            <li><b>1. Wedding Details</b> - fills the automatic cover and event-details scenes below.</li>
+            <li><b>2. Add your scenes</b> - your own story, in whatever order you add them. Each one plays as its own stop; use the arrows to reorder.</li>
+            <li><b>3. Set the camera per scene (optional)</b> - choose which side the camera looks from, how much it zooms in, and how many seconds it lingers. Leave any of these blank and it's picked automatically.</li>
+            <li><b>4. Preview Live Cinematic</b> - opens the real, playing animation in a new tab, exactly as guests will see it. The panel on the right is only a content check, not the animation itself.</li>
+            <li><b>5. Turn the VIP page on</b> below once you're happy, then copy/share the link.</li>
+          </ol>
         </div>
       </div>
 
@@ -144,6 +178,27 @@
                   <UButton v-if="draft.imageUrl" size="sm" variant="ghost" color="error" icon="i-heroicons-trash" @click="draft.imageUrl = ''" />
                 </div>
               </div>
+
+              <!-- Camera controls - optional per-scene overrides for the
+                   automatic fly-through. Leaving these blank picks a calm
+                   default automatically (see VipCinematicInvite.vue). -->
+              <div class="camera-controls">
+                <p class="text-xs font-semibold uppercase tracking-widest text-gray-500 mb-2.5 flex items-center gap-1.5">
+                  <UIcon name="i-heroicons-video-camera" class="w-3.5 h-3.5" /> Camera for this scene (optional)
+                </p>
+                <div class="grid grid-cols-3 gap-3">
+                  <UFormField label="Position">
+                    <USelect v-model="draft.position" :items="positionOptions" size="sm" class="w-full" />
+                  </UFormField>
+                  <UFormField label="Zoom (%)">
+                    <UInput v-model.number="draft.zoomPercent" type="number" min="90" max="140" step="2" placeholder="Auto" size="sm" class="w-full" />
+                  </UFormField>
+                  <UFormField label="Hold (sec)">
+                    <UInput v-model.number="draft.holdSeconds" type="number" min="1.5" max="10" step="0.5" placeholder="Auto" size="sm" class="w-full" />
+                  </UFormField>
+                </div>
+              </div>
+
               <UButton color="primary" icon="i-heroicons-plus" size="md" class="font-semibold shadow-md" @click="addScene">
                 Add Scene
               </UButton>
@@ -181,6 +236,14 @@
                       </UButton>
                       <UButton v-if="scene.imageUrl" size="2xs" variant="ghost" color="error" @click="scene.imageUrl = ''">Remove image</UButton>
                     </div>
+
+                    <!-- Per-scene camera controls - same overrides as the
+                         Add a Scene panel above, editable after the fact. -->
+                    <div class="grid grid-cols-3 gap-2 mt-1">
+                      <USelect v-model="scene.position" :items="positionOptions" size="xs" class="w-full" />
+                      <UInput v-model.number="scene.zoomPercent" type="number" min="90" max="140" step="2" placeholder="Zoom auto" size="xs" class="w-full" />
+                      <UInput v-model.number="scene.holdSeconds" type="number" min="1.5" max="10" step="0.5" placeholder="Hold auto" size="xs" class="w-full" />
+                    </div>
                   </div>
 
                   <UButton size="sm" variant="ghost" color="error" icon="i-heroicons-trash" class="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-2" @click="removeScene(index)" />
@@ -193,16 +256,21 @@
 
         <!-- Right Column: Preview -->
         <div class="w-full lg:w-[360px] xl:w-[400px] shrink-0 flex flex-col items-center pb-8 lg:pb-0 overflow-y-auto hide-scrollbar order-1 lg:order-2">
-          <div class="flex items-center justify-between w-full mb-4 px-2">
+          <div class="flex items-center justify-between w-full mb-2 px-2">
             <p class="text-xs font-semibold uppercase tracking-widest text-gold-200/70 flex items-center gap-2">
-              <UIcon name="i-heroicons-device-phone-mobile" class="w-4 h-4" /> Scene Preview
+              <UIcon name="i-heroicons-device-phone-mobile" class="w-4 h-4" /> Content Check (not animated)
             </p>
           </div>
+          <p class="text-xs text-white/40 mb-4 px-2 leading-relaxed">
+            This just stacks your text/photos in order so you can proofread them. It does not move or zoom like the real page -
+            use <b class="text-gold-300/80">Preview Live Cinematic</b> above to see the actual fly-through.
+          </p>
 
           <!-- Smartphone Mockup Wrapper - a stacked preview of the scenes in
                order (the real guest page plays them one at a time with the
                automatic camera - see VipCinematicInvite.vue - but the stacked
-               view here is enough to check your writing/photos at a glance). -->
+               view here is enough to check your writing/photos at a glance,
+               NOT to judge the animation itself). -->
           <div class="phone-bezel w-full max-w-[360px] shadow-2xl shrink-0">
             <div class="phone-notch"></div>
             <div class="phone-screen hide-scrollbar relative flex flex-col p-5" :style="styleVars">
@@ -225,6 +293,10 @@
                   <div class="p-3">
                     <h3 v-if="scene.title" class="text-sm font-semibold mb-1" :style="{ color: 'var(--theme-ink)', fontFamily: 'var(--theme-heading-font)' }">{{ scene.title }}</h3>
                     <p v-if="scene.body" class="text-xs opacity-70 leading-relaxed" :style="{ color: 'var(--theme-ink)' }">{{ scene.body }}</p>
+                    <p class="camera-badge">
+                      <UIcon name="i-heroicons-video-camera" class="w-3 h-3" />
+                      {{ cameraSummary(scene) }}
+                    </p>
                   </div>
                 </div>
 
@@ -270,8 +342,31 @@ const details = reactive({
 
 const scenes = ref<VipScene[]>([])
 const vipEnabled = ref(false)
-const draft = reactive({ title: '', body: '', imageUrl: '' })
+const draft = reactive<{ title: string; body: string; imageUrl: string; position: VipScene['position']; zoomPercent: number | ''; holdSeconds: number | '' }>({
+  title: '',
+  body: '',
+  imageUrl: '',
+  position: 'auto',
+  zoomPercent: '',
+  holdSeconds: ''
+})
 const savedAt = ref<number | null>(null)
+const showGuide = ref(true)
+const previewing = ref(false)
+
+const positionOptions = [
+  { label: 'Auto (alternates)', value: 'auto' },
+  { label: 'Left', value: 'left' },
+  { label: 'Center', value: 'center' },
+  { label: 'Right', value: 'right' }
+]
+
+function cameraSummary(scene: VipScene) {
+  const pos = scene.position && scene.position !== 'auto' ? scene.position : 'auto side'
+  const zoom = scene.zoomPercent ? `${scene.zoomPercent}% zoom` : 'auto zoom'
+  const hold = scene.holdSeconds ? `${scene.holdSeconds}s` : 'auto timing'
+  return `${pos} · ${zoom} · ${hold}`
+}
 
 const draftImageInput = ref<HTMLInputElement | null>(null)
 const sceneImageInputs: Record<string, HTMLInputElement | null> = {}
@@ -342,11 +437,17 @@ function addScene() {
     id: `${Date.now()}`,
     title: draft.title.trim(),
     body: draft.body.trim(),
-    imageUrl: draft.imageUrl
+    imageUrl: draft.imageUrl,
+    position: draft.position || 'auto',
+    zoomPercent: draft.zoomPercent === '' ? undefined : Number(draft.zoomPercent),
+    holdSeconds: draft.holdSeconds === '' ? undefined : Number(draft.holdSeconds)
   })
   draft.title = ''
   draft.body = ''
   draft.imageUrl = ''
+  draft.position = 'auto'
+  draft.zoomPercent = ''
+  draft.holdSeconds = ''
 }
 
 function removeScene(index: number) {
@@ -382,7 +483,21 @@ async function handleImageSelect(event: Event, target: string) {
   ;(event.target as HTMLInputElement).value = ''
 }
 
+// Scene camera fields come straight off <UInput type="number"> models, which
+// can leave a cleared field as '' (a string) rather than undefined - clean
+// that up before it ever reaches Firestore or the camera engine, which only
+// understand "a number" or "not set at all".
+function sanitizedScenes(): VipScene[] {
+  return scenes.value.map((scene) => ({
+    ...scene,
+    position: scene.position || 'auto',
+    zoomPercent: scene.zoomPercent === ('' as unknown as number) || !scene.zoomPercent ? undefined : Number(scene.zoomPercent),
+    holdSeconds: scene.holdSeconds === ('' as unknown as number) || !scene.holdSeconds ? undefined : Number(scene.holdSeconds)
+  }))
+}
+
 async function save() {
+  scenes.value = sanitizedScenes()
   await updateContent({
     brideName: details.brideName.trim(),
     groomName: details.groomName.trim(),
@@ -400,6 +515,20 @@ async function save() {
   setTimeout(() => { savedAt.value = null }, 3000)
 }
 
+// Saves first (so what opens is guaranteed current), then opens the real
+// guest-facing cinematic page in a new tab - the owner is let through even
+// while the VIP page is off for guests, see pages/w/[slug]/vip.vue.
+async function previewLive() {
+  if (!wedding.value) return
+  previewing.value = true
+  try {
+    await save()
+    window.open(vipLinkPath.value, '_blank')
+  } finally {
+    previewing.value = false
+  }
+}
+
 useSeoMeta({ title: 'VIP Cinematic — WeddingCard' })
 </script>
 
@@ -410,6 +539,53 @@ useSeoMeta({ title: 'VIP Cinematic — WeddingCard' })
   background: #111827;
   border: 1px solid #374151;
   box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5);
+}
+
+.how-it-works {
+  border-radius: 1rem;
+  border: 1px solid rgba(212, 160, 23, 0.25);
+  background: rgba(212, 160, 23, 0.06);
+  overflow: hidden;
+}
+
+.how-it-works-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1.1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #f3ddaa;
+}
+
+.how-it-works-body {
+  padding: 0 1.1rem 1.1rem;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.how-it-works-body li b {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.camera-controls {
+  border-radius: 0.85rem;
+  padding: 0.85rem;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px dashed #374151;
+}
+
+.camera-badge {
+  margin-top: 0.4rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.62rem;
+  letter-spacing: 0.02em;
+  text-transform: capitalize;
+  opacity: 0.55;
 }
 
 .date-input {

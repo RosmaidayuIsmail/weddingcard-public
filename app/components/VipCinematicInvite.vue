@@ -210,24 +210,27 @@ const vipScenes = computed(() => props.wedding.vipScenes || [])
 
 // ---- alternating left/right pan pattern + zoom scale for the middle stops ----
 // cover and closing are always centered (bookends); everything between
-// alternates so the camera visibly travels left/right, not just down. Built
-// once (at setup) from the wedding's actual scene list, so the admin's VIP
-// scenes and the fixed data-bound scenes continue the same left-right
-// rhythm as one unbroken sequence, however many scenes the couple wrote.
+// alternates so the camera visibly travels left/right, not just down - unless
+// the couple explicitly chose a position/zoom for one of their own VIP
+// scenes in VipScenesPanel.vue, in which case that override wins. Kept in a
+// deliberately narrow, calm range (scale 1.0-1.15) so the automatic default
+// never feels like a jarring lurch even when nothing is overridden.
 const alignByKey: Record<string, 'left' | 'right' | 'center'> = { cover: 'center', closing: 'center' }
-const scaleByKey: Record<string, number> = { cover: 1.0, closing: 0.88 }
-const MIDDLE_ORDER: Array<{ key: string; scale: number }> = [
-  ...vipScenes.value.map((scene, i) => ({ key: `vip-${scene.id}`, scale: i % 2 === 0 ? 1.15 : 1.05 })),
-  { key: 'event', scale: 1.18 },
-  { key: 'location', scale: 1.3 },
-  { key: 'gift', scale: 1.12 },
-  { key: 'flow', scale: 1.08 }
+const scaleByKey: Record<string, number> = { cover: 1.0, closing: 0.94 }
+const holdOverrideMsByKey: Record<string, number> = {}
+const DEFAULT_SCALE: Record<string, number> = { event: 1.08, location: 1.12, gift: 1.06, flow: 1.04 }
+const MIDDLE_KEYS: string[] = [
+  ...vipScenes.value.map((scene) => `vip-${scene.id}`),
+  'event', 'location', 'gift', 'flow'
 ]
-let sideToggle = 0
-MIDDLE_ORDER.forEach(({ key, scale }) => {
-  alignByKey[key] = sideToggle % 2 === 0 ? 'right' : 'left'
-  scaleByKey[key] = scale
-  sideToggle++
+MIDDLE_KEYS.forEach((key, i) => {
+  const sceneId = key.startsWith('vip-') ? key.slice(4) : null
+  const scene = sceneId ? vipScenes.value.find((s) => s.id === sceneId) : null
+  const defaultAlign: 'left' | 'right' = i % 2 === 0 ? 'right' : 'left'
+  const defaultScale = sceneId ? (i % 2 === 0 ? 1.06 : 1.04) : (DEFAULT_SCALE[key] ?? 1.06)
+  alignByKey[key] = (scene?.position && scene.position !== 'auto') ? scene.position : defaultAlign
+  scaleByKey[key] = scene?.zoomPercent ? scene.zoomPercent / 100 : defaultScale
+  if (scene?.holdSeconds) holdOverrideMsByKey[key] = scene.holdSeconds * 1000
 })
 function rowAlignClass(key: string) {
   return 'cine-row-' + (alignByKey[key] || 'center')
@@ -246,7 +249,10 @@ const stopOrder = ref<string[]>([])
 const currentIndex = ref(0)
 let stops: Array<{ x: number; y: number; scale: number; hold: number }> = []
 let timer: ReturnType<typeof setTimeout> | null = null
-const TRANSITION_MS = 1700
+// Slightly longer + eased than a typical UI transition on purpose - this is
+// meant to read as a slow, deliberate camera move, not a snap-cut. Must stay
+// in sync with .cine-world's CSS transition duration below.
+const TRANSITION_MS = 1900
 
 function measureStops() {
   if (!worldEl.value) return
@@ -266,8 +272,9 @@ function measureStops() {
     const x = r.left - worldRect.left + r.width / 2
     const y = r.top - worldRect.top + r.height / 2
     const textLen = (el.textContent || '').trim().length
-    const hold = Math.min(5200, Math.max(2200, textLen * 30))
-    return { x, y, scale: scaleByKey[key] ?? 1.1, hold }
+    const autoHold = Math.min(5200, Math.max(2200, textLen * 30))
+    const hold = holdOverrideMsByKey[key] ?? autoHold
+    return { x, y, scale: scaleByKey[key] ?? 1.05, hold }
   })
 }
 
@@ -356,7 +363,7 @@ onBeforeUnmount(() => {
   top: 0;
   left: 0;
   transform-origin: 0 0;
-  transition: transform 1.7s cubic-bezier(.65, 0, .35, 1);
+  transition: transform 1.9s cubic-bezier(.45, 0, .15, 1);
   will-change: transform;
 }
 

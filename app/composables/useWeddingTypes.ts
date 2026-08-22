@@ -240,6 +240,16 @@ export interface VipScene {
   title: string
   body: string
   imageUrl?: string
+  /** Where the camera looks during this scene in the fly-through. Unset (or
+   *  'auto') alternates left/right automatically so the camera visibly
+   *  travels, not just zooms - see VipCinematicInvite.vue. */
+  position?: 'auto' | 'left' | 'center' | 'right'
+  /** How zoomed-in the camera gets on this scene, as a percentage (100 = no
+   *  zoom, e.g. 112 = 12% zoomed in). Unset uses a calm automatic default. */
+  zoomPercent?: number
+  /** How many seconds the camera lingers on this scene before moving to the
+   *  next one. Unset estimates a hold time from how much text is written. */
+  holdSeconds?: number
 }
 
 export type WeddingPlan = 'free' | 'premium'
