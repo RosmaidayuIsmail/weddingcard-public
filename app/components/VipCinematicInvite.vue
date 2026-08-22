@@ -25,6 +25,12 @@
            Falls back to nothing (just the gradient below) when unset. -->
       <div v-if="wedding.vipBackgroundImageUrl" class="cine-photo-backdrop" :style="{ backgroundImage: `url(${wedding.vipBackgroundImageUrl})` }"></div>
 
+      <!-- Soft smoke/mist wipe that puffs across the screen at the start of
+           each camera move (see puffMist() below) - a stand-in for the
+           mist-transition look in the reference video, independent of any
+           couple's chosen theme colors so it reads the same everywhere. -->
+      <div class="cine-mist" ref="mistEl"></div>
+
       <div class="cine-world" ref="worldEl" :style="{ width: worldWidthPx + 'px' }">
         <div class="cine-bg" :class="{ 'cine-bg-scrim': !!wedding.vipBackgroundImageUrl }" :style="{ width: worldWidthPx + 'px' }"></div>
 
@@ -33,10 +39,12 @@
         <!-- STOP: cover -->
         <div class="cine-row cine-row-center">
           <div class="cine-stop" :class="stopClass('cover')" :ref="el => setStopRef('cover', el)">
-            <div class="cine-eyebrow">{{ wedding.content.innerGreeting || "You're Invited" }}</div>
-            <h1 class="cine-names">
-              {{ wedding.content.brideName }}<span class="cine-amp">&amp;</span>{{ wedding.content.groomName }}
-            </h1>
+            <div class="cine-frame">
+              <div class="cine-eyebrow">{{ wedding.content.innerGreeting || "You're Invited" }}</div>
+              <h1 class="cine-names">
+                {{ wedding.content.brideName }}<span class="cine-amp">&amp;</span>{{ wedding.content.groomName }}
+              </h1>
+            </div>
             <p class="cine-date">{{ wedding.content.dateLabel }}</p>
           </div>
         </div>
@@ -129,8 +137,10 @@
              finale shot. -->
         <div class="cine-row cine-row-center cine-row-finale">
           <div class="cine-stop" :class="stopClass('closing')" :ref="el => setStopRef('closing', el)">
-            <div class="cine-eyebrow">Join Our Celebration</div>
-            <h2 class="cine-subnames" style="font-size:2rem;">{{ wedding.content.brideName }} &amp; {{ wedding.content.groomName }}</h2>
+            <div class="cine-frame cine-frame-wide">
+              <div class="cine-eyebrow">Join Our Celebration</div>
+              <h2 class="cine-subnames" style="font-size:2rem;">{{ wedding.content.brideName }} &amp; {{ wedding.content.groomName }}</h2>
+            </div>
             <UButton v-if="wedding.content.rsvpEnabled !== false" :to="rsvpLink" size="xl" color="primary" class="cine-cta">
               {{ wedding.content.btnRsvp || 'RSVP Now' }}
             </UButton>
@@ -274,7 +284,19 @@ function stopClass(key: string) {
 // ---- camera engine ----
 const viewportEl = ref<HTMLElement | null>(null)
 const worldEl = ref<HTMLElement | null>(null)
+const mistEl = ref<HTMLElement | null>(null)
 const worldWidthPx = ref(600)
+
+// A brief smoke/mist puff at the start of each automatic camera move (not
+// the very first instant jump, and not the instant jump from Skip to RSVP -
+// both of those are meant to feel immediate, not misty). Mirrors the
+// reference video's soft transitions between scenes.
+function puffMist() {
+  const el = mistEl.value
+  if (!el) return
+  el.classList.add('cine-mist-active')
+  setTimeout(() => { el.classList.remove('cine-mist-active') }, 900)
+}
 const stopRefs: Record<string, HTMLElement> = {}
 function setStopRef(key: string, el: Element | null) {
   if (el) stopRefs[key] = el as HTMLElement
@@ -335,6 +357,7 @@ function applyCamera(i: number, instant: boolean) {
 
 function runCamera(i: number, instant?: boolean) {
   if (timer) clearTimeout(timer)
+  if (!instant) puffMist()
   applyCamera(i, !!instant)
   if (i >= stops.length - 1) return
   timer = setTimeout(() => runCamera(i + 1), TRANSITION_MS + stops[i].hold)
@@ -456,6 +479,57 @@ onBeforeUnmount(() => {
 
 .cine-petals { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
 
+/* Smoke/mist wipe - see puffMist() in the script. Sits above the world but
+   below the HUD, fixed to the viewport (not panned), so it reads as
+   something drifting across the screen rather than part of the scene. */
+.cine-mist {
+  position: absolute;
+  inset: -10%;
+  z-index: 15;
+  pointer-events: none;
+  opacity: 0;
+  background:
+    radial-gradient(45% 35% at 30% 40%, rgba(255, 248, 235, 0.55), transparent 70%),
+    radial-gradient(40% 30% at 70% 60%, rgba(255, 248, 235, 0.4), transparent 70%);
+  filter: blur(30px);
+  transition: opacity 0.85s ease;
+}
+.cine-mist-active { opacity: 1; }
+
+/* A light ornamental frame around the cover/closing names - an arch-shaped
+   ring in the couple's own accent color, with two soft color blooms at its
+   corners, so the bookend stops feel like they sit inside something rather
+   than just being centered text. Deliberately simple so it holds up across
+   every theme's color palette, not just one. */
+.cine-frame {
+  position: relative;
+  padding: 34px 26px 26px;
+  border: 1px solid var(--theme-accent, #e3b04a);
+  border-radius: 120px 120px 14px 14px;
+  background: radial-gradient(circle at 50% 22%, color-mix(in srgb, var(--theme-accent, #e3b04a) 16%, transparent), transparent 65%);
+}
+.cine-frame::before,
+.cine-frame::after {
+  content: '';
+  position: absolute;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  opacity: 0.6;
+  filter: blur(1px);
+}
+.cine-frame::before {
+  top: -8px;
+  left: -10px;
+  background: radial-gradient(circle, var(--theme-accent, #e3b04a), transparent 70%);
+}
+.cine-frame::after {
+  bottom: -10px;
+  right: -8px;
+  background: radial-gradient(circle, rgba(201, 120, 150, .8), transparent 70%);
+}
+.cine-frame-wide { border-radius: 24px; padding: 26px 30px; }
+
 .cine-row {
   position: relative;
   z-index: 2;
@@ -490,7 +564,41 @@ onBeforeUnmount(() => {
 
 .cine-scene-img { width: 100%; max-height: 220px; object-fit: cover; border-radius: 12px; margin-bottom: 14px; display: block; }
 
-.cine-card { background: rgba(20, 10, 24, .55); backdrop-filter: blur(8px); border: 1px solid rgba(227,176,74,.3); border-radius: 18px; padding: 22px 24px; }
+.cine-card {
+  position: relative;
+  background: rgba(20, 10, 24, .55);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(227,176,74,.3);
+  border-radius: 6px;
+  padding: 26px 24px 24px;
+  box-shadow: 0 16px 30px -14px rgba(0, 0, 0, 0.6);
+}
+/* Rolled top/bottom edges - reads as a hanging scroll or card propped in
+   the scene rather than a flat glass rectangle floating on its own. */
+.cine-card::before,
+.cine-card::after {
+  content: '';
+  position: absolute;
+  left: -4px;
+  right: -4px;
+  height: 10px;
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(227,176,74,.5), rgba(227,176,74,.15));
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
+}
+.cine-card::before { top: -6px; }
+.cine-card::after { bottom: -6px; }
+/* The thread it hangs from - a faint vertical line up into the scene. */
+.cine-card-stop { position: relative; }
+.cine-card-stop::before {
+  content: '';
+  position: absolute;
+  top: -34px;
+  left: 50%;
+  width: 1px;
+  height: 34px;
+  background: rgba(255, 255, 255, 0.28);
+}
 .cine-card h3 { font-family: var(--theme-heading-font, serif); font-weight: 500; font-size: 1.4rem; margin: 0 0 10px; color: var(--theme-ink, #f7ecf3); }
 .cine-card p { font-size: .84rem; line-height: 1.7; color: rgba(247,236,243,.72); margin: 4px 0; }
 .cine-story-text { white-space: pre-line; }
