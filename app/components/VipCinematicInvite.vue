@@ -131,6 +131,43 @@
           </div>
         </div>
 
+        <!-- STOP: bride biodata - her full name and parents' names, styled
+             as its own card. Reuses the brideFullName/brideParents fields
+             already collected on the Wedding Details page (Family Details
+             panel) and already shown on the classic layout's StoryInvite.vue
+             - just not previously rendered anywhere in the VIP fly-through.
+             Optional - skipped entirely when both fields are empty, same
+             "don't show a blank card" rule as every other optional stop. -->
+        <div v-if="wedding.content.brideFullName || wedding.content.brideParents" class="cine-row" :class="rowAlignClass('brideBio')">
+          <div class="cine-stop cine-card-stop" :class="stopClass('brideBio')" :ref="el => setStopRef('brideBio', el)">
+            <div class="cine-card cine-card-bio">
+              <svg class="cine-bio-motif" viewBox="0 0 46 30" aria-hidden="true">
+                <path d="M32,6 C32.6,7.6 33.9,8.7 35.6,8.9 C33.9,9.1 32.6,10.2 32,11.8 C31.4,10.2 30.1,9.1 28.4,8.9 C30.1,8.7 31.4,7.6 32,6 Z" fill="var(--theme-accent)"/>
+                <path d="M14,4 C14.8,6.4 16.7,8.1 19.2,8.5 C16.7,8.9 14.8,10.6 14,13 C13.2,10.6 11.3,8.9 8.8,8.5 C11.3,8.1 13.2,6.4 14,4 Z" fill="color-mix(in srgb, var(--theme-accent) 55%, white)"/>
+              </svg>
+              <div class="cine-bio-label">Bride</div>
+              <h3 class="cine-bio-name">{{ wedding.content.brideFullName || wedding.content.brideName }}</h3>
+              <p v-if="wedding.content.brideParents" class="cine-bio-parents">{{ wedding.content.childOfLabel || 'Child of' }}<br>{{ wedding.content.brideParents }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- STOP: groom biodata - same treatment, mirrored (see brideBio
+             above), using groomFullName/groomParents. -->
+        <div v-if="wedding.content.groomFullName || wedding.content.groomParents" class="cine-row" :class="rowAlignClass('groomBio')">
+          <div class="cine-stop cine-card-stop" :class="stopClass('groomBio')" :ref="el => setStopRef('groomBio', el)">
+            <div class="cine-card cine-card-bio">
+              <svg class="cine-bio-motif" viewBox="0 0 46 30" aria-hidden="true">
+                <path d="M32,6 C32.6,7.6 33.9,8.7 35.6,8.9 C33.9,9.1 32.6,10.2 32,11.8 C31.4,10.2 30.1,9.1 28.4,8.9 C30.1,8.7 31.4,7.6 32,6 Z" fill="var(--theme-accent)"/>
+                <path d="M14,4 C14.8,6.4 16.7,8.1 19.2,8.5 C16.7,8.9 14.8,10.6 14,13 C13.2,10.6 11.3,8.9 8.8,8.5 C11.3,8.1 13.2,6.4 14,4 Z" fill="color-mix(in srgb, var(--theme-accent) 55%, white)"/>
+              </svg>
+              <div class="cine-bio-label">Groom</div>
+              <h3 class="cine-bio-name">{{ wedding.content.groomFullName || wedding.content.groomName }}</h3>
+              <p v-if="wedding.content.groomParents" class="cine-bio-parents">{{ wedding.content.childOfLabel || 'Child of' }}<br>{{ wedding.content.groomParents }}</p>
+            </div>
+          </div>
+        </div>
+
         <!-- STOPS: VIP scenes - the couple's own narrative content, written
              and ordered from the admin's Full Scene Manager (see
              VipScenesPanel.vue). Rendered generically: an optional image,
@@ -375,9 +412,10 @@ const vipScenes = computed(() => props.wedding.vipScenes || [])
 const alignByKey: Record<string, 'left' | 'right' | 'center'> = { cover: 'center', venue: 'center', closing: 'center' }
 const scaleByKey: Record<string, number> = { cover: 1.0, venue: 1.0, closing: 0.94 }
 const holdOverrideMsByKey: Record<string, number> = {}
-const DEFAULT_SCALE: Record<string, number> = { greeting: 1.05, event: 1.08, doa: 1.06, frames: 1.05, location: 1.12, gift: 1.06, flow: 1.04 }
+const DEFAULT_SCALE: Record<string, number> = { greeting: 1.05, brideBio: 1.05, groomBio: 1.05, event: 1.08, doa: 1.06, frames: 1.05, location: 1.12, gift: 1.06, flow: 1.04 }
 const MIDDLE_KEYS: string[] = [
   'greeting',
+  'brideBio', 'groomBio',
   ...vipScenes.value.map((scene) => `vip-${scene.id}`),
   'event', 'doa', 'frames', 'location', 'gift', 'flow'
 ]
@@ -722,6 +760,20 @@ onBeforeUnmount(() => {
 .cine-venue-photo img { width: 100%; display: block; filter: drop-shadow(0 14px 18px rgba(0,0,0,.4)); }
 
 .cine-greeting-names { margin-top: 14px; font-family: var(--theme-heading-font, serif); font-style: italic; font-size: 1.2rem; color: var(--theme-ink, #f7ecf3); }
+
+/* Bride/groom biodata cards - a quieter, centered variant of .cine-card,
+   one "Bride"/"Groom" label in the heading font, the full name large and
+   bold, and the parents' names beneath. See brideBio/groomBio stops above -
+   each is entirely optional and only appears once its fields are filled. */
+.cine-card-bio { text-align: center; padding-top: 28px; }
+.cine-card-bio::before, .cine-card-bio::after { display: none; }
+.cine-bio-motif { width: 30px; height: 20px; margin: 0 auto 10px; display: block; }
+.cine-bio-label {
+  font-family: var(--theme-heading-font, serif); font-style: italic; font-weight: 500;
+  font-size: .95rem; letter-spacing: .04em; color: var(--theme-accent); margin-bottom: 6px;
+}
+.cine-bio-name { font-family: var(--theme-heading-font, serif); font-weight: 600; font-size: 1.45rem; color: var(--theme-ink, #f7ecf3); margin: 0 0 8px; }
+.cine-bio-parents { font-size: .8rem; line-height: 1.65; color: rgba(247,236,243,.68); }
 
 /* Doa (prayer) card - a lighter double-border variant of .cine-card so it
    reads as its own quieter moment rather than another event-details box. */

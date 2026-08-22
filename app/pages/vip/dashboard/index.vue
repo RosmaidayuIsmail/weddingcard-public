@@ -116,6 +116,39 @@
         </div>
       </div>
 
+      <!-- Family Details - full names + parents, shown on their own bride
+           biodata / groom biodata scenes in the fly-through (right after the
+           greeting card). Optional and independent - each scene only
+           appears once that person's fields are filled in, same "empty
+           means skipped" rule as Couple Illustration below. These fields
+           already existed for the classic layout (see brideFullName etc. on
+           WeddingContent) - this panel is what was missing to let VIP
+           couples fill them in too. -->
+      <div class="form-panel mt-6">
+        <h2 class="text-base font-semibold text-white mb-1 flex items-center gap-2">
+          <UIcon name="i-heroicons-identification" style="color: #e3b04a;" class="w-5 h-5" />
+          Family Details
+        </h2>
+        <p class="text-xs text-gray-400 mb-4">Adds a bride biodata and a groom biodata scene to the fly-through, right after the greeting card. Leave a person's fields empty to skip their scene.</p>
+        <div class="grid sm:grid-cols-2 gap-4">
+          <UFormField label="Bride's Full Name">
+            <UInput v-model="details.brideFullName" placeholder="Nur Aisyah binti Ahmad" size="lg" class="w-full" />
+          </UFormField>
+          <UFormField label="Groom's Full Name">
+            <UInput v-model="details.groomFullName" placeholder="Danial bin Hassan" size="lg" class="w-full" />
+          </UFormField>
+          <UFormField label="Bride's Parents">
+            <UInput v-model="details.brideParents" placeholder="Tuan Haji ... & Puan Hajjah ..." size="lg" class="w-full" />
+          </UFormField>
+          <UFormField label="Groom's Parents">
+            <UInput v-model="details.groomParents" placeholder="Encik ... & Puan ..." size="lg" class="w-full" />
+          </UFormField>
+          <UFormField label="'Child of' label" class="sm:col-span-2">
+            <UInput v-model="details.childOfLabel" placeholder="Child of" size="lg" class="w-full" />
+          </UFormField>
+        </div>
+      </div>
+
       <!-- Couple Illustration - one picture of the two of you together,
            shown inside an ornamental arch frame on the cover, the very
            first scene of the fly-through. Optional - the cover uses a
@@ -343,6 +376,7 @@ const details = reactive({
   brideName: '', groomName: '', dateISO: '', dateLabel: '', timeLabel: '',
   venueName: '', venueAddress: '', mapUrl: '', rsvpEnabled: true,
   openingStyle: 'classic', openingBgUrl: '', openingModernDarkPalette: '', openingMinimalLightPalette: '',
+  brideFullName: '', brideParents: '', groomFullName: '', groomParents: '', childOfLabel: '',
   coupleIllustrationUrl: '',
   enableDoa: false, doaText: ''
 })
@@ -392,6 +426,11 @@ watch(wedding, (value) => {
   details.venueAddress = value.content.venueAddress || ''
   details.mapUrl = value.content.mapUrl || ''
   details.rsvpEnabled = value.content.rsvpEnabled !== false
+  details.brideFullName = value.content.brideFullName || ''
+  details.brideParents = value.content.brideParents || ''
+  details.groomFullName = value.content.groomFullName || ''
+  details.groomParents = value.content.groomParents || ''
+  details.childOfLabel = value.content.childOfLabel || ''
   details.openingStyle = value.content.openingStyle || 'classic'
   details.openingBgUrl = value.content.openingBgUrl || ''
   details.openingModernDarkPalette = value.content.openingModernDarkPalette || ''
@@ -445,6 +484,11 @@ async function save() {
     venueAddress: details.venueAddress.trim(),
     mapUrl: details.mapUrl.trim(),
     rsvpEnabled: details.rsvpEnabled,
+    brideFullName: details.brideFullName.trim(),
+    brideParents: details.brideParents.trim(),
+    groomFullName: details.groomFullName.trim(),
+    groomParents: details.groomParents.trim(),
+    childOfLabel: details.childOfLabel.trim(),
     openingStyle: details.openingStyle,
     openingBgUrl: details.openingBgUrl,
     openingModernDarkPalette: details.openingModernDarkPalette,
