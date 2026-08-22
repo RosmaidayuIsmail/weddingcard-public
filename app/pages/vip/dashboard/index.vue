@@ -116,6 +116,29 @@
         </div>
       </div>
 
+      <!-- Background Photo - a photo of the couple's own venue/place, used
+           as a fixed backdrop behind the whole fly-through instead of the
+           plain gradient. Optional. -->
+      <div class="form-panel mt-6">
+        <h2 class="text-base font-semibold text-white mb-1 flex items-center gap-2">
+          <UIcon name="i-heroicons-photo" style="color: #e3b04a;" class="w-5 h-5" />
+          Background Photo
+        </h2>
+        <p class="text-xs text-gray-400 mb-4">A photo of your venue or wedding place, shown behind every scene in the fly-through. Optional - leave empty to keep the plain color background.</p>
+        <div class="flex items-center gap-4">
+          <div v-if="backgroundImageUrl" class="w-24 h-24 rounded-lg overflow-hidden border border-gray-700 shrink-0 shadow-md">
+            <img :src="backgroundImageUrl" class="w-full h-full object-cover" />
+          </div>
+          <input ref="backgroundImageInput" type="file" accept="image/*" class="hidden" @change="handleBackgroundImageSelect">
+          <div class="flex flex-wrap gap-2">
+            <UButton size="sm" variant="soft" color="gray" icon="i-heroicons-photo" :loading="uploadingBackground" :disabled="!cloudinaryConfigured" @click="backgroundImageInput?.click()">
+              {{ backgroundImageUrl ? 'Change Photo' : 'Upload Photo' }}
+            </UButton>
+            <UButton v-if="backgroundImageUrl" size="sm" variant="ghost" color="error" icon="i-heroicons-trash" @click="backgroundImageUrl = ''" />
+          </div>
+        </div>
+      </div>
+
       <div class="next-hint">
         <UIcon name="i-heroicons-arrow-right-circle" class="w-5 h-5 shrink-0" style="color: #e3b04a;" />
         <span>Next, add your story on the <NuxtLink to="/vip/dashboard/scenes" class="text-gold-300 hover:underline font-medium">Your Scenes</NuxtLink> page.</span>
@@ -128,7 +151,8 @@
 definePageMeta({ layout: 'vip-dashboard', middleware: 'vip' })
 
 const { profile, requestVipStatus } = useAuth()
-const { wedding, loading, saving, createWedding, isSlugAvailable, updateContent } = useMyWedding()
+const { wedding, loading, saving, createWedding, isSlugAvailable, updateContent, updateVipBackground, setPublished } = useMyWedding()
+const { isConfigured: cloudinaryConfigured, uploadImage } = useCloudinary()
 const toast = useToast()
 
 const vipApprovalStatus = computed(() => profile.value?.vipApprovalStatus || 'pending')
@@ -207,6 +231,9 @@ const details = reactive({
   venueName: '', venueAddress: '', mapUrl: '', rsvpEnabled: true
 })
 const savedAt = ref<number | null>(null)
+const backgroundImageUrl = ref('')
+const backgroundImageInput = ref<HTMLInputElement | null>(null)
+const uploadingBackground = ref(false)
 
 let initialized = false
 watch(wedding, (value) => {
@@ -221,7 +248,23 @@ watch(wedding, (value) => {
   details.venueAddress = value.content.venueAddress || ''
   details.mapUrl = value.content.mapUrl || ''
   details.rsvpEnabled = value.content.rsvpEnabled !== false
+  backgroundImageUrl.value = value.vipBackgroundImageUrl || ''
 }, { immediate: true })
+
+async function handleBackgroundImageSelect(event: Event) {
+  const file = (event.target as HTMLInputElement).files?.[0]
+  if (!file || !wedding.value) return
+  uploadingBackground.value = true
+  try {
+    backgroundImageUrl.value = await uploadImage(file, `weddings/${wedding.value.id}/vip`)
+    toast.add({ title: 'Photo uploaded', color: 'success' })
+  } catch (error) {
+    toast.add({ title: 'Upload failed', color: 'error' })
+  } finally {
+    uploadingBackground.value = false
+  }
+  ;(event.target as HTMLInputElement).value = ''
+}
 
 async function save() {
   await updateContent({
@@ -235,6 +278,7 @@ async function save() {
     mapUrl: details.mapUrl.trim(),
     rsvpEnabled: details.rsvpEnabled
   })
+  await updateVipBackground(backgroundImageUrl.value)
   savedAt.value = Date.now()
   toast.add({ title: 'Wedding details saved', color: 'success' })
   setTimeout(() => { savedAt.value = null }, 3000)

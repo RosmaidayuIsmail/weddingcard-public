@@ -276,6 +276,13 @@ export interface WeddingDoc {
   vipEnabled: boolean
   /** Admin-authored narrative scenes shown in the VIP Cinematic fly-through - see VipScene. */
   vipScenes: VipScene[]
+  /**
+   * A photo of the wedding's own venue/place, used as a fixed backdrop
+   * behind the entire VIP Cinematic fly-through (see VipCinematicInvite.vue)
+   * instead of the plain theme gradient. Optional - falls back to the
+   * gradient when unset.
+   */
+  vipBackgroundImageUrl?: string
 }
 
 export interface GuestDoc {

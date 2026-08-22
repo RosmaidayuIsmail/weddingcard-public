@@ -232,6 +232,23 @@ export function useMyWedding(overrideId?: Ref<string | null | undefined>) {
     })
   }
 
+  // A photo of the wedding's own venue, used as a fixed backdrop behind the
+  // whole VIP Cinematic fly-through - see vipBackgroundImageUrl on
+  // WeddingDoc and VipCinematicInvite.vue. Separate from updateVip() so the
+  // Wedding Details page can save it without needing the couple's scenes.
+  async function updateVipBackground(url: string) {
+    if (!db || !wedding.value) return
+    saving.value = true
+    try {
+      await updateDoc(doc(db, 'weddings', wedding.value.id), {
+        vipBackgroundImageUrl: url,
+        updatedAt: serverTimestamp()
+      })
+    } finally {
+      saving.value = false
+    }
+  }
+
   return {
     wedding,
     loading,
@@ -244,6 +261,7 @@ export function useMyWedding(overrideId?: Ref<string | null | undefined>) {
     updateTheme,
     updateFlow,
     updateVip,
+    updateVipBackground,
     setPublished
   }
 }

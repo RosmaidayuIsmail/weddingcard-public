@@ -18,14 +18,21 @@
          camera pans and zooms across on its own timer - see runCamera().
          Nothing here responds to scrolling or taps; it plays itself. -->
     <div v-if="opened" class="cine-viewport" ref="viewportEl">
+      <!-- A photo of the couple's own venue, fixed to the viewport (not
+           panned like the world below) so it reads as a constant backdrop
+           behind every scene - see vipBackgroundImageUrl on WeddingDoc and
+           the "Background Photo" upload on the Wedding Details page.
+           Falls back to nothing (just the gradient below) when unset. -->
+      <div v-if="wedding.vipBackgroundImageUrl" class="cine-photo-backdrop" :style="{ backgroundImage: `url(${wedding.vipBackgroundImageUrl})` }"></div>
+
       <div class="cine-world" ref="worldEl" :style="{ width: worldWidthPx + 'px' }">
-        <div class="cine-bg" :style="{ width: worldWidthPx + 'px' }"></div>
+        <div class="cine-bg" :class="{ 'cine-bg-scrim': !!wedding.vipBackgroundImageUrl }" :style="{ width: worldWidthPx + 'px' }"></div>
 
         <PetalsBackground v-if="wedding.content.enablePetals !== false" :style-name="wedding.content.petalStyle" class="cine-petals" />
 
         <!-- STOP: cover -->
         <div class="cine-row cine-row-center">
-          <div class="cine-stop" :ref="el => setStopRef('cover', el)">
+          <div class="cine-stop" :class="stopClass('cover')" :ref="el => setStopRef('cover', el)">
             <div class="cine-eyebrow">{{ wedding.content.innerGreeting || "You're Invited" }}</div>
             <h1 class="cine-names">
               {{ wedding.content.brideName }}<span class="cine-amp">&amp;</span>{{ wedding.content.groomName }}
@@ -44,7 +51,7 @@
           class="cine-row"
           :class="rowAlignClass('vip-' + scene.id)"
         >
-          <div class="cine-stop cine-card-stop" :ref="el => setStopRef('vip-' + scene.id, el)">
+          <div class="cine-stop cine-card-stop" :class="stopClass('vip-' + scene.id)" :ref="el => setStopRef('vip-' + scene.id, el)">
             <div class="cine-card">
               <img v-if="scene.imageUrl" :src="scene.imageUrl" alt="" class="cine-scene-img">
               <h3 v-if="scene.title">{{ scene.title }}</h3>
@@ -55,7 +62,7 @@
 
         <!-- STOP: event details -->
         <div class="cine-row" :class="rowAlignClass('event')">
-          <div class="cine-stop cine-card-stop" :ref="el => setStopRef('event', el)">
+          <div class="cine-stop cine-card-stop" :class="stopClass('event')" :ref="el => setStopRef('event', el)">
             <div class="cine-card">
               <h3>{{ wedding.content.detailsHeading || 'The Details' }}</h3>
               <p v-if="wedding.content.timeLabel">{{ wedding.content.timeLabel }}</p>
@@ -84,7 +91,7 @@
 
         <!-- STOP: location / QR -->
         <div v-if="wedding.content.mapUrl" class="cine-row" :class="rowAlignClass('location')">
-          <div class="cine-stop cine-card-stop" :ref="el => setStopRef('location', el)">
+          <div class="cine-stop cine-card-stop" :class="stopClass('location')" :ref="el => setStopRef('location', el)">
             <div class="cine-card">
               <h3>{{ wedding.content.locationHeading || 'Find Us' }}</h3>
               <p>{{ wedding.content.locationSubtitle || 'Scan to open in Maps' }}</p>
@@ -98,7 +105,7 @@
 
         <!-- STOP: gift -->
         <div v-if="hasGift" class="cine-row" :class="rowAlignClass('gift')">
-          <div class="cine-stop cine-card-stop" :ref="el => setStopRef('gift', el)">
+          <div class="cine-stop cine-card-stop" :class="stopClass('gift')" :ref="el => setStopRef('gift', el)">
             <div class="cine-card">
               <h3>A Gift of Love</h3>
               <GiftCard :banks="[wedding.content.bank, wedding.content.bank2]" />
@@ -108,7 +115,7 @@
 
         <!-- STOP: flow -->
         <div v-if="wedding.flow?.length" class="cine-row" :class="rowAlignClass('flow')">
-          <div class="cine-stop cine-card-stop" :ref="el => setStopRef('flow', el)">
+          <div class="cine-stop cine-card-stop" :class="stopClass('flow')" :ref="el => setStopRef('flow', el)">
             <div class="cine-card">
               <h3>{{ wedding.content.eventFlowHeading || 'Event Flow' }}</h3>
               <FlowTimeline :items="wedding.flow" />
@@ -121,7 +128,7 @@
              from peeking into frame once the camera zooms out for this
              finale shot. -->
         <div class="cine-row cine-row-center cine-row-finale">
-          <div class="cine-stop" :ref="el => setStopRef('closing', el)">
+          <div class="cine-stop" :class="stopClass('closing')" :ref="el => setStopRef('closing', el)">
             <div class="cine-eyebrow">Join Our Celebration</div>
             <h2 class="cine-subnames" style="font-size:2rem;">{{ wedding.content.brideName }} &amp; {{ wedding.content.groomName }}</h2>
             <UButton v-if="wedding.content.rsvpEnabled !== false" :to="rsvpLink" size="xl" color="primary" class="cine-cta">
@@ -234,6 +241,15 @@ MIDDLE_KEYS.forEach((key, i) => {
 })
 function rowAlignClass(key: string) {
   return 'cine-row-' + (alignByKey[key] || 'center')
+}
+
+// Reveal effect - "the content show, then gone" as the camera moves between
+// stops (the reference behavior asked for): a stop is faded low while the
+// camera is elsewhere and only comes to full opacity once it's the one the
+// camera has actually arrived at, instead of every scene sitting fully
+// visible in world-space all the time.
+function stopClass(key: string) {
+  return { 'cine-stop-active': stopOrder.value[currentIndex.value] === key }
 }
 
 // ---- camera engine ----
@@ -367,6 +383,19 @@ onBeforeUnmount(() => {
   will-change: transform;
 }
 
+/* The couple's own venue photo (optional) - fixed to the viewport, not
+   panned with .cine-world, so it reads as one constant backdrop the whole
+   fly-through plays over. Sits behind .cine-world in paint order purely by
+   DOM order (it's the earlier sibling), no z-index tug-of-war needed. */
+.cine-photo-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background-size: cover;
+  background-position: center;
+  filter: saturate(1.05) brightness(0.72);
+}
+
 .cine-bg {
   position: absolute;
   top: 0; left: 0; right: 0;
@@ -378,6 +407,16 @@ onBeforeUnmount(() => {
     radial-gradient(700px 600px at 30% 45%, rgba(120, 140, 180, .08), transparent 60%),
     linear-gradient(175deg, var(--theme-bg-from, #2a1245), var(--theme-bg-via, #1c0f2e) 45%, var(--theme-bg-to, #150a20) 100%);
   z-index: 0;
+}
+
+/* When a background photo is set, .cine-bg switches from an opaque gradient
+   to a translucent color scrim so the photo shows through while text stays
+   readable - see the :class binding on .cine-bg in the template. */
+.cine-bg-scrim {
+  background:
+    radial-gradient(600px 500px at 30% 4%, rgba(227, 176, 74, .12), transparent 60%),
+    radial-gradient(700px 600px at 70% 22%, rgba(201, 120, 150, .08), transparent 60%),
+    linear-gradient(175deg, rgba(20, 10, 28, .55), rgba(14, 7, 18, .72) 45%, rgba(10, 5, 14, .85) 100%);
 }
 
 .cine-petals { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
@@ -393,7 +432,12 @@ onBeforeUnmount(() => {
 .cine-row-right { justify-content: flex-end; }
 .cine-row-finale { padding-top: 220px; padding-bottom: 140px; }
 
-.cine-stop { max-width: 320px; text-align: center; }
+/* Reveal effect: dim while the camera is elsewhere, come to full opacity
+   only once the camera has actually arrived - "the content show, then
+   gone" as the camera moves between stops, instead of every scene sitting
+   fully visible the whole time. See stopClass() in the script. */
+.cine-stop { max-width: 320px; text-align: center; opacity: 0.2; transition: opacity 1.3s ease; }
+.cine-stop-active { opacity: 1; }
 .cine-card-stop { width: 300px; }
 
 .cine-eyebrow { font-size: .66rem; letter-spacing: .32em; text-transform: uppercase; color: var(--theme-accent); margin-bottom: 10px; }
