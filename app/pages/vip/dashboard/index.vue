@@ -116,6 +116,30 @@
         </div>
       </div>
 
+      <!-- Couple Illustration - one picture of the two of you together,
+           shown inside an ornamental arch frame on the cover, the very
+           first scene of the fly-through. Optional - the cover uses a
+           plain text frame when this is empty. -->
+      <div class="form-panel mt-6">
+        <h2 class="text-base font-semibold text-white mb-1 flex items-center gap-2">
+          <UIcon name="i-heroicons-user-group" style="color: #e3b04a;" class="w-5 h-5" />
+          Couple Illustration
+        </h2>
+        <p class="text-xs text-gray-400 mb-4">A picture of you both together, shown inside the ornamental arch on the cover. A photo or illustration with a transparent background works best. Optional - leave empty to keep the plain text cover.</p>
+        <div class="flex items-center gap-4">
+          <div v-if="details.coupleIllustrationUrl" class="w-20 h-28 rounded-lg overflow-hidden border border-gray-700 shrink-0 shadow-md bg-gray-800">
+            <img :src="details.coupleIllustrationUrl" class="w-full h-full object-cover" />
+          </div>
+          <input ref="coupleIllustrationInput" type="file" accept="image/*" class="hidden" @change="handleCoupleIllustrationSelect">
+          <div class="flex flex-wrap gap-2">
+            <UButton size="sm" variant="soft" color="gray" icon="i-heroicons-user-group" :loading="uploadingCoupleIllustration" :disabled="!cloudinaryConfigured" @click="coupleIllustrationInput?.click()">
+              {{ details.coupleIllustrationUrl ? 'Change Picture' : 'Upload Picture' }}
+            </UButton>
+            <UButton v-if="details.coupleIllustrationUrl" size="sm" variant="ghost" color="error" icon="i-heroicons-trash" @click="details.coupleIllustrationUrl = ''" />
+          </div>
+        </div>
+      </div>
+
       <!-- Opening Style - the tap-to-open screen a guest sees first, before
            the cinematic fly-through starts. Same style catalog as the
            classic dashboard's Opening Design page (see
@@ -300,7 +324,8 @@ async function handleCreate() {
 const details = reactive({
   brideName: '', groomName: '', dateISO: '', dateLabel: '', timeLabel: '',
   venueName: '', venueAddress: '', mapUrl: '', rsvpEnabled: true,
-  openingStyle: 'classic', openingBgUrl: '', openingModernDarkPalette: '', openingMinimalLightPalette: ''
+  openingStyle: 'classic', openingBgUrl: '', openingModernDarkPalette: '', openingMinimalLightPalette: '',
+  coupleIllustrationUrl: ''
 })
 const savedAt = ref<number | null>(null)
 const backgroundImageUrl = ref('')
@@ -352,8 +377,26 @@ watch(wedding, (value) => {
   details.openingBgUrl = value.content.openingBgUrl || ''
   details.openingModernDarkPalette = value.content.openingModernDarkPalette || ''
   details.openingMinimalLightPalette = value.content.openingMinimalLightPalette || ''
+  details.coupleIllustrationUrl = value.content.coupleIllustrationUrl || ''
   backgroundImageUrl.value = value.vipBackgroundImageUrl || ''
 }, { immediate: true })
+
+const coupleIllustrationInput = ref<HTMLInputElement | null>(null)
+const uploadingCoupleIllustration = ref(false)
+async function handleCoupleIllustrationSelect(event: Event) {
+  const file = (event.target as HTMLInputElement).files?.[0]
+  if (!file || !wedding.value) return
+  uploadingCoupleIllustration.value = true
+  try {
+    details.coupleIllustrationUrl = await uploadImage(file, `weddings/${wedding.value.id}/couple`)
+    toast.add({ title: 'Picture uploaded', color: 'success' })
+  } catch (error) {
+    toast.add({ title: 'Upload failed', color: 'error' })
+  } finally {
+    uploadingCoupleIllustration.value = false
+  }
+  ;(event.target as HTMLInputElement).value = ''
+}
 
 async function handleBackgroundImageSelect(event: Event) {
   const file = (event.target as HTMLInputElement).files?.[0]
@@ -384,7 +427,8 @@ async function save() {
     openingStyle: details.openingStyle,
     openingBgUrl: details.openingBgUrl,
     openingModernDarkPalette: details.openingModernDarkPalette,
-    openingMinimalLightPalette: details.openingMinimalLightPalette
+    openingMinimalLightPalette: details.openingMinimalLightPalette,
+    coupleIllustrationUrl: details.coupleIllustrationUrl
   })
   await updateVipBackground(backgroundImageUrl.value)
   savedAt.value = Date.now()

@@ -39,13 +39,50 @@
         <!-- STOP: cover -->
         <div class="cine-row cine-row-center">
           <div class="cine-stop" :class="stopClass('cover')" :ref="el => setStopRef('cover', el)">
-            <div class="cine-frame">
-              <div class="cine-eyebrow">{{ wedding.content.innerGreeting || "You're Invited" }}</div>
-              <h1 class="cine-names">
-                {{ wedding.content.brideName }}<span class="cine-amp">&amp;</span>{{ wedding.content.groomName }}
-              </h1>
+            <!-- Template 1's ornamental-arch cover: only appears once the
+                 couple has uploaded a picture of themselves together (see
+                 the Couple Illustration panel on the Wedding Details page).
+                 Purely additive - every wedding without one keeps today's
+                 plain text frame below, unchanged. -->
+            <div v-if="wedding.content.coupleIllustrationUrl" class="cine-arch">
+              <svg class="cine-arch-corner cine-arch-corner-tl" viewBox="0 0 90 90" aria-hidden="true">
+                <path d="M4,2 C24,6 42,18 54,36" fill="none" stroke="var(--theme-accent)" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+                <circle cx="18" cy="14" r="7" fill="var(--theme-accent)" opacity="0.85"/>
+                <circle cx="30" cy="26" r="5" fill="color-mix(in srgb, var(--theme-accent) 55%, white)" opacity="0.9"/>
+                <circle cx="10" cy="30" r="4" fill="color-mix(in srgb, var(--theme-accent) 55%, white)" opacity="0.9"/>
+                <path d="M40,10 C41,13 43,15 46,16 C43,17 41,19 40,22 C39,19 37,17 34,16 C37,15 39,13 40,10 Z" fill="var(--theme-ink, #f7ecf3)" opacity="0.6"/>
+              </svg>
+              <svg class="cine-arch-corner cine-arch-corner-tr" viewBox="0 0 90 90" aria-hidden="true">
+                <path d="M4,2 C24,6 42,18 54,36" fill="none" stroke="var(--theme-accent)" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+                <circle cx="18" cy="14" r="7" fill="var(--theme-accent)" opacity="0.85"/>
+                <circle cx="30" cy="26" r="5" fill="color-mix(in srgb, var(--theme-accent) 55%, white)" opacity="0.9"/>
+                <circle cx="10" cy="30" r="4" fill="color-mix(in srgb, var(--theme-accent) 55%, white)" opacity="0.9"/>
+                <path d="M40,10 C41,13 43,15 46,16 C43,17 41,19 40,22 C39,19 37,17 34,16 C37,15 39,13 40,10 Z" fill="var(--theme-ink, #f7ecf3)" opacity="0.6"/>
+              </svg>
+              <div class="cine-arch-panel">
+                <svg class="cine-arch-motif" viewBox="0 0 46 30" aria-hidden="true">
+                  <path d="M17,15 A9,9 0 1 0 17,-3 A7,7 0 1 1 17,15 Z" fill="var(--theme-accent)" transform="translate(0,9)"/>
+                  <path d="M32,6 C32.6,7.6 33.9,8.7 35.6,8.9 C33.9,9.1 32.6,10.2 32,11.8 C31.4,10.2 30.1,9.1 28.4,8.9 C30.1,8.7 31.4,7.6 32,6 Z" fill="var(--theme-ink, #f7ecf3)"/>
+                </svg>
+                <div class="cine-arch-photo">
+                  <img :src="wedding.content.coupleIllustrationUrl" alt="">
+                </div>
+                <div class="cine-eyebrow">{{ wedding.content.innerGreeting || "You're Invited" }}</div>
+                <h1 class="cine-names">
+                  {{ wedding.content.brideName }}<span class="cine-amp">&amp;</span>{{ wedding.content.groomName }}
+                </h1>
+                <p class="cine-date">{{ wedding.content.dateLabel }}</p>
+              </div>
             </div>
-            <p class="cine-date">{{ wedding.content.dateLabel }}</p>
+            <template v-else>
+              <div class="cine-frame">
+                <div class="cine-eyebrow">{{ wedding.content.innerGreeting || "You're Invited" }}</div>
+                <h1 class="cine-names">
+                  {{ wedding.content.brideName }}<span class="cine-amp">&amp;</span>{{ wedding.content.groomName }}
+                </h1>
+              </div>
+              <p class="cine-date">{{ wedding.content.dateLabel }}</p>
+            </template>
           </div>
         </div>
 
@@ -529,6 +566,46 @@ onBeforeUnmount(() => {
   background: radial-gradient(circle, rgba(201, 120, 150, .8), transparent 70%);
 }
 .cine-frame-wide { border-radius: 24px; padding: 26px 30px; }
+
+/* Template 1's ornamental-arch cover (see coupleIllustrationUrl above) - an
+   arch-shaped panel in the couple's own theme colors, with two small
+   floral sprigs at its outer corners and a crescent moon + star motif at
+   the top. Purely decorative around the same eyebrow/names/date content
+   the plain .cine-frame already shows, so nothing here depends on any
+   field that could be missing. */
+.cine-arch { position: relative; width: 100%; max-width: 280px; }
+.cine-arch-corner { position: absolute; width: 58px; height: 58px; top: -6px; z-index: 1; filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.3)); }
+.cine-arch-corner-tl { left: -12px; }
+.cine-arch-corner-tr { right: -12px; transform: scaleX(-1); }
+.cine-arch-panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 36px 22px 22px;
+  color: var(--theme-ink, #f7ecf3);
+  background: linear-gradient(165deg, color-mix(in srgb, var(--theme-accent) 20%, var(--theme-bg-via, #1c0f2e)) 0%, var(--theme-bg-via, #1c0f2e) 55%, var(--theme-bg-to, #150a20) 100%);
+  border: 1px solid color-mix(in srgb, var(--theme-accent) 55%, transparent);
+  clip-path: path('M0,250 C0,102 30,0 140,0 C250,0 280,102 280,250 L280,430 L0,430 Z');
+}
+.cine-arch-motif { width: 38px; height: 25px; margin-bottom: 6px; flex-shrink: 0; }
+.cine-arch-photo {
+  width: 64%;
+  max-width: 168px;
+  margin: 2px 0 10px;
+  -webkit-mask-image: linear-gradient(180deg, #000 78%, transparent 100%);
+  mask-image: linear-gradient(180deg, #000 78%, transparent 100%);
+}
+.cine-arch-photo img { display: block; width: 100%; height: auto; filter: drop-shadow(0 12px 16px rgba(0, 0, 0, 0.35)); }
+.cine-arch-panel .cine-eyebrow { margin-bottom: 8px; }
+.cine-arch-panel .cine-names {
+  font-size: 1.55rem;
+  line-height: 1.2;
+  margin-bottom: 8px;
+  max-width: 100%;
+  overflow-wrap: break-word;
+}
+.cine-arch-panel .cine-date { margin-top: 2px; }
 
 .cine-row {
   position: relative;

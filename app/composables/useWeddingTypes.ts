@@ -15,6 +15,13 @@ export interface WeddingContent {
   /** Individual portrait photos shown on the Family slide */
   bridePhotoUrl: string
   groomPhotoUrl: string
+  /**
+   * One picture of the couple together (a photo, or an illustration with a
+   * transparent background works best) shown inside the VIP Cinematic
+   * cover's ornamental arch frame - see VipCinematicInvite.vue. Optional;
+   * the cover falls back to its plain text-only frame when unset.
+   */
+  coupleIllustrationUrl?: string
   story: string
   dateISO: string
   dateLabel: string
@@ -308,6 +315,7 @@ export function createDefaultContent(brideName = '', groomName = ''): WeddingCon
     groomParents: '',
     bridePhotoUrl: '',
     groomPhotoUrl: '',
+    coupleIllustrationUrl: '',
     story: 'With humble hearts, we joyfully invite you to celebrate our wedding with us.',
     dateISO: '',
     dateLabel: '',
