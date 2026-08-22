@@ -86,6 +86,51 @@
           </div>
         </div>
 
+        <!-- STOP: venue diorama - a courtyard scene the couple "stands in",
+             right after the cover. Only appears once a couple picture is
+             uploaded (same gate as the cover's arch treatment above, and the
+             same picture) - without one there's no figure to put in the
+             scene, so it's skipped entirely rather than showing an empty
+             courtyard. -->
+        <div v-if="wedding.content.coupleIllustrationUrl" class="cine-row cine-row-center">
+          <div class="cine-stop cine-venue-stop" :class="stopClass('venue')" :ref="el => setStopRef('venue', el)">
+            <div class="cine-venue">
+              <div class="cine-venue-sky"></div>
+              <svg class="cine-venue-roof" viewBox="0 0 390 200" preserveAspectRatio="none" aria-hidden="true">
+                <path d="M-10,185 C10,130 35,85 66,74 C96,90 118,118 150,140 C172,155 195,160 195,160 C195,160 218,155 240,140 C272,118 294,90 324,74 C355,85 380,130 400,185 Z" fill="color-mix(in srgb, var(--theme-accent) 18%, #2c1608)"/>
+                <path d="M0,160 C14,92 34,32 62,18 C90,34 112,70 140,96 C164,114 176,120 195,122 C214,120 226,114 250,96 C278,70 300,34 328,18 C356,32 376,92 390,160 L390,200 L0,200 Z" fill="color-mix(in srgb, var(--theme-accent) 30%, #4a2a12)"/>
+                <path d="M0,166 C14,100 34,42 62,28 C90,44 112,78 140,102 C164,120 176,126 195,128 C214,126 226,120 250,102 C278,78 300,44 328,28 C356,42 376,100 390,166" fill="none" stroke="var(--theme-accent)" stroke-width="1.5" opacity=".5"/>
+                <path d="M62,110 L62,200 M328,110 L328,200 M195,122 L195,200" stroke="#2c1608" stroke-width="9" opacity=".8"/>
+              </svg>
+              <div class="cine-venue-floor"></div>
+              <div class="cine-venue-signage">
+                <div class="cine-eyebrow">{{ wedding.content.innerGreeting || "You're Invited" }}</div>
+                <div class="cine-venue-names">{{ wedding.content.brideName }} &amp; {{ wedding.content.groomName }}</div>
+              </div>
+              <svg class="cine-venue-arch" viewBox="0 0 220 90" aria-hidden="true">
+                <g opacity=".95">
+                  <circle cx="16" cy="32" r="14" fill="var(--theme-accent)"/><circle cx="36" cy="16" r="10" fill="color-mix(in srgb, var(--theme-accent) 60%, white)"/>
+                  <circle cx="6" cy="16" r="9" fill="color-mix(in srgb, var(--theme-accent) 70%, white)"/><circle cx="48" cy="36" r="8" fill="color-mix(in srgb, var(--theme-accent) 40%, #7a8f4a)"/>
+                  <circle cx="204" cy="30" r="14" fill="var(--theme-accent)"/><circle cx="184" cy="14" r="10" fill="color-mix(in srgb, var(--theme-accent) 60%, white)"/>
+                  <circle cx="214" cy="12" r="9" fill="color-mix(in srgb, var(--theme-accent) 70%, white)"/><circle cx="172" cy="34" r="8" fill="color-mix(in srgb, var(--theme-accent) 40%, #7a8f4a)"/>
+                </g>
+              </svg>
+              <div class="cine-venue-photo"><img :src="wedding.content.coupleIllustrationUrl" alt=""></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- STOP: greeting - the salutation card, right after the venue. -->
+        <div class="cine-row" :class="rowAlignClass('greeting')">
+          <div class="cine-stop cine-card-stop" :class="stopClass('greeting')" :ref="el => setStopRef('greeting', el)">
+            <div class="cine-card">
+              <div class="cine-eyebrow">{{ wedding.content.innerGreeting || "You're Invited" }}</div>
+              <p class="cine-story-text">{{ wedding.content.story }}</p>
+              <h3 class="cine-greeting-names">{{ wedding.content.brideName }} &amp; {{ wedding.content.groomName }}</h3>
+            </div>
+          </div>
+        </div>
+
         <!-- STOPS: VIP scenes - the couple's own narrative content, written
              and ordered from the admin's Full Scene Manager (see
              VipScenesPanel.vue). Rendered generically: an optional image,
@@ -129,6 +174,41 @@
                   :label="wedding.content.calendarButtonLabel"
                   class="rounded-full shadow-lg"
                 />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- STOP: doa (prayer) - optional, off by default (see enableDoa on
+             the Wedding Details page). When turned on with no custom text,
+             defaultDoaText below fills in a generic Malay wedding doa. -->
+        <div v-if="wedding.content.enableDoa" class="cine-row" :class="rowAlignClass('doa')">
+          <div class="cine-stop cine-card-stop" :class="stopClass('doa')" :ref="el => setStopRef('doa', el)">
+            <div class="cine-card cine-card-doa">
+              <svg class="cine-doa-motif" viewBox="0 0 46 30" aria-hidden="true">
+                <path d="M17,15 A9,9 0 1 0 17,-3 A7,7 0 1 1 17,15 Z" fill="var(--theme-accent)" transform="translate(0,9)"/>
+                <path d="M32,6 C32.6,7.6 33.9,8.7 35.6,8.9 C33.9,9.1 32.6,10.2 32,11.8 C31.4,10.2 30.1,9.1 28.4,8.9 C30.1,8.7 31.4,7.6 32,6 Z" fill="var(--theme-ink, #f7ecf3)"/>
+              </svg>
+              <p class="cine-story-text">{{ wedding.content.doaText || defaultDoaText }}</p>
+              <p class="cine-doa-amin">Amin Ya Rabbal 'Alamin</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- STOP: photo frames - reuses the same couple picture as the cover
+             (there's no separate individual bride/groom upload in the VIP
+             dashboard yet), cropped to two different focal points so each
+             frame reads as its own portrait rather than a repeated image. -->
+        <div v-if="wedding.content.coupleIllustrationUrl" class="cine-row" :class="rowAlignClass('frames')">
+          <div class="cine-stop" :class="stopClass('frames')" :ref="el => setStopRef('frames', el)">
+            <div class="cine-frames">
+              <svg class="cine-frames-ribbon" viewBox="0 0 70 44" aria-hidden="true">
+                <path d="M35,10 L15,40 L25,34 L35,42 L45,34 L55,40 Z" fill="var(--theme-accent)"/>
+                <circle cx="35" cy="10" r="10" fill="color-mix(in srgb, var(--theme-accent) 70%, white)"/>
+              </svg>
+              <div class="cine-frames-row">
+                <div class="cine-frame-box"><img :src="wedding.content.coupleIllustrationUrl" style="object-position: 15% 20%;" alt="" /></div>
+                <div class="cine-frame-box"><img :src="wedding.content.coupleIllustrationUrl" style="object-position: 85% 20%;" alt="" /></div>
               </div>
             </div>
           </div>
@@ -255,6 +335,10 @@ const qrCodeUrl = computed(
   () => `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(props.wedding.content.mapUrl ?? '')}&size=200x200`
 )
 
+// Generic fallback shown on the doa stop when enableDoa is on but the couple
+// hasn't written their own text yet - see doaText on WeddingContent.
+const defaultDoaText = "Ya Allah Ya Tuhan kami, Engkau rahmatilah majlis ini dan berkatilah perjalanan hidup mereka berdua. Jalinkanlah perhubungan ini dengan ikatan kasih sayang, jauh dari salah faham dan perselisihan."
+
 const hasGift = computed(() => {
   const content = props.wedding.content
   return !!(content.enableGift && (
@@ -288,13 +372,14 @@ const vipScenes = computed(() => props.wedding.vipScenes || [])
 // scenes in VipScenesPanel.vue, in which case that override wins. Kept in a
 // deliberately narrow, calm range (scale 1.0-1.15) so the automatic default
 // never feels like a jarring lurch even when nothing is overridden.
-const alignByKey: Record<string, 'left' | 'right' | 'center'> = { cover: 'center', closing: 'center' }
-const scaleByKey: Record<string, number> = { cover: 1.0, closing: 0.94 }
+const alignByKey: Record<string, 'left' | 'right' | 'center'> = { cover: 'center', venue: 'center', closing: 'center' }
+const scaleByKey: Record<string, number> = { cover: 1.0, venue: 1.0, closing: 0.94 }
 const holdOverrideMsByKey: Record<string, number> = {}
-const DEFAULT_SCALE: Record<string, number> = { event: 1.08, location: 1.12, gift: 1.06, flow: 1.04 }
+const DEFAULT_SCALE: Record<string, number> = { greeting: 1.05, event: 1.08, doa: 1.06, frames: 1.05, location: 1.12, gift: 1.06, flow: 1.04 }
 const MIDDLE_KEYS: string[] = [
+  'greeting',
   ...vipScenes.value.map((scene) => `vip-${scene.id}`),
-  'event', 'location', 'gift', 'flow'
+  'event', 'doa', 'frames', 'location', 'gift', 'flow'
 ]
 MIDDLE_KEYS.forEach((key, i) => {
   const sceneId = key.startsWith('vip-') ? key.slice(4) : null
@@ -606,6 +691,57 @@ onBeforeUnmount(() => {
   overflow-wrap: break-word;
 }
 .cine-arch-panel .cine-date { margin-top: 2px; }
+
+/* Venue diorama (see the venue stop above) - a small courtyard scene built
+   from the couple's own theme accent color via color-mix(), so it reads
+   correctly across every theme, not just one palette. Sits right after the
+   cover, before the couple's own written scenes. */
+.cine-venue-stop { width: 300px; }
+.cine-venue { position: relative; width: 100%; aspect-ratio: 3 / 4; border-radius: 14px; overflow: hidden; box-shadow: 0 20px 40px -14px rgba(0,0,0,.6); }
+.cine-venue-sky { position: absolute; inset: 0; background: linear-gradient(180deg, color-mix(in srgb, var(--theme-accent) 22%, #f6d29c) 0%, color-mix(in srgb, var(--theme-accent) 30%, #dd8548) 45%, color-mix(in srgb, var(--theme-accent) 15%, #9c4526) 100%); }
+.cine-venue-roof { position: absolute; left: 0; right: 0; top: 22%; height: 36%; width: 100%; }
+.cine-venue-floor {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 46%;
+  background:
+    repeating-linear-gradient(135deg, rgba(0,0,0,.06) 0 2px, transparent 2px 30px),
+    repeating-linear-gradient(45deg, rgba(0,0,0,.06) 0 2px, transparent 2px 30px),
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-accent) 20%, #c1663a) 0%, color-mix(in srgb, var(--theme-accent) 10%, #9c4c28) 100%);
+}
+.cine-venue-signage {
+  position: absolute; left: 50%; top: 47%; transform: translateX(-50%); text-align: center;
+  background: rgba(0,0,0,.12); padding: 8px 14px; border-radius: 8px; backdrop-filter: blur(2px);
+}
+.cine-venue-signage .cine-eyebrow { margin-bottom: 4px; }
+.cine-venue-names { font-family: var(--theme-heading-font, serif); font-style: italic; font-weight: 600; font-size: 1.05rem; color: #2c1608; }
+.cine-venue-arch { position: absolute; left: 50%; top: 33%; transform: translateX(-50%); width: 58%; filter: drop-shadow(0 8px 12px rgba(0,0,0,.3)); }
+.cine-venue-photo {
+  position: absolute; left: 50%; bottom: 4%; transform: translateX(-50%); width: 44%;
+  -webkit-mask-image: linear-gradient(180deg, #000 88%, transparent 100%);
+  mask-image: linear-gradient(180deg, #000 88%, transparent 100%);
+}
+.cine-venue-photo img { width: 100%; display: block; filter: drop-shadow(0 14px 18px rgba(0,0,0,.4)); }
+
+.cine-greeting-names { margin-top: 14px; font-family: var(--theme-heading-font, serif); font-style: italic; font-size: 1.2rem; color: var(--theme-ink, #f7ecf3); }
+
+/* Doa (prayer) card - a lighter double-border variant of .cine-card so it
+   reads as its own quieter moment rather than another event-details box. */
+.cine-card-doa { text-align: center; padding-top: 30px; }
+.cine-card-doa::before, .cine-card-doa::after { display: none; }
+.cine-doa-motif { width: 30px; height: 20px; margin: 0 auto 12px; display: block; }
+.cine-doa-amin { margin-top: 10px; font-style: italic; color: var(--theme-accent); font-size: .82rem; }
+
+/* Photo frames stop - two ornate frames with a ribbon bow, sharing the same
+   couple picture as the cover (cropped to two focal points) since there's
+   no separate solo bride/groom upload in the VIP dashboard yet. */
+.cine-frames { position: relative; padding-top: 24px; }
+.cine-frames-ribbon { position: absolute; top: -6px; left: 50%; transform: translateX(-50%); width: 60px; height: 38px; z-index: 1; }
+.cine-frames-row { display: flex; gap: 12px; }
+.cine-frame-box {
+  width: 118px; height: 152px; border-radius: 4px; overflow: hidden;
+  border: 6px solid color-mix(in srgb, var(--theme-accent) 45%, #cbb17f);
+  box-shadow: 0 16px 28px -10px rgba(0,0,0,.5);
+}
+.cine-frame-box img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
 .cine-row {
   position: relative;

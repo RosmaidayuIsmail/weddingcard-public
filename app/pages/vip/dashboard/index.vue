@@ -125,7 +125,7 @@
           <UIcon name="i-heroicons-user-group" style="color: #e3b04a;" class="w-5 h-5" />
           Couple Illustration
         </h2>
-        <p class="text-xs text-gray-400 mb-4">A picture of you both together, shown inside the ornamental arch on the cover. A photo or illustration with a transparent background works best. Optional - leave empty to keep the plain text cover.</p>
+        <p class="text-xs text-gray-400 mb-4">A picture of you both together, shown on the cover, the venue scene right after it, and the photo frames scene near the end. A photo or illustration with a transparent background works best. Optional - those three scenes stay in their plain text/skipped form when this is empty.</p>
         <div class="flex items-center gap-4">
           <div v-if="details.coupleIllustrationUrl" class="w-20 h-28 rounded-lg overflow-hidden border border-gray-700 shrink-0 shadow-md bg-gray-800">
             <img :src="details.coupleIllustrationUrl" class="w-full h-full object-cover" />
@@ -138,6 +138,24 @@
             <UButton v-if="details.coupleIllustrationUrl" size="sm" variant="ghost" color="error" icon="i-heroicons-trash" @click="details.coupleIllustrationUrl = ''" />
           </div>
         </div>
+      </div>
+
+      <!-- Doa (Prayer) - an optional extra scene between the event details
+           and location scenes. Off by default since not every couple wants
+           a religious text scene; turning it on with the text left empty
+           still shows a generic Malay wedding doa rather than a blank scene. -->
+      <div class="form-panel mt-6">
+        <div class="flex items-center justify-between gap-4 mb-1">
+          <h2 class="text-base font-semibold text-white flex items-center gap-2">
+            <UIcon name="i-heroicons-sparkles" style="color: #e3b04a;" class="w-5 h-5" />
+            Doa (Prayer)
+          </h2>
+          <USwitch v-model="details.enableDoa" size="lg" />
+        </div>
+        <p class="text-xs text-gray-400 mb-4">An extra scene between the event details and location scenes, showing a short prayer for the two of you. Off by default.</p>
+        <UFormField v-if="details.enableDoa" label="Prayer text (optional)">
+          <UTextarea v-model="details.doaText" placeholder="Leave empty to use a generic Malay wedding doa" :rows="3" class="w-full" />
+        </UFormField>
       </div>
 
       <!-- Opening Style - the tap-to-open screen a guest sees first, before
@@ -325,7 +343,8 @@ const details = reactive({
   brideName: '', groomName: '', dateISO: '', dateLabel: '', timeLabel: '',
   venueName: '', venueAddress: '', mapUrl: '', rsvpEnabled: true,
   openingStyle: 'classic', openingBgUrl: '', openingModernDarkPalette: '', openingMinimalLightPalette: '',
-  coupleIllustrationUrl: ''
+  coupleIllustrationUrl: '',
+  enableDoa: false, doaText: ''
 })
 const savedAt = ref<number | null>(null)
 const backgroundImageUrl = ref('')
@@ -378,6 +397,8 @@ watch(wedding, (value) => {
   details.openingModernDarkPalette = value.content.openingModernDarkPalette || ''
   details.openingMinimalLightPalette = value.content.openingMinimalLightPalette || ''
   details.coupleIllustrationUrl = value.content.coupleIllustrationUrl || ''
+  details.enableDoa = value.content.enableDoa === true
+  details.doaText = value.content.doaText || ''
   backgroundImageUrl.value = value.vipBackgroundImageUrl || ''
 }, { immediate: true })
 
@@ -428,7 +449,9 @@ async function save() {
     openingBgUrl: details.openingBgUrl,
     openingModernDarkPalette: details.openingModernDarkPalette,
     openingMinimalLightPalette: details.openingMinimalLightPalette,
-    coupleIllustrationUrl: details.coupleIllustrationUrl
+    coupleIllustrationUrl: details.coupleIllustrationUrl,
+    enableDoa: details.enableDoa,
+    doaText: details.doaText.trim()
   })
   await updateVipBackground(backgroundImageUrl.value)
   savedAt.value = Date.now()

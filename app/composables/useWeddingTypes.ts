@@ -22,6 +22,15 @@ export interface WeddingContent {
    * the cover falls back to its plain text-only frame when unset.
    */
   coupleIllustrationUrl?: string
+  /**
+   * Optional "doa" (prayer) stop in the VIP Cinematic fly-through, shown
+   * between the event details and location scenes - see VipCinematicInvite.vue.
+   * Off by default since not every couple wants a religious text stop;
+   * when turned on with no custom text, a generic Malay wedding doa is
+   * shown instead so the stop is never left blank.
+   */
+  enableDoa?: boolean
+  doaText?: string
   story: string
   dateISO: string
   dateLabel: string
@@ -316,6 +325,8 @@ export function createDefaultContent(brideName = '', groomName = ''): WeddingCon
     bridePhotoUrl: '',
     groomPhotoUrl: '',
     coupleIllustrationUrl: '',
+    enableDoa: false,
+    doaText: '',
     story: 'With humble hearts, we joyfully invite you to celebrate our wedding with us.',
     dateISO: '',
     dateLabel: '',
