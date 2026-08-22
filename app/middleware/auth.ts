@@ -17,4 +17,11 @@ export default defineNuxtRouteMiddleware(async (to) => {
   if (profile.value?.role === 'superadmin') {
     return navigateTo('/admin')
   }
+
+  // VIP is a wholly separate tier with its own dashboard - a VIP account
+  // never sees the regular couple dashboard or classic/story tools, the
+  // same way it never sees /admin. See middleware/vip.ts for the reverse.
+  if (profile.value?.role === 'vip') {
+    return navigateTo('/vip/dashboard')
+  }
 })

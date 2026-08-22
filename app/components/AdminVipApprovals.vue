@@ -1,6 +1,6 @@
 <template>
   <div class="space-y-6">
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
       <div class="stat-card">
         <p class="stat-label">Pending Requests</p>
         <p class="stat-number text-gold-200">{{ pendingCount }}</p>
@@ -13,14 +13,10 @@
         <p class="stat-label">Rejected</p>
         <p class="stat-number text-red-300">{{ rejectedCount }}</p>
       </div>
-      <div class="stat-card">
-        <p class="stat-label">Never Requested</p>
-        <p class="stat-number text-white/60">{{ noneCount }}</p>
-      </div>
     </div>
 
     <div class="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
-      <UInput v-model="search" icon="i-heroicons-magnifying-glass" placeholder="Search by names or link name..." size="lg" class="max-w-sm" />
+      <UInput v-model="search" icon="i-heroicons-magnifying-glass" placeholder="Search by name or email..." size="lg" class="max-w-sm" />
       <div class="flex flex-wrap bg-gray-900 border border-gray-700 rounded-full p-1 gap-0.5 w-fit">
         <button
           v-for="tab in tabs"
@@ -36,33 +32,43 @@
     </div>
 
     <div v-if="loading" class="text-center text-white/50 py-16">Loading...</div>
-    <div v-else-if="filteredWeddings.length === 0" class="empty-state">
+    <div v-else-if="filteredAccounts.length === 0" class="empty-state">
       <div class="p-4 rounded-full bg-white/5 ring-1 ring-white/10">
         <UIcon name="i-heroicons-film" class="w-7 h-7" style="color: rgba(227, 176, 74, 0.5);" />
       </div>
-      <p class="text-white/50 text-sm">No weddings match this filter.</p>
+      <p class="text-white/50 text-sm">No VIP accounts match this filter.</p>
     </div>
     <div v-else class="space-y-2">
-      <div v-for="w in filteredWeddings" :key="w.id" class="wedding-row">
+      <div v-for="acct in filteredAccounts" :key="acct.uid" class="account-row">
         <div class="min-w-0">
-          <p class="font-medium truncate">{{ w.content.brideName || '—' }} &amp; {{ w.content.groomName || '—' }}</p>
-          <p class="text-xs text-white/50">/w/{{ w.slug }}</p>
+          <p class="font-medium truncate">{{ acct.displayName || acct.email || '—' }}</p>
+          <p class="text-xs text-white/50 truncate">{{ acct.email }}</p>
         </div>
         <div class="flex items-center gap-2 flex-wrap">
-          <UBadge :color="statusColor(effectiveStatus(w))" variant="subtle">{{ effectiveStatus(w) }}</UBadge>
-          <UButton size="xs" variant="soft" color="neutral" icon="i-heroicons-arrow-top-right-on-square" :to="`/admin/wedding/${w.id}/vip`" target="_blank" external>
+          <UBadge :color="statusColor(acct.vipApprovalStatus)" variant="subtle">{{ acct.vipApprovalStatus }}</UBadge>
+          <UButton
+            v-if="acct.weddingId"
+            size="xs"
+            variant="soft"
+            color="neutral"
+            icon="i-heroicons-arrow-top-right-on-square"
+            :to="`/admin/vip/${acct.weddingId}`"
+            target="_blank"
+            external
+          >
             Open Editor
           </UButton>
+          <span v-else class="text-xs text-white/30 italic">No invitation created yet</span>
 
-          <template v-if="effectiveStatus(w) === 'pending'">
-            <UButton size="xs" color="primary" icon="i-heroicons-check" :loading="updatingId === w.id" @click="setStatus(w, 'approved')">Approve</UButton>
-            <UButton size="xs" variant="soft" color="error" icon="i-heroicons-x-mark" :loading="updatingId === w.id" @click="setStatus(w, 'rejected')">Reject</UButton>
+          <template v-if="acct.vipApprovalStatus === 'pending'">
+            <UButton size="xs" color="primary" icon="i-heroicons-check" :loading="updatingUid === acct.uid" @click="setStatus(acct, 'approved')">Approve</UButton>
+            <UButton size="xs" variant="soft" color="error" icon="i-heroicons-x-mark" :loading="updatingUid === acct.uid" @click="setStatus(acct, 'rejected')">Reject</UButton>
           </template>
-          <template v-else-if="effectiveStatus(w) === 'approved'">
-            <UButton size="xs" variant="soft" color="error" icon="i-heroicons-no-symbol" :loading="updatingId === w.id" @click="setStatus(w, 'rejected')">Revoke access</UButton>
+          <template v-else-if="acct.vipApprovalStatus === 'approved'">
+            <UButton size="xs" variant="soft" color="error" icon="i-heroicons-no-symbol" :loading="updatingUid === acct.uid" @click="setStatus(acct, 'rejected')">Revoke access</UButton>
           </template>
           <template v-else>
-            <UButton size="xs" variant="soft" color="primary" icon="i-heroicons-check" :loading="updatingId === w.id" @click="setStatus(w, 'approved')">Grant access</UButton>
+            <UButton size="xs" variant="soft" color="primary" icon="i-heroicons-check" :loading="updatingUid === acct.uid" @click="setStatus(acct, 'approved')">Grant access</UButton>
           </template>
         </div>
       </div>
@@ -71,85 +77,107 @@
 </template>
 
 <script setup lang="ts">
-import { collection, doc, getDocs, serverTimestamp, updateDoc } from 'firebase/firestore'
-import type { VipStatus, WeddingDoc } from '~/composables/useWeddingTypes'
+import { collection, doc, getDocs, updateDoc } from 'firebase/firestore'
+import type { VipApprovalStatus } from '~/composables/useAuth'
+import type { WeddingDoc } from '~/composables/useWeddingTypes'
 
-// VIP Cinematic is an admin-approved tier (not something every couple can
-// switch on themselves) - see VipStatus in useWeddingTypes.ts. This page is
-// where a superadmin reviews requests and grants/revokes access. Loads
-// every wedding directly (same pattern as AdminWeddingsList.vue) since this
-// spans every couple on the platform, not just one.
+// VIP Cinematic is its own account tier (role 'vip' on users/{uid}, see
+// useAuth.ts) - not a feature a regular couple's wedding can request. This
+// is where a superadmin reviews sign-up requests and grants/revokes
+// access. Loads every 'vip' user directly (same getDocs-the-whole-
+// collection pattern as AdminWeddingsList.vue), plus every wedding once so
+// each VIP account's own invitation (if they've created one) can be linked
+// to without an extra query per row.
 const { db, isConfigured } = useFirebase()
 const toast = useToast()
 
-const weddings = ref<WeddingDoc[]>([])
+interface VipAccountRow {
+  uid: string
+  email: string | null
+  displayName: string | null
+  vipApprovalStatus: VipApprovalStatus
+  weddingId: string | null
+}
+
+const accounts = ref<VipAccountRow[]>([])
 const loading = ref(true)
 const search = ref('')
-const updatingId = ref<string | null>(null)
+const updatingUid = ref<string | null>(null)
 
-type FilterTab = 'pending' | 'approved' | 'rejected' | 'none' | 'all'
+type FilterTab = 'pending' | 'approved' | 'rejected' | 'all'
 const filter = ref<FilterTab>('pending')
 const tabs: { id: FilterTab; label: string }[] = [
   { id: 'pending', label: 'Pending' },
   { id: 'approved', label: 'Approved' },
   { id: 'rejected', label: 'Rejected' },
-  { id: 'none', label: 'Never Requested' },
   { id: 'all', label: 'All' }
 ]
 
-// Older wedding docs saved before VIP Cinematic existed have no vipStatus
-// field at all yet - treat that the same as 'none'.
-function effectiveStatus(w: WeddingDoc): VipStatus {
-  return w.vipStatus || 'none'
-}
-
-function statusColor(status: VipStatus) {
+function statusColor(status: VipApprovalStatus) {
   if (status === 'approved') return 'success'
   if (status === 'pending') return 'primary'
-  if (status === 'rejected') return 'error'
-  return 'neutral'
+  return 'error'
 }
 
-async function loadWeddings() {
+async function loadAccounts() {
   if (!isConfigured || !db) {
     loading.value = false
     return
   }
   loading.value = true
   try {
-    const snapshot = await getDocs(collection(db, 'weddings'))
-    weddings.value = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as WeddingDoc)
+    const [usersSnap, weddingsSnap] = await Promise.all([
+      getDocs(collection(db, 'users')),
+      getDocs(collection(db, 'weddings'))
+    ])
+
+    const weddingByOwner = new Map<string, string>()
+    weddingsSnap.docs.forEach((d) => {
+      const w = d.data() as WeddingDoc
+      weddingByOwner.set(w.ownerUid, d.id)
+    })
+
+    accounts.value = usersSnap.docs
+      .map((d) => d.data() as { role?: string; email?: string | null; displayName?: string | null; vipApprovalStatus?: VipApprovalStatus })
+      .map((data, i) => ({ uid: usersSnap.docs[i]!.id, ...data }))
+      .filter((u) => u.role === 'vip')
+      .map((u) => ({
+        uid: u.uid,
+        email: u.email ?? null,
+        displayName: u.displayName ?? null,
+        vipApprovalStatus: u.vipApprovalStatus || 'pending',
+        weddingId: weddingByOwner.get(u.uid) || null
+      }))
   } catch (error) {
     console.error(error)
-    toast.add({ title: 'Could not load weddings', description: 'Check that your account has the superadmin role in Firestore.', color: 'error' })
+    toast.add({ title: 'Could not load VIP accounts', description: 'Check that your account has the superadmin role in Firestore.', color: 'error' })
   } finally {
     loading.value = false
   }
 }
 
-onMounted(loadWeddings)
+onMounted(loadAccounts)
 
-const pendingCount = computed(() => weddings.value.filter((w) => effectiveStatus(w) === 'pending').length)
-const approvedCount = computed(() => weddings.value.filter((w) => effectiveStatus(w) === 'approved').length)
-const rejectedCount = computed(() => weddings.value.filter((w) => effectiveStatus(w) === 'rejected').length)
-const noneCount = computed(() => weddings.value.filter((w) => effectiveStatus(w) === 'none').length)
+const pendingCount = computed(() => accounts.value.filter((a) => a.vipApprovalStatus === 'pending').length)
+const approvedCount = computed(() => accounts.value.filter((a) => a.vipApprovalStatus === 'approved').length)
+const rejectedCount = computed(() => accounts.value.filter((a) => a.vipApprovalStatus === 'rejected').length)
 
-const filteredWeddings = computed(() => {
+const filteredAccounts = computed(() => {
   const q = search.value.trim().toLowerCase()
-  return weddings.value.filter((w) => {
-    if (filter.value !== 'all' && effectiveStatus(w) !== filter.value) return false
+  return accounts.value.filter((a) => {
+    if (filter.value !== 'all' && a.vipApprovalStatus !== filter.value) return false
     if (!q) return true
-    return [w.content.brideName, w.content.groomName, w.slug].some((field) => field?.toLowerCase().includes(q))
+    return [a.displayName, a.email].some((field) => field?.toLowerCase().includes(q))
   })
 })
 
-async function setStatus(w: WeddingDoc, status: VipStatus) {
+async function setStatus(acct: VipAccountRow, status: VipApprovalStatus) {
   if (!db) return
-  updatingId.value = w.id
+  updatingUid.value = acct.uid
   try {
-    await updateDoc(doc(db, 'weddings', w.id), { vipStatus: status, updatedAt: serverTimestamp() })
-    const target = weddings.value.find((x) => x.id === w.id)
-    if (target) target.vipStatus = status
+    await updateDoc(doc(db, 'users', acct.uid), { vipApprovalStatus: status })
+    const target = accounts.value.find((a) => a.uid === acct.uid)
+    if (target) target.vipApprovalStatus = status
     toast.add({
       title: status === 'approved' ? 'VIP access granted' : status === 'rejected' ? 'VIP access declined' : 'Status updated',
       color: status === 'approved' ? 'success' : 'neutral'
@@ -158,7 +186,7 @@ async function setStatus(w: WeddingDoc, status: VipStatus) {
     console.error(error)
     toast.add({ title: 'Could not update status', color: 'error' })
   } finally {
-    updatingId.value = null
+    updatingUid.value = null
   }
 }
 </script>
@@ -185,7 +213,7 @@ async function setStatus(w: WeddingDoc, status: VipStatus) {
   font-weight: 700;
 }
 
-.wedding-row {
+.account-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -198,7 +226,7 @@ async function setStatus(w: WeddingDoc, status: VipStatus) {
   transition: border-color 0.2s ease, background 0.2s ease;
 }
 
-.wedding-row:hover {
+.account-row:hover {
   border-color: rgba(255, 255, 255, 0.16);
   background: rgba(255, 255, 255, 0.035);
 }

@@ -8,15 +8,31 @@ import {
   updateProfile,
   type User
 } from 'firebase/auth'
-import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore'
+import { doc, getDoc, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore'
 
-export type UserRole = 'couple' | 'superadmin'
+// 'vip' is a wholly separate tier of account from 'couple' - its own
+// sign-up (/vip/signup), its own login (/vip/login), its own dashboard
+// (/vip/dashboard) and its own admin-approval gate (Platform Admin > VIP
+// Approvals). A VIP account never sees the regular couple dashboard or the
+// classic/story invitation tools - see middleware/auth.ts and
+// middleware/vip.ts for how the two are kept apart.
+export type UserRole = 'couple' | 'superadmin' | 'vip'
+
+/**
+ * Only meaningful for role 'vip'. 'pending' from the moment they sign up
+ * until a superadmin decides; 'approved' unlocks their VIP dashboard;
+ * 'rejected' lets them send another request. See firestore.rules - a VIP
+ * account can request (write 'pending') but can never write 'approved'
+ * for themselves; only a superadmin's write can do that.
+ */
+export type VipApprovalStatus = 'pending' | 'approved' | 'rejected'
 
 export interface UserProfile {
   uid: string
   email: string | null
   displayName: string | null
   role: UserRole
+  vipApprovalStatus?: VipApprovalStatus
 }
 
 // Module-level (shared across every component that calls useAuth)
@@ -37,12 +53,13 @@ async function loadProfile(user: User, db: ReturnType<typeof useFirebase>['db'])
     const snap = await getDoc(ref)
 
     if (snap.exists()) {
-      const data = snap.data() as { role?: UserRole; displayName?: string }
+      const data = snap.data() as { role?: UserRole; displayName?: string; vipApprovalStatus?: VipApprovalStatus }
       profile.value = {
         uid: user.uid,
         email: user.email,
         displayName: data.displayName ?? user.displayName,
-        role: data.role ?? 'couple'
+        role: data.role ?? 'couple',
+        vipApprovalStatus: data.vipApprovalStatus
       }
     } else {
       // First sign-in \u2014 create their profile doc
@@ -135,6 +152,40 @@ export function useAuth() {
     return credential.user
   }
 
+  // Separate sign-up path for the VIP tier (see /vip/signup) - writes the
+  // Firestore profile directly with role 'vip' and vipApprovalStatus
+  // 'pending', instead of going through loadProfile()'s normal "first
+  // sign-in" branch, which always defaults a brand-new profile to 'couple'.
+  async function signUpVip(email: string, password: string, displayName: string) {
+    if (!auth) throw new Error('Firebase is not configured')
+    const credential = await createUserWithEmailAndPassword(auth, email, password)
+    if (displayName) await updateProfile(credential.user, { displayName })
+
+    const newProfile: UserProfile = {
+      uid: credential.user.uid,
+      email: credential.user.email,
+      displayName: credential.user.displayName,
+      role: 'vip',
+      vipApprovalStatus: 'pending'
+    }
+    if (db) {
+      try {
+        await setDoc(doc(db, 'users', credential.user.uid), {
+          email: newProfile.email,
+          displayName: newProfile.displayName,
+          role: newProfile.role,
+          vipApprovalStatus: newProfile.vipApprovalStatus,
+          createdAt: serverTimestamp()
+        })
+      } catch (error) {
+        console.warn('[useAuth] Could not create the VIP Firestore user profile.', error)
+      }
+    }
+    profile.value = newProfile
+    currentUser.value = credential.user
+    return credential.user
+  }
+
   async function signIn(email: string, password: string) {
     if (!auth) throw new Error('Firebase is not configured')
     const credential = await signInWithEmailAndPassword(auth, email, password)
@@ -151,6 +202,16 @@ export function useAuth() {
     return credential.user
   }
 
+  // Lets a VIP account (re-)request approval - e.g. after a 'rejected'
+  // decision. Firestore rules let a signed-in user write their own
+  // vipApprovalStatus to anything EXCEPT 'approved' - only a superadmin's
+  // write can grant that, so this can never self-approve.
+  async function requestVipStatus() {
+    if (!db || !currentUser.value) return
+    await updateDoc(doc(db, 'users', currentUser.value.uid), { vipApprovalStatus: 'pending' })
+    if (profile.value) profile.value = { ...profile.value, vipApprovalStatus: 'pending' }
+  }
+
   async function logOut() {
     if (!auth) return
     await signOut(auth)
@@ -165,8 +226,10 @@ export function useAuth() {
     authReady,
     isConfigured,
     signUp,
+    signUpVip,
     signIn,
     signInWithGoogle,
+    requestVipStatus,
     logOut
   }
 }

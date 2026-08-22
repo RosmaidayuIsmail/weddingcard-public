@@ -12,16 +12,15 @@
     </div>
   </div>
 
-  <!-- Either the couple hasn't been approved for VIP Cinematic yet (see
-       VipStatus / VipScenesPanel.vue) or they have but haven't turned the
-       guest page on - either way, a graceful message instead of a 404,
-       since this link may get visited before it's ready. -->
-  <div v-else-if="wedding.vipStatus !== 'approved' || !wedding.vipEnabled" class="min-h-screen invite-backdrop flex items-center justify-center text-white text-center px-6">
+  <!-- The couple hasn't turned this page on yet (VIP dashboard > VIP page
+       is off) - a graceful message instead of a 404, since this link may
+       get visited before it's ready. -->
+  <div v-else-if="!wedding.vipEnabled" class="min-h-screen invite-backdrop flex items-center justify-center text-white text-center px-6">
     <div class="p-8 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 shadow-2xl max-w-sm">
       <UIcon name="i-heroicons-film" class="w-12 h-12 text-gold-300/50 mb-4 mx-auto" />
       <p class="text-xl font-display mb-2">The VIP invitation isn't ready yet.</p>
-      <p class="text-sm text-white/60 mb-6">Please check back soon, or use the regular invitation link in the meantime.</p>
-      <UButton :to="`/w/${slug}`" variant="soft" color="neutral" size="lg" class="rounded-full px-8">View Invitation</UButton>
+      <p class="text-sm text-white/60 mb-6">Please check back soon.</p>
+      <UButton to="/" variant="soft" color="neutral" size="lg" class="rounded-full px-8">Return Home</UButton>
     </div>
   </div>
 

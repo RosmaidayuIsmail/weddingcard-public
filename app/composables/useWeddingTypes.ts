@@ -245,16 +245,6 @@ export interface VipScene {
 export type WeddingPlan = 'free' | 'premium'
 export type PaymentStatus = 'unpaid' | 'pending' | 'paid'
 export type WeddingStatus = 'draft' | 'published'
-/**
- * VIP Cinematic is a gated, admin-approved tier - not something every
- * couple can just switch on themselves. 'none' = never requested access.
- * 'pending' = the couple asked and is waiting on a superadmin decision
- * (Platform Admin > VIP Approvals). 'approved' = they can build/edit their
- * scenes and turn the guest page on. 'rejected' = admin declined - the
- * couple can request again. Admin can also grant/revoke this directly
- * without a request ever being made.
- */
-export type VipStatus = 'none' | 'pending' | 'approved' | 'rejected'
 
 export interface WeddingDoc {
   id: string
@@ -266,9 +256,13 @@ export interface WeddingDoc {
   status: WeddingStatus
   content: WeddingContent
   flow: FlowItem[]
-  /** Whether the couple has been approved to build/use VIP Cinematic at all - see VipStatus. */
-  vipStatus: VipStatus
-  /** Whether the separate VIP Cinematic guest page (/w/[slug]/vip) is turned on. Only meaningful once vipStatus is 'approved'. */
+  /**
+   * Whether the separate VIP Cinematic guest page (/w/[slug]/vip) is turned
+   * on. Only ever meaningful for a wedding owned by a VIP-tier account
+   * (see UserRole/VipApprovalStatus in useAuth.ts) - whether that account
+   * is even allowed to use VIP Cinematic at all is gated at the account
+   * level via admin approval, not per-wedding.
+   */
   vipEnabled: boolean
   /** Admin-authored narrative scenes shown in the VIP Cinematic fly-through - see VipScene. */
   vipScenes: VipScene[]

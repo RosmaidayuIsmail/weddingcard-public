@@ -6,35 +6,16 @@
       <p class="animate-pulse tracking-widest uppercase text-xs">Loading VIP Cinematic...</p>
     </div>
 
+    <!-- Only really reachable here via the superadmin override view
+         (Platform Admin > VIP Approvals > Open Editor) before a VIP
+         account has created their wedding yet - the couple's own
+         /vip/dashboard handles wedding creation itself before ever
+         rendering this component. -->
     <div v-else-if="!wedding" class="flex flex-col items-center justify-center flex-1 text-white/60 space-y-6">
       <div class="p-6 rounded-full bg-white/5 ring-1 ring-white/10 mb-2">
         <UIcon name="i-heroicons-film" class="w-12 h-12" style="color: rgba(227, 176, 74, 0.5);" />
       </div>
-      <p class="text-lg">You haven't created your wedding card yet.</p>
-      <UButton to="/dashboard" size="lg" color="primary" class="font-semibold shadow-lg shadow-gold-500/20">Go create it</UButton>
-    </div>
-
-    <!-- Gated tier: VIP Cinematic is admin-approved, not something every
-         couple can just switch on themselves - see VipStatus. Everything
-         below this block (the scene manager) only renders once approved. -->
-    <div v-else-if="vipStatus !== 'approved'" class="flex flex-col items-center justify-center flex-1 text-white/60 space-y-6 px-4 text-center">
-      <div class="p-6 rounded-full bg-white/5 ring-1 ring-white/10 mb-2">
-        <UIcon :name="gateIcon" class="w-12 h-12" :style="{ color: gateIconColor }" />
-      </div>
-      <div class="max-w-md space-y-2">
-        <p class="text-lg text-white">{{ gateTitle }}</p>
-        <p class="text-sm text-white/50">{{ gateDescription }}</p>
-      </div>
-      <UButton
-        v-if="vipStatus === 'none' || vipStatus === 'rejected'"
-        size="lg"
-        color="primary"
-        class="font-semibold shadow-lg shadow-gold-500/20"
-        :loading="saving"
-        @click="requestVipAccess"
-      >
-        {{ vipStatus === 'rejected' ? 'Request again' : 'Request VIP Access' }}
-      </UButton>
+      <p class="text-lg">This account hasn't created their wedding yet.</p>
     </div>
 
     <div v-else class="flex-1 min-h-0 flex flex-col mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 pb-4">
@@ -71,6 +52,52 @@
 
         <!-- Left Column: Controls & List -->
         <div class="flex-1 w-full lg:overflow-y-auto custom-scrollbar lg:pr-6 pb-8 lg:pb-20 space-y-6 order-2 lg:order-1">
+
+          <!-- Wedding Details - the couple's own account is dedicated to
+               VIP Cinematic only, so unlike a regular couple they don't
+               have Opening Design/Design Studio pages to set these in -
+               this is the one place they set the details the automatic
+               cover/event/location scenes in VipCinematicInvite.vue pull
+               from. -->
+          <div class="form-panel animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <h2 class="text-base font-semibold text-white mb-4 border-b border-gray-700 pb-3 flex items-center gap-2">
+              <UIcon name="i-heroicons-heart" style="color: #e3b04a;" class="w-5 h-5" />
+              Wedding Details
+            </h2>
+            <div class="grid sm:grid-cols-2 gap-4">
+              <UFormField label="Bride's Name">
+                <UInput v-model="details.brideName" placeholder="Aisyah" size="lg" class="w-full" />
+              </UFormField>
+              <UFormField label="Groom's Name">
+                <UInput v-model="details.groomName" placeholder="Danial" size="lg" class="w-full" />
+              </UFormField>
+              <UFormField label="Wedding Date">
+                <input v-model="details.dateISO" type="date" class="date-input" />
+              </UFormField>
+              <UFormField label="Time (as guests will see it)">
+                <UInput v-model="details.timeLabel" placeholder="e.g. 10:00 AM" size="lg" class="w-full" />
+              </UFormField>
+              <UFormField label="Date (as guests will see it)">
+                <UInput v-model="details.dateLabel" placeholder="e.g. Saturday, 12 September 2026" size="lg" class="w-full" />
+              </UFormField>
+              <UFormField label="Venue Name">
+                <UInput v-model="details.venueName" placeholder="The Grand Ballroom" size="lg" class="w-full" />
+              </UFormField>
+              <UFormField label="Venue Address" class="sm:col-span-2">
+                <UInput v-model="details.venueAddress" placeholder="123 Jalan Example, Kuala Lumpur" size="lg" class="w-full" />
+              </UFormField>
+              <UFormField label="Google Maps Link (optional)" class="sm:col-span-2">
+                <UInput v-model="details.mapUrl" placeholder="https://maps.google.com/..." size="lg" class="w-full" />
+              </UFormField>
+            </div>
+            <div class="flex items-center justify-between gap-4 mt-5 pt-4 border-t border-gray-800">
+              <div class="min-w-0">
+                <p class="text-sm font-medium text-white">RSVP button</p>
+                <p class="text-xs text-gray-400">Show the RSVP button and page at the end of the fly-through.</p>
+              </div>
+              <USwitch v-model="details.rsvpEnabled" size="lg" />
+            </div>
+          </div>
 
           <!-- Enable/disable + live link panel -->
           <div class="form-panel animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -218,43 +245,27 @@
 <script setup lang="ts">
 import type { VipScene } from '~/composables/useWeddingTypes'
 
-// The shared VIP Cinematic scene manager, used by both /dashboard/vip and
-// the /admin/wedding/[id]/vip admin page. overrideWeddingId is only ever
-// set by the admin page; couples hitting their own dashboard never pass
+// The shared VIP Cinematic scene manager, used by both /vip/dashboard (a
+// VIP account's own invitation) and /admin/vip/[id] (a superadmin viewing
+// one specific VIP account's invitation). overrideWeddingId is only ever
+// set by the admin page; a VIP account on their own dashboard never passes
 // it, so useMyWedding() falls back to its normal own-wedding lookup.
 const props = defineProps<{ overrideWeddingId?: string | null }>()
-const { wedding, loading, saving, updateVip, requestVipAccess } = useMyWedding(toRef(props, 'overrideWeddingId'))
+const { wedding, loading, saving, updateVip, updateContent } = useMyWedding(toRef(props, 'overrideWeddingId'))
 const { themeStyleVars } = useThemes()
 const { isConfigured: cloudinaryConfigured, uploadImage } = useCloudinary()
 const toast = useToast()
 
-// Older wedding docs saved before VIP Cinematic existed have no vipStatus
-// field at all yet - treat that the same as 'none' (never requested).
-const vipStatus = computed(() => wedding.value?.vipStatus || 'none')
-
-const gateIcon = computed(() => {
-  if (vipStatus.value === 'pending') return 'i-heroicons-clock'
-  if (vipStatus.value === 'rejected') return 'i-heroicons-x-circle'
-  return 'i-heroicons-film'
-})
-const gateIconColor = computed(() => {
-  if (vipStatus.value === 'pending') return '#e3b04a'
-  if (vipStatus.value === 'rejected') return 'rgba(248, 113, 113, 0.7)'
-  return 'rgba(227, 176, 74, 0.5)'
-})
-const gateTitle = computed(() => {
-  if (vipStatus.value === 'pending') return 'Your VIP request is awaiting approval'
-  if (vipStatus.value === 'rejected') return 'Your VIP request was not approved'
-  return 'VIP Cinematic is an approved-access tier'
-})
-const gateDescription = computed(() => {
-  if (vipStatus.value === 'pending') {
-    return "We've let the team know you're interested - once approved, you'll be able to build your scenes here."
-  }
-  if (vipStatus.value === 'rejected') {
-    return 'You can send another request if you\'d still like VIP Cinematic for your invitation.'
-  }
-  return 'A separate, cinematic version of your invitation with an automatic camera fly-through. Request access below and our team will review it.'
+const details = reactive({
+  brideName: '',
+  groomName: '',
+  dateISO: '',
+  dateLabel: '',
+  timeLabel: '',
+  venueName: '',
+  venueAddress: '',
+  mapUrl: '',
+  rsvpEnabled: true
 })
 
 const scenes = ref<VipScene[]>([])
@@ -309,6 +320,15 @@ watch(
     initialized = true
     scenes.value = [...(value.vipScenes || [])]
     vipEnabled.value = !!value.vipEnabled
+    details.brideName = value.content.brideName || ''
+    details.groomName = value.content.groomName || ''
+    details.dateISO = value.content.dateISO ? value.content.dateISO.slice(0, 10) : ''
+    details.dateLabel = value.content.dateLabel || ''
+    details.timeLabel = value.content.timeLabel || ''
+    details.venueName = value.content.venueName || ''
+    details.venueAddress = value.content.venueAddress || ''
+    details.mapUrl = value.content.mapUrl || ''
+    details.rsvpEnabled = value.content.rsvpEnabled !== false
   },
   { immediate: true }
 )
@@ -363,6 +383,17 @@ async function handleImageSelect(event: Event, target: string) {
 }
 
 async function save() {
+  await updateContent({
+    brideName: details.brideName.trim(),
+    groomName: details.groomName.trim(),
+    dateISO: details.dateISO,
+    dateLabel: details.dateLabel.trim(),
+    timeLabel: details.timeLabel.trim(),
+    venueName: details.venueName.trim(),
+    venueAddress: details.venueAddress.trim(),
+    mapUrl: details.mapUrl.trim(),
+    rsvpEnabled: details.rsvpEnabled
+  })
   await updateVip(vipEnabled.value, scenes.value)
   savedAt.value = Date.now()
   toast.add({ title: 'VIP Cinematic saved', color: 'success' })
@@ -379,6 +410,21 @@ useSeoMeta({ title: 'VIP Cinematic — WeddingCard' })
   background: #111827;
   border: 1px solid #374151;
   box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5);
+}
+
+.date-input {
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  border-radius: 0.5rem;
+  background: #1F2937;
+  border: 1px solid #374151;
+  color: #f3f4f6;
+  font-size: 0.925rem;
+  color-scheme: dark;
+}
+.date-input:focus {
+  outline: none;
+  border-color: var(--color-gold-400, #d4a017);
 }
 
 .scene-row {

@@ -12,10 +12,6 @@ import {
 } from 'firebase/firestore'
 import { createDefaultContent, type FlowItem, type VipScene, type WeddingContent, type WeddingDoc } from './useWeddingTypes'
 
-// Older wedding docs created before VIP Cinematic existed won't have a
-// vipStatus field at all yet (see useAdminMigrations' backfill tool) - treat
-// a missing value the same as 'none' everywhere it's read, not as an error.
-
 export function slugify(input: string) {
   return input
     .toLowerCase()
@@ -138,7 +134,6 @@ export function useMyWedding(overrideId?: Ref<string | null | undefined>) {
           btnRsvp: defaults.btnRsvp
         },
         flow: defaults.flow.map((item, index) => ({ id: `starter-${index}`, ...item })),
-        vipStatus: 'none',
         vipEnabled: false,
         vipScenes: [],
         createdAt: serverTimestamp(),
@@ -229,23 +224,6 @@ export function useMyWedding(overrideId?: Ref<string | null | undefined>) {
     }
   }
 
-  // The couple asking to be let into VIP Cinematic - just flips the status
-  // to 'pending' so it shows up in Platform Admin > VIP Approvals. Actually
-  // granting/declining access is a superadmin-only action (see
-  // AdminVipApprovals.vue), not something this composable does.
-  async function requestVipAccess() {
-    if (!db || !wedding.value) return
-    saving.value = true
-    try {
-      await updateDoc(doc(db, 'weddings', wedding.value.id), {
-        vipStatus: 'pending',
-        updatedAt: serverTimestamp()
-      })
-    } finally {
-      saving.value = false
-    }
-  }
-
   async function setPublished(published: boolean) {
     if (!db || !wedding.value) return
     await updateDoc(doc(db, 'weddings', wedding.value.id), {
@@ -266,7 +244,6 @@ export function useMyWedding(overrideId?: Ref<string | null | undefined>) {
     updateTheme,
     updateFlow,
     updateVip,
-    requestVipAccess,
     setPublished
   }
 }

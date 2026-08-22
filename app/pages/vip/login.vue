@@ -4,14 +4,14 @@
 
     <div class="relative z-10 w-full max-w-sm animate-fade-up">
       <div class="text-center mb-6">
-        <NuxtLink to="/" class="inline-flex items-center gap-2">
-          <UIcon name="i-heroicons-heart" class="w-5 h-5 text-gold-300" />
-          <span class="font-display font-semibold text-gold-100">WeddingCard</span>
+        <NuxtLink to="/vip" class="inline-flex items-center gap-2">
+          <UIcon name="i-heroicons-film" class="w-5 h-5 text-gold-300" />
+          <span class="font-display font-semibold text-gold-100">VIP Cinematic</span>
         </NuxtLink>
       </div>
 
       <div class="rounded-2xl border border-gold-400/20 bg-ink-900/60 backdrop-blur p-6 shadow-xl">
-        <h1 class="text-xl font-display font-bold text-center text-gold-100 mb-5">Welcome back</h1>
+        <h1 class="text-xl font-display font-bold text-center text-gold-100 mb-5">VIP member login</h1>
 
         <UAlert
           v-if="!isConfigured"
@@ -36,18 +36,10 @@
           <UButton block size="lg" color="primary" class="font-semibold" :loading="loading" @click="handleLogin">
             Log in
           </UButton>
-
-          <div class="flex items-center gap-3 text-xs text-white/40">
-            <div class="h-px flex-1 bg-white/10" /> or <div class="h-px flex-1 bg-white/10" />
-          </div>
-
-          <UButton block size="lg" variant="soft" color="neutral" :loading="googleLoading" @click="handleGoogle">
-            Continue with Google
-          </UButton>
         </div>
 
         <p class="text-center text-sm text-white/60 mt-6">
-          New here? <NuxtLink to="/signup" class="text-gold-300 hover:underline">Create your wedding card</NuxtLink>
+          New here? <NuxtLink to="/vip/signup" class="text-gold-300 hover:underline">Request VIP Access</NuxtLink>
         </p>
       </div>
     </div>
@@ -55,31 +47,18 @@
 </template>
 
 <script setup lang="ts">
-const { signIn, signInWithGoogle, isConfigured, profile } = useAuth()
+const { signIn, isConfigured, profile, logOut } = useAuth()
 const route = useRoute()
 
 const email = ref('')
 const password = ref('')
 const loading = ref(false)
-const googleLoading = ref(false)
 const errorMessage = ref('')
 
-// If middleware bounced someone here from a protected page (e.g. /admin or
-// /dashboard), send them back there - that page's own middleware will still
-// have the final say (e.g. a couple account hitting redirect=/admin gets
-// bounced onward to /dashboard by the superadmin middleware anyway). With no
-// explicit target, default by role: admins land on /admin, couples on
-// /dashboard, never the other one's area. This is the regular couple/admin
-// login - a VIP account normally signs in at /vip/login instead, but if one
-// ends up here anyway (e.g. an old bookmark), send them to their own
-// dashboard rather than the couple one.
 const redirectTo = computed(() => {
   const raw = route.query.redirect
   const isSafeInternalPath = typeof raw === 'string' && raw.startsWith('/') && !raw.startsWith('//')
-  if (isSafeInternalPath) return raw
-  if (profile.value?.role === 'superadmin') return '/admin'
-  if (profile.value?.role === 'vip') return '/vip/dashboard'
-  return '/dashboard'
+  return isSafeInternalPath ? raw : '/vip/dashboard'
 })
 
 async function handleLogin() {
@@ -91,28 +70,23 @@ async function handleLogin() {
   loading.value = true
   try {
     await signIn(email.value, password.value)
+    // This login page is for the VIP tier specifically - a regular couple
+    // or admin account signing in here (wrong password manager entry, old
+    // bookmark, etc.) gets signed back out with a clear message instead of
+    // landing somewhere confusing.
+    if (profile.value?.role !== 'vip') {
+      await logOut()
+      errorMessage.value = 'This login is for VIP accounts only. Use the regular login instead.'
+      return
+    }
     await navigateTo(redirectTo.value)
   } catch (error) {
-    errorMessage.value = 'Could not sign in \u2014 check your email and password.'
+    errorMessage.value = 'Could not sign in — check your email and password.'
     console.error(error)
   } finally {
     loading.value = false
   }
 }
 
-async function handleGoogle() {
-  errorMessage.value = ''
-  googleLoading.value = true
-  try {
-    await signInWithGoogle()
-    await navigateTo(redirectTo.value)
-  } catch (error) {
-    errorMessage.value = 'Google sign-in failed. Please try again.'
-    console.error(error)
-  } finally {
-    googleLoading.value = false
-  }
-}
-
-useSeoMeta({ title: 'Log in \u2014 WeddingCard' })
+useSeoMeta({ title: 'VIP Login — WeddingCard' })
 </script>

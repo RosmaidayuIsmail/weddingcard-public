@@ -9,7 +9,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
   }
 
   if (profile.value?.role !== 'superadmin') {
-    return navigateTo('/dashboard')
+    return navigateTo(profile.value?.role === 'vip' ? '/vip/dashboard' : '/dashboard')
   }
 
   // /admin/wedding/[id]/* is how a superadmin opens and edits one specific

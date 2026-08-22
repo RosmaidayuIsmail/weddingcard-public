@@ -4,9 +4,18 @@ rules_version = '2';
 // with the Firebase CLI (`firebase deploy --only firestore:rules`).
 //
 // Data model:
-//   users/{uid}                        - profile + role ('couple' | 'superadmin')
+//   users/{uid}                        - profile + role ('couple' | 'superadmin' | 'vip').
+//                                         A 'vip' account additionally carries
+//                                         vipApprovalStatus ('pending' | 'approved' |
+//                                         'rejected') - VIP Cinematic is a wholly
+//                                         separate, admin-approved tier with its own
+//                                         sign-up/login/dashboard at /vip, not a
+//                                         feature a regular 'couple' account can turn
+//                                         on. Only a superadmin's write can ever set
+//                                         vipApprovalStatus to 'approved' - see below.
 //   slugs/{slug}                       - { weddingId } reservation, public read
-//   weddings/{weddingId}               - one per couple, owned by ownerUid
+//   weddings/{weddingId}               - one per couple (or one per VIP account),
+//                                         owned by ownerUid
 //   weddings/{weddingId}/guests/{id}   - full RSVP data (dietary, phone, etc.)
 //                                         PRIVATE: only the owner or a superadmin can read
 //   weddings/{weddingId}/wishes/{id}   - public-safe subset (name + message only)
@@ -40,10 +49,17 @@ service cloud.firestore {
     match /users/{uid} {
       allow read: if isSignedIn() && (request.auth.uid == uid || isSuperAdmin());
       allow create: if isSignedIn() && request.auth.uid == uid;
-      // Users can update their own profile but can't grant themselves the
-      // superadmin role - that has to be set manually in the console/CLI.
-      allow update: if isSignedIn() && request.auth.uid == uid &&
-        request.resource.data.role == resource.data.role;
+      // A superadmin can update any profile (needed to approve/decline a
+      // VIP request - see AdminVipApprovals.vue). Otherwise, a user can
+      // only update their own profile, can't grant themselves the
+      // superadmin role, and can never write 'approved' as their own
+      // vipApprovalStatus - they can request ('pending') but only a
+      // superadmin's write can actually grant VIP access.
+      allow update: if isSuperAdmin() || (
+        isSignedIn() && request.auth.uid == uid &&
+        request.resource.data.role == resource.data.role &&
+        request.resource.data.vipApprovalStatus != 'approved'
+      );
     }
 
     match /slugs/{slug} {

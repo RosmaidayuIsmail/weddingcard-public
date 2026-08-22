@@ -12,6 +12,13 @@
           <span class="font-display font-bold text-xl tracking-wide bg-clip-text text-transparent bg-gradient-to-r from-gold-100 to-gold-400">WeddingCard</span>
         </div>
         <div class="flex items-center gap-3">
+          <!-- VIP Cinematic is a wholly separate tier with its own sign-up/
+               login/dashboard (see /vip) - this button is the only place it
+               shows up on the regular product, kept visually distinct so it
+               reads as its own thing rather than another regular plan. -->
+          <UButton to="/vip" variant="soft" color="neutral" class="hidden sm:flex font-semibold text-base border border-gold-400/30 text-gold-200 hover:text-gold-100 hover:border-gold-400/50 rounded-full px-4" icon="i-heroicons-film">
+            VIP
+          </UButton>
           <UButton to="/login" variant="ghost" color="neutral" class="hidden sm:flex text-white/80 hover:text-white font-medium text-base">Log in</UButton>
           <UButton to="/signup" color="primary" class="font-semibold shadow-lg shadow-gold-500/20 hover:shadow-gold-500/40 transition-shadow rounded-full px-6 py-2">
             Get Started
