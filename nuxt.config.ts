@@ -18,6 +18,18 @@ export default defineNuxtConfig({
     }
   },
 
+  // Forces every response to skip HTTP/CDN caching entirely. Added because
+  // the VIP dashboard was intermittently showing stale content after
+  // deploys - this removes any caching layer as a possible cause, at the
+  // cost of a little raw performance (fine for a low-traffic app like this).
+  routeRules: {
+    '/**': {
+      headers: {
+        'cache-control': 'no-store, no-cache, must-revalidate, max-age=0'
+      }
+    }
+  },
+
   // Only takes effect when building with --preset=firebase (see
   // `npm run build:firebase`) - local `npm run dev`/`build`/`preview` are
   // unaffected and keep using the default node-server preset.
