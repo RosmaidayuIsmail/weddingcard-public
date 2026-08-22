@@ -1,5 +1,5 @@
 <template>
-  <div class="max-w-3xl mx-auto pb-12">
+  <div class="pb-12">
 
     <!-- Approval gate - VIP Cinematic is admin-approved, not something a
          new account can just switch on themselves. Every VIP account
@@ -80,6 +80,11 @@
         </div>
       </div>
 
+      <div class="flex flex-col lg:flex-row gap-8 xl:gap-10">
+
+        <!-- Left: editing -->
+        <div class="flex-1 min-w-0 space-y-6">
+
       <div class="form-panel">
         <div class="grid sm:grid-cols-2 gap-4">
           <UFormField label="Bride's Name">
@@ -124,7 +129,7 @@
            already existed for the classic layout (see brideFullName etc. on
            WeddingContent) - this panel is what was missing to let VIP
            couples fill them in too. -->
-      <div class="form-panel mt-6">
+      <div class="form-panel">
         <h2 class="text-base font-semibold text-white mb-1 flex items-center gap-2">
           <UIcon name="i-heroicons-identification" style="color: #e3b04a;" class="w-5 h-5" />
           Family Details
@@ -153,7 +158,7 @@
            shown inside an ornamental arch frame on the cover, the very
            first scene of the fly-through. Optional - the cover uses a
            plain text frame when this is empty. -->
-      <div class="form-panel mt-6">
+      <div class="form-panel">
         <h2 class="text-base font-semibold text-white mb-1 flex items-center gap-2">
           <UIcon name="i-heroicons-user-group" style="color: #e3b04a;" class="w-5 h-5" />
           Couple Illustration
@@ -177,7 +182,7 @@
            and location scenes. Off by default since not every couple wants
            a religious text scene; turning it on with the text left empty
            still shows a generic Malay wedding doa rather than a blank scene. -->
-      <div class="form-panel mt-6">
+      <div class="form-panel">
         <div class="flex items-center justify-between gap-4 mb-1">
           <h2 class="text-base font-semibold text-white flex items-center gap-2">
             <UIcon name="i-heroicons-sparkles" style="color: #e3b04a;" class="w-5 h-5" />
@@ -197,7 +202,7 @@
            DashboardOpeningPanel.vue) so VIP couples get the same choice,
            just condensed to what matters here: pick a style, and upload a
            picture if that style uses one. -->
-      <div class="form-panel mt-6">
+      <div class="form-panel">
         <h2 class="text-base font-semibold text-white mb-1 flex items-center gap-2">
           <UIcon name="i-heroicons-envelope-open" style="color: #e3b04a;" class="w-5 h-5" />
           Opening Style
@@ -264,7 +269,7 @@
       <!-- Background Photo - a photo of the couple's own venue/place, used
            as a fixed backdrop behind the whole fly-through instead of the
            plain gradient. Optional. -->
-      <div class="form-panel mt-6">
+      <div class="form-panel">
         <h2 class="text-base font-semibold text-white mb-1 flex items-center gap-2">
           <UIcon name="i-heroicons-photo" style="color: #e3b04a;" class="w-5 h-5" />
           Background Photo
@@ -287,6 +292,37 @@
       <div class="next-hint">
         <UIcon name="i-heroicons-arrow-right-circle" class="w-5 h-5 shrink-0" style="color: #e3b04a;" />
         <span>Next, add your story on the <NuxtLink to="/vip/dashboard/scenes" class="text-gold-300 hover:underline font-medium">Your Scenes</NuxtLink> page.</span>
+      </div>
+
+        </div>
+
+        <!-- Right: live preview - same real VipCinematicInvite component
+             and embedded phone-bezel pattern as Your Scenes (see that page's
+             comment), fed the couple's real wedding with just the fields
+             this page owns swapped for whatever's in the form above right
+             now, so edits show up before you hit Save. -->
+        <div class="w-full lg:w-[340px] shrink-0 flex flex-col items-center">
+          <p class="text-xs font-semibold uppercase tracking-widest text-gold-200/70 flex items-center gap-2 w-full mb-2 px-1">
+            <UIcon name="i-heroicons-device-phone-mobile" class="w-4 h-4" /> Live Preview
+          </p>
+          <p class="text-xs text-white/40 mb-4 px-1 leading-relaxed">
+            The real fly-through, exactly as a guest sees it - tap the phone to open it.
+            Reflects the form as you edit, even before you save.
+          </p>
+          <div class="phone-bezel w-full max-w-[340px] shadow-2xl shrink-0">
+            <div class="phone-notch"></div>
+            <div class="phone-screen hide-scrollbar relative">
+              <VipCinematicInvite
+                v-if="previewWedding"
+                :key="wedding?.id"
+                :wedding="previewWedding"
+                :rsvp-link="rsvpLink"
+                embedded
+              />
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
@@ -384,6 +420,43 @@ const savedAt = ref<number | null>(null)
 const backgroundImageUrl = ref('')
 const backgroundImageInput = ref<HTMLInputElement | null>(null)
 const uploadingBackground = ref(false)
+
+// Feeds the Live Preview panel: the couple's real wedding doc, with the
+// fields this page owns swapped for whatever's in `details`/
+// `backgroundImageUrl` right now (not necessarily saved yet), same pattern
+// as Your Scenes' previewWedding.
+const previewWedding = computed(() => {
+  if (!wedding.value) return null
+  return {
+    ...wedding.value,
+    vipBackgroundImageUrl: backgroundImageUrl.value,
+    content: {
+      ...wedding.value.content,
+      brideName: details.brideName,
+      groomName: details.groomName,
+      dateISO: details.dateISO,
+      dateLabel: details.dateLabel,
+      timeLabel: details.timeLabel,
+      venueName: details.venueName,
+      venueAddress: details.venueAddress,
+      mapUrl: details.mapUrl,
+      rsvpEnabled: details.rsvpEnabled,
+      brideFullName: details.brideFullName,
+      brideParents: details.brideParents,
+      groomFullName: details.groomFullName,
+      groomParents: details.groomParents,
+      childOfLabel: details.childOfLabel,
+      openingStyle: details.openingStyle,
+      openingBgUrl: details.openingBgUrl,
+      openingModernDarkPalette: details.openingModernDarkPalette,
+      openingMinimalLightPalette: details.openingMinimalLightPalette,
+      coupleIllustrationUrl: details.coupleIllustrationUrl,
+      enableDoa: details.enableDoa,
+      doaText: details.doaText
+    }
+  }
+})
+const rsvpLink = computed(() => (wedding.value ? `/w/${wedding.value.slug}/rsvp` : ''))
 
 // Same "which styles need an uploaded picture" logic as DashboardOpeningPanel.vue.
 const slideOpeningStyles = ['slide-up', 'slide-down', 'slide-left', 'slide-right']
@@ -573,4 +646,35 @@ useSeoMeta({ title: 'Wedding Details — VIP Cinematic' })
 .palette-swatch:hover { border-color: rgba(212, 160, 23, 0.4); color: white; }
 .palette-swatch-active { background: rgba(212, 160, 23, 0.1); border-color: var(--color-gold-400, #d4a017); color: #f3ddaa; }
 .palette-dot { width: 1rem; height: 1rem; border-radius: 50%; border: 1px solid rgba(255, 255, 255, 0.25); flex-shrink: 0; }
+
+.phone-bezel {
+  position: relative;
+  height: 660px;
+  background: #000;
+  border: 12px solid #1e293b;
+  border-radius: 2.5rem;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), inset 0 0 0 2px rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+  transform: translateZ(0);
+}
+.phone-notch {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40%;
+  height: 24px;
+  background: #1e293b;
+  border-bottom-left-radius: 14px;
+  border-bottom-right-radius: 14px;
+  z-index: 50;
+}
+.phone-screen {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #111;
+}
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 </style>

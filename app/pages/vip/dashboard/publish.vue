@@ -1,5 +1,5 @@
 <template>
-  <div class="max-w-2xl mx-auto pb-12">
+  <div class="pb-12">
 
     <div v-if="vipApprovalStatus !== 'approved' || loading" class="flex flex-col items-center justify-center min-h-[60vh] text-white/60 space-y-4">
       <UIcon name="i-heroicons-arrow-path" class="w-8 h-8 animate-spin text-gold-400" />
@@ -15,6 +15,11 @@
     <div v-else class="animate-fade-up">
       <h1 class="text-3xl font-display font-bold text-white mb-1">Preview & Publish</h1>
       <p class="text-sm text-white/50 mb-6">Check the real animation, then turn your VIP page on when you're happy.</p>
+
+      <div class="flex flex-col lg:flex-row gap-8 xl:gap-10">
+
+        <!-- Left: publish controls -->
+        <div class="flex-1 min-w-0 max-w-2xl space-y-6">
 
       <!-- How it works -->
       <div class="how-it-works mb-6">
@@ -72,6 +77,36 @@
           <UIcon name="i-heroicons-check-circle" class="w-4 h-4" /> Saved
         </span>
       </div>
+
+        </div>
+
+        <!-- Right: live preview - same real VipCinematicInvite component
+             and embedded phone-bezel pattern as Wedding Details/Your Scenes.
+             Nothing on this page edits content, so this is simply the
+             couple's saved wedding as-is - the true final result before you
+             flip the switch above. -->
+        <div class="w-full lg:w-[340px] shrink-0 flex flex-col items-center">
+          <p class="text-xs font-semibold uppercase tracking-widest text-gold-200/70 flex items-center gap-2 w-full mb-2 px-1">
+            <UIcon name="i-heroicons-device-phone-mobile" class="w-4 h-4" /> Live Preview
+          </p>
+          <p class="text-xs text-white/40 mb-4 px-1 leading-relaxed">
+            The real fly-through, exactly as a guest sees it - tap the phone to open it.
+          </p>
+          <div class="phone-bezel w-full max-w-[340px] shadow-2xl shrink-0">
+            <div class="phone-notch"></div>
+            <div class="phone-screen hide-scrollbar relative">
+              <VipCinematicInvite
+                v-if="wedding"
+                :key="wedding.id"
+                :wedding="wedding"
+                :rsvp-link="rsvpLink"
+                embedded
+              />
+            </div>
+          </div>
+        </div>
+
+      </div>
     </div>
   </div>
 </template>
@@ -85,6 +120,7 @@ const toast = useToast()
 
 const vipApprovalStatus = computed(() => profile.value?.vipApprovalStatus || 'pending')
 const vipLinkPath = computed(() => (wedding.value ? `/w/${wedding.value.slug}/vip` : ''))
+const rsvpLink = computed(() => (wedding.value ? `/w/${wedding.value.slug}/rsvp` : ''))
 
 const vipEnabled = ref(false)
 const savedAt = ref<number | null>(null)
@@ -165,4 +201,35 @@ useSeoMeta({ title: 'Preview & Publish — VIP Cinematic' })
 .how-it-works-body li b {
   color: rgba(255, 255, 255, 0.9);
 }
+
+.phone-bezel {
+  position: relative;
+  height: 660px;
+  background: #000;
+  border: 12px solid #1e293b;
+  border-radius: 2.5rem;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), inset 0 0 0 2px rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+  transform: translateZ(0);
+}
+.phone-notch {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40%;
+  height: 24px;
+  background: #1e293b;
+  border-bottom-left-radius: 14px;
+  border-bottom-right-radius: 14px;
+  z-index: 50;
+}
+.phone-screen {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #111;
+}
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 </style>
