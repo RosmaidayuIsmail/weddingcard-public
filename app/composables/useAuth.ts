@@ -41,6 +41,17 @@ const profile = ref<UserProfile | null>(null)
 const authReady = ref(false)
 let listenerAttached = false
 let readyResolve: (() => void) | null = null
+
+// Guards against a race with the onAuthStateChanged listener below: calling
+// createUserWithEmailAndPassword() fires that listener (which calls
+// loadProfile()) independently of - and concurrently with - signUp()/
+// signUpVip()'s own explicit profile write for the same brand-new user. If
+// the listener's loadProfile() runs first, it sees no doc yet and creates
+// one defaulted to role:'couple', which can then race with (and for VIP,
+// silently undo) signUpVip()'s 'vip' write. While a uid is in here, the
+// listener skips loadProfile() and leaves the explicit call in sole charge
+// of that user's first profile write.
+const pendingManualProfileUid = new Set<string>()
 const readyPromise = new Promise<void>((resolve) => {
   readyResolve = resolve
 })
@@ -110,7 +121,12 @@ function attachListener() {
   onAuthStateChanged(auth, async (user) => {
     currentUser.value = user
     if (user) {
-      await loadProfile(user, db)
+      // Skip while signUp()/signUpVip() is mid-flight for this exact user -
+      // see pendingManualProfileUid above. They already handle their own
+      // profile write and will set profile.value themselves.
+      if (!pendingManualProfileUid.has(user.uid)) {
+        await loadProfile(user, db)
+      }
     } else {
       profile.value = null
     }
@@ -146,10 +162,15 @@ export function useAuth() {
   async function signUp(email: string, password: string, displayName: string) {
     if (!auth) throw new Error('Firebase is not configured')
     const credential = await createUserWithEmailAndPassword(auth, email, password)
-    if (displayName) await updateProfile(credential.user, { displayName })
-    await loadProfile(credential.user, db)
-    currentUser.value = credential.user
-    return credential.user
+    pendingManualProfileUid.add(credential.user.uid)
+    try {
+      if (displayName) await updateProfile(credential.user, { displayName })
+      await loadProfile(credential.user, db)
+      currentUser.value = credential.user
+      return credential.user
+    } finally {
+      pendingManualProfileUid.delete(credential.user.uid)
+    }
   }
 
   // Separate sign-up path for the VIP tier (see /vip/signup) - writes the
@@ -159,17 +180,22 @@ export function useAuth() {
   async function signUpVip(email: string, password: string, displayName: string) {
     if (!auth) throw new Error('Firebase is not configured')
     const credential = await createUserWithEmailAndPassword(auth, email, password)
-    if (displayName) await updateProfile(credential.user, { displayName })
+    pendingManualProfileUid.add(credential.user.uid)
+    try {
+      if (displayName) await updateProfile(credential.user, { displayName })
 
-    const newProfile: UserProfile = {
-      uid: credential.user.uid,
-      email: credential.user.email,
-      displayName: credential.user.displayName,
-      role: 'vip',
-      vipApprovalStatus: 'pending'
-    }
-    if (db) {
-      try {
+      const newProfile: UserProfile = {
+        uid: credential.user.uid,
+        email: credential.user.email,
+        displayName: credential.user.displayName,
+        role: 'vip',
+        vipApprovalStatus: 'pending'
+      }
+      if (db) {
+        // Unlike loadProfile()'s swallow-and-continue, this write must not
+        // fail silently: if it did, the caller would still navigate to the
+        // "request received" screen with nothing actually saved for admin
+        // to see and approve. Let the error propagate to the sign-up form.
         await setDoc(doc(db, 'users', credential.user.uid), {
           email: newProfile.email,
           displayName: newProfile.displayName,
@@ -177,13 +203,13 @@ export function useAuth() {
           vipApprovalStatus: newProfile.vipApprovalStatus,
           createdAt: serverTimestamp()
         })
-      } catch (error) {
-        console.warn('[useAuth] Could not create the VIP Firestore user profile.', error)
       }
+      profile.value = newProfile
+      currentUser.value = credential.user
+      return credential.user
+    } finally {
+      pendingManualProfileUid.delete(credential.user.uid)
     }
-    profile.value = newProfile
-    currentUser.value = credential.user
-    return credential.user
   }
 
   async function signIn(email: string, password: string) {
