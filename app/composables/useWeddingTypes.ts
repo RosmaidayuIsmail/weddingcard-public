@@ -70,6 +70,14 @@ export interface WeddingContent {
   monogramFont: string // curated font id, used unless monogramFontUrl is set
   monogramFontUrl: string // custom Google Font stylesheet URL
   monogramFontFamily: string // custom Google Font CSS family name
+  /** 'classic' (default) is today's Opening -> Details -> RSVP three-page
+   *  flow, unchanged. 'story' is a single continuously-scrolling page that
+   *  reveals the same content (story, couple, family, event, location,
+   *  gift, flow) as scroll-triggered scenes instead of separate pages, then
+   *  ends on an RSVP call to action - see StoryInvite.vue. Old weddings with
+   *  no value saved yet fall back to 'classic' so nothing changes for
+   *  anyone who hasn't opted in. */
+  layoutStyle: 'classic' | 'story'
   openingStyle: string
   openingBgUrl: string
   openingTitle: string
@@ -219,9 +227,34 @@ export interface FlowItem {
   highlight?: boolean
 }
 
+/**
+ * A single admin-authored "scene" shown in the VIP Cinematic invitation's
+ * automatic camera fly-through (see VipCinematicInvite.vue / VipScenesPanel.vue).
+ * These are the narrative middle scenes (couple story, family, custom notes,
+ * etc.) that the couple writes themselves - separate from the automatic
+ * data-bound scenes (event details, location, gift, flow, closing) which are
+ * still generated straight from `content`/`flow`.
+ */
+export interface VipScene {
+  id: string
+  title: string
+  body: string
+  imageUrl?: string
+}
+
 export type WeddingPlan = 'free' | 'premium'
 export type PaymentStatus = 'unpaid' | 'pending' | 'paid'
 export type WeddingStatus = 'draft' | 'published'
+/**
+ * VIP Cinematic is a gated, admin-approved tier - not something every
+ * couple can just switch on themselves. 'none' = never requested access.
+ * 'pending' = the couple asked and is waiting on a superadmin decision
+ * (Platform Admin > VIP Approvals). 'approved' = they can build/edit their
+ * scenes and turn the guest page on. 'rejected' = admin declined - the
+ * couple can request again. Admin can also grant/revoke this directly
+ * without a request ever being made.
+ */
+export type VipStatus = 'none' | 'pending' | 'approved' | 'rejected'
 
 export interface WeddingDoc {
   id: string
@@ -233,6 +266,12 @@ export interface WeddingDoc {
   status: WeddingStatus
   content: WeddingContent
   flow: FlowItem[]
+  /** Whether the couple has been approved to build/use VIP Cinematic at all - see VipStatus. */
+  vipStatus: VipStatus
+  /** Whether the separate VIP Cinematic guest page (/w/[slug]/vip) is turned on. Only meaningful once vipStatus is 'approved'. */
+  vipEnabled: boolean
+  /** Admin-authored narrative scenes shown in the VIP Cinematic fly-through - see VipScene. */
+  vipScenes: VipScene[]
 }
 
 export interface GuestDoc {
@@ -301,6 +340,7 @@ export function createDefaultContent(brideName = '', groomName = ''): WeddingCon
     monogramFont: 'Cormorant Garamond',
     monogramFontUrl: '',
     monogramFontFamily: '',
+    layoutStyle: 'classic',
     openingStyle: 'classic',
     openingBgUrl: '',
     openingTitle: "You're Invited",

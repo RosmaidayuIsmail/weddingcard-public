@@ -12,7 +12,12 @@
     </div>
   </div>
 
-  <div v-else class="theme-surface text-white relative overflow-hidden" :style="styleVars">
+  <!-- 'story' opts a wedding into the single-scroll layout (StoryInvite.vue)
+       instead of this classic hero+footer markup. Old weddings with no
+       layoutStyle saved yet fall back to 'classic' via createDefaultContent(),
+       so this v-else-if condition is the only thing gating the branch - the
+       classic markup itself is untouched. -->
+  <div v-else-if="wedding.content.layoutStyle !== 'story'" class="theme-surface text-white relative overflow-hidden" :style="styleVars">
     <!-- Admin-authored Custom Code (Platform Admin > Custom Code), rendered
          inside a sandboxed iframe - see CustomCodeBlock.vue for the safety
          design. Position is admin-configurable; defaults to bottom. -->
@@ -190,6 +195,8 @@
       <CustomCodeBlock v-if="customCode.position !== 'top'" class="mt-10 w-full max-w-lg mx-auto" />
     </div>
   </div>
+
+  <StoryInvite v-else :wedding="wedding" :guest-name="guestName" :rsvp-link="rsvpLink" />
 </template>
 
 <script setup lang="ts">

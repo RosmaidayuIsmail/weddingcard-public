@@ -49,7 +49,51 @@
         <div class="flex-1 w-full lg:overflow-y-auto custom-scrollbar lg:pr-6 pb-8 lg:pb-20 space-y-8 order-2 lg:order-1">
           
           <div class="space-y-8 form-panel animate-in fade-in slide-in-from-bottom-4 duration-500">
-            
+
+            <!-- Page Layout - Classic (today's Opening -> Details -> RSVP
+                 three separate pages) vs Story (one continuously-scrolling
+                 page with scroll-triggered scenes, matching the reference
+                 invitation the client asked to match). Everything below this
+                 card (cover style, palettes, fonts, etc.) still applies to
+                 both layouts - this only changes how the content after the
+                 cover is presented. VIP Cinematic lives on its own separate
+                 page/link (Dashboard > VIP Cinematic) rather than as a
+                 layoutStyle option here - see VipScenesPanel.vue. -->
+            <div>
+              <h3 class="text-sm font-semibold text-white mb-3">Page Layout</h3>
+              <div class="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  class="ornament-card group"
+                  :class="{ 'ornament-card-active': (form.layoutStyle || 'classic') === 'classic' }"
+                  @click="form.layoutStyle = 'classic'"
+                >
+                  <div class="h-12 flex items-center justify-center opacity-60 group-hover:opacity-100 transition-opacity"
+                       :style="{ color: (form.layoutStyle || 'classic') === 'classic' ? '#e3b04a' : 'currentColor' }">
+                    <UIcon name="i-heroicons-document-duplicate" class="w-6 h-6 drop-shadow" />
+                  </div>
+                  <span class="text-xs font-medium">Classic Pages</span>
+                  <UIcon v-if="(form.layoutStyle || 'classic') === 'classic'" name="i-heroicons-check-circle" class="absolute top-2 right-2 w-4 h-4 text-current" />
+                </button>
+                <button
+                  type="button"
+                  class="ornament-card group"
+                  :class="{ 'ornament-card-active': form.layoutStyle === 'story' }"
+                  @click="form.layoutStyle = 'story'"
+                >
+                  <div class="h-12 flex items-center justify-center opacity-60 group-hover:opacity-100 transition-opacity"
+                       :style="{ color: form.layoutStyle === 'story' ? '#e3b04a' : 'currentColor' }">
+                    <UIcon name="i-heroicons-arrows-up-down" class="w-6 h-6 drop-shadow" />
+                  </div>
+                  <span class="text-xs font-medium">Scrolling Story</span>
+                  <UIcon v-if="form.layoutStyle === 'story'" name="i-heroicons-check-circle" class="absolute top-2 right-2 w-4 h-4 text-current" />
+                </button>
+              </div>
+              <p class="text-xs text-white/40 mt-2">
+                {{ form.layoutStyle === 'story' ? 'Guests scroll through one continuous page - cover, couple, details, and RSVP all flow together.' : 'Guests move through separate Opening, Details, and RSVP pages (today\'s default).' }}
+              </p>
+            </div>
+
             <!-- Cover Style Selector -->
             <div>
               <h3 class="text-sm font-semibold text-white mb-3">Cover Layout Style</h3>
@@ -384,6 +428,7 @@ watch(
     Object.assign(form, value.content)
     
     // Fallbacks for older DB entries
+    if (!form.layoutStyle) form.layoutStyle = 'classic'
     if (!form.openingStyle) form.openingStyle = 'classic'
     if (!form.openingTitle) form.openingTitle = "You're Invited"
     if (!form.openingGreeting) form.openingGreeting = 'Dear'

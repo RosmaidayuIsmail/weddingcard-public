@@ -62,6 +62,7 @@
       <AdminGuestListControls v-else-if="section === 'guests'" />
       <AdminCustomCode v-else-if="section === 'custom-code'" />
       <AdminWeddingsList v-else-if="section === 'weddings'" />
+      <AdminVipApprovals v-else-if="section === 'vip-approvals'" />
       <AdminCatalogManager v-else :section="section" />
     </main>
   </div>
@@ -73,10 +74,11 @@ definePageMeta({ middleware: 'superadmin' })
 const { logOut } = useAuth()
 const { currentUser, profile, authReady } = useAuthState()
 
-type Section = 'dashboard' | 'themes' | 'fonts' | 'presets' | 'rsvp' | 'opening-styles' | 'design-options' | 'day-flow' | 'guests' | 'custom-code' | 'starter-defaults' | 'weddings'
+type Section = 'dashboard' | 'themes' | 'fonts' | 'presets' | 'rsvp' | 'opening-styles' | 'design-options' | 'day-flow' | 'guests' | 'custom-code' | 'starter-defaults' | 'weddings' | 'vip-approvals'
 
 const navItems: { id: Section; label: string; icon: string; description: string }[] = [
   { id: 'weddings', label: 'Weddings & Sync', icon: 'i-heroicons-rectangle-stack', description: 'The admin home - every wedding on the platform, plus applying the platform template to weddings that already exist.' },
+  { id: 'vip-approvals', label: 'VIP Approvals', icon: 'i-heroicons-film', description: 'Review VIP Cinematic access requests and grant or revoke access per wedding - VIP is an approved tier, not something couples can switch on themselves.' },
   { id: 'dashboard', label: 'User Dashboard', icon: 'i-heroicons-squares-2x2', description: 'Control the labels and enabled pages every user sees in their dashboard.' },
   { id: 'themes', label: 'Design Studio', icon: 'i-heroicons-swatch', description: 'Themes and palette pricing available in the user Design Studio.' },
   { id: 'fonts', label: 'Typography', icon: 'i-heroicons-language', description: 'Fonts available in user font pickers across the app.' },

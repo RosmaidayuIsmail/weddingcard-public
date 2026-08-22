@@ -10,7 +10,11 @@ import {
   where,
   type Unsubscribe
 } from 'firebase/firestore'
-import { createDefaultContent, type FlowItem, type WeddingContent, type WeddingDoc } from './useWeddingTypes'
+import { createDefaultContent, type FlowItem, type VipScene, type WeddingContent, type WeddingDoc } from './useWeddingTypes'
+
+// Older wedding docs created before VIP Cinematic existed won't have a
+// vipStatus field at all yet (see useAdminMigrations' backfill tool) - treat
+// a missing value the same as 'none' everywhere it's read, not as an error.
 
 export function slugify(input: string) {
   return input
@@ -134,6 +138,9 @@ export function useMyWedding(overrideId?: Ref<string | null | undefined>) {
           btnRsvp: defaults.btnRsvp
         },
         flow: defaults.flow.map((item, index) => ({ id: `starter-${index}`, ...item })),
+        vipStatus: 'none',
+        vipEnabled: false,
+        vipScenes: [],
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       })
@@ -208,6 +215,37 @@ export function useMyWedding(overrideId?: Ref<string | null | undefined>) {
     }
   }
 
+  async function updateVip(enabled: boolean, scenes: VipScene[]) {
+    if (!db || !wedding.value) return
+    saving.value = true
+    try {
+      await updateDoc(doc(db, 'weddings', wedding.value.id), {
+        vipEnabled: enabled,
+        vipScenes: scenes,
+        updatedAt: serverTimestamp()
+      })
+    } finally {
+      saving.value = false
+    }
+  }
+
+  // The couple asking to be let into VIP Cinematic - just flips the status
+  // to 'pending' so it shows up in Platform Admin > VIP Approvals. Actually
+  // granting/declining access is a superadmin-only action (see
+  // AdminVipApprovals.vue), not something this composable does.
+  async function requestVipAccess() {
+    if (!db || !wedding.value) return
+    saving.value = true
+    try {
+      await updateDoc(doc(db, 'weddings', wedding.value.id), {
+        vipStatus: 'pending',
+        updatedAt: serverTimestamp()
+      })
+    } finally {
+      saving.value = false
+    }
+  }
+
   async function setPublished(published: boolean) {
     if (!db || !wedding.value) return
     await updateDoc(doc(db, 'weddings', wedding.value.id), {
@@ -227,6 +265,8 @@ export function useMyWedding(overrideId?: Ref<string | null | undefined>) {
     updateSlug,
     updateTheme,
     updateFlow,
+    updateVip,
+    requestVipAccess,
     setPublished
   }
 }
