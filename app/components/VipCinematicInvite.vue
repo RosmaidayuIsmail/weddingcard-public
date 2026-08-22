@@ -10,7 +10,7 @@
          tap is also the "user gesture" the browser needs to allow the music
          to autoplay, and it's the moment that kicks off the whole camera
          sequence below. -->
-    <div class="relative overflow-hidden" :style="{ minHeight: '100dvh' }">
+    <div class="envelope-shell" :class="{ 'envelope-shell-collapsed': envelopeCollapsed }">
       <EnvelopeIntro v-model:opened="opened" :guest-name="guestName" :content="wedding.content" />
     </div>
 
@@ -184,6 +184,25 @@ const styleVars = computed(() =>
 )
 
 const opened = ref(false)
+
+// EnvelopeIntro's own wrapper reserves a full 100dvh so the closed envelope
+// has room to sit and its open animation has room to play. But that 100dvh
+// block was staying in the document FOREVER, even once the envelope itself
+// had fully animated away and unmounted - which meant the actual cinematic
+// viewport below it started off-screen, and guests had to manually scroll
+// past an empty full-screen block to ever see the camera fly-through. That
+// defeats the entire point of this page ("plays itself, no scrolling") and
+// is why the camera looked like it had already jumped ahead by the time
+// anyone scrolled down to it: the timer had been running the whole time,
+// unseen. envelopeCollapsed flips once EnvelopeIntro's slowest close
+// animation (the wax-seal style, ~1.8s) has had time to fully finish, and
+// the now-empty wrapper collapses out of the way so .cine-viewport takes
+// over the screen immediately.
+const envelopeCollapsed = ref(false)
+watch(opened, (value) => {
+  if (!value) return
+  setTimeout(() => { envelopeCollapsed.value = true }, 2000)
+})
 
 const qrCodeUrl = computed(
   () => `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(props.wedding.content.mapUrl ?? '')}&size=200x200`
@@ -363,6 +382,22 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+.envelope-shell {
+  position: relative;
+  overflow: hidden;
+  min-height: 100dvh;
+  transition: min-height 0.4s ease;
+}
+
+/* Once the envelope has fully animated away (see envelopeCollapsed in the
+   script above), this wrapper is empty - collapsing its reserved height
+   lets .cine-viewport slide up to fill the screen on its own, instead of
+   sitting below a permanent blank 100dvh block the guest would otherwise
+   have to scroll past manually. */
+.envelope-shell-collapsed {
+  min-height: 0;
+}
+
 .cine-viewport {
   position: relative;
   width: 100%;
