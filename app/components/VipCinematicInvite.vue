@@ -817,12 +817,27 @@ onBeforeUnmount(() => {
   background-size: cover;
   background-position: center;
   filter: saturate(1.05) brightness(0.72);
+  /* A slow, continuous drift on the backdrop itself - the reference video's
+     biggest single quality gap versus this scene wasn't any one transition,
+     it was that its camera is ALWAYS moving through the venue, never
+     static. This can't fake a real 3D camera move through the hall (that
+     needs the venue built in actual depth layers, which the current single
+     flat illustration isn't), but a slow ambient zoom/drift running the
+     entire time a guest is on the page reads as "the camera is alive" even
+     while scenes crossfade on top of it - see cine-backdrop-drift below. */
+  animation: cine-backdrop-drift 42s ease-in-out infinite alternate;
 }
 /* The illustrated venue default (see venueBackgroundImage above) is a bright
-   hand-drawn hall, not a moody photo - kept a touch lighter than the photo
-   backdrop above so the illustration still reads clearly through the scrim. */
+   hand-drawn hall, not a moody photo - kept noticeably lighter than a photo
+   backdrop would need so the illustration - its own colour, its own
+   detail - actually reads, instead of being guessed at through a dark
+   scrim (see cine-bg-scrim below, which is lightened to match). */
 .cine-illustrated-backdrop {
-  filter: saturate(1.08) brightness(0.85);
+  filter: saturate(1.12) brightness(1.02);
+}
+@keyframes cine-backdrop-drift {
+  0% { transform: scale(1.08) translate(0, 0); }
+  100% { transform: scale(1.18) translate(-1.5%, -1%); }
 }
 
 .cine-bg {
@@ -835,11 +850,17 @@ onBeforeUnmount(() => {
     linear-gradient(175deg, var(--theme-bg-from, #2a1245), var(--theme-bg-via, #1c0f2e) 45%, var(--theme-bg-to, #150a20) 100%);
   z-index: 0;
 }
+/* Lightened from the original dark-cinematic scrim - the illustrated venue
+   was getting lost under it (guests said the background "isn't used
+   properly"). Still dark enough at the very top/bottom for the eyebrow and
+   footer chrome to stay readable, but the middle of the frame - where the
+   venue and the couple actually are - now shows real colour and detail
+   instead of reading as a near-black scene. */
 .cine-bg-scrim {
   background:
-    radial-gradient(600px 500px at 30% 4%, rgba(227, 176, 74, .12), transparent 60%),
-    radial-gradient(700px 600px at 70% 22%, rgba(201, 120, 150, .08), transparent 60%),
-    linear-gradient(175deg, rgba(20, 10, 28, .55), rgba(14, 7, 18, .72) 45%, rgba(10, 5, 14, .85) 100%);
+    radial-gradient(600px 500px at 30% 4%, rgba(227, 176, 74, .10), transparent 60%),
+    radial-gradient(700px 600px at 70% 22%, rgba(201, 120, 150, .06), transparent 60%),
+    linear-gradient(175deg, rgba(20, 10, 28, .32), rgba(14, 7, 18, .38) 45%, rgba(10, 5, 14, .58) 100%);
 }
 
 .cine-petals { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
@@ -1282,5 +1303,6 @@ onBeforeUnmount(() => {
   .cine-gate-arch, .cine-gate-reveal-couple-image, .cine-gate-reveal-image, .cine-gate-reveal-monogram { transition: none !important; }
   .cine-gate-spotlight, .cine-gate-name-panel { transition: none !important; }
   .cine-gate-tap-hint { animation: none !important; }
+  .cine-photo-backdrop { animation: none !important; }
 }
 </style>
