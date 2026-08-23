@@ -335,6 +335,14 @@
         &#9208; Back to this scene
       </button>
       <button v-else-if="!hasFocus && currentIndex < sceneKeys.length - 1" type="button" class="cine-skip" @click="skipToEnd">Skip to RSVP &rarr;</button>
+
+      <!-- Preview-only reset: lets the couple replay the fly-through from
+           scene 1 without leaving/reopening the dashboard page. Never shown
+           on the real guest page - a real guest only ever taps the envelope
+           once. -->
+      <button v-if="embedded" type="button" class="cine-reset-toggle" title="Replay from the start" @click="restartPreview">
+        &#8635; Replay
+      </button>
     </div>
   </div>
 </template>
@@ -549,6 +557,15 @@ function backToFocusScene() {
   playingFull.value = false
   showFocusScene()
 }
+// Preview-only "Replay" control (see the button in the template) - jumps
+// back to scene 1 and re-runs the full autoplay sequence from there, same
+// as the very first render, so the couple can watch it again as many times
+// as they like instead of it just sitting on the last scene once it ends.
+function restartPreview() {
+  if (!props.embedded) return
+  playingFull.value = true
+  goTo(0, true)
+}
 // Re-focus automatically the moment this scene becomes available - e.g. the
 // Gift page's preview switches from the full autoplay loop to holding on
 // the actual Gift scene as soon as the couple's typed enough to make it
@@ -589,6 +606,17 @@ onBeforeUnmount(() => {
 .envelope-shell.cine-embedded {
   min-height: 100%;
   height: 100%;
+}
+/* .envelope-shell-collapsed alone (1 class) loses a specificity fight
+   against .envelope-shell.cine-embedded (2 classes) - without this rule,
+   an embedded preview's envelope wrapper never actually collapses once the
+   envelope opens, so it keeps reserving the full 100% height of the phone
+   bezel and pushes .cine-viewport (the actual scene content) out of the
+   visible, overflow-hidden frame - leaving only the flat background color
+   showing. This 3-class rule outranks both and forces the real collapse. */
+.envelope-shell.cine-embedded.envelope-shell-collapsed {
+  min-height: 0;
+  height: 0;
 }
 .cine-viewport.cine-embedded {
   min-height: 100%;
@@ -844,6 +872,14 @@ onBeforeUnmount(() => {
   padding: 7px 12px; border-radius: 999px; cursor: pointer;
 }
 .cine-focus-toggle:hover { color: #fff; border-color: rgba(255,255,255,.4); }
+
+.cine-reset-toggle {
+  position: absolute; top: 16px; left: 16px; z-index: 20;
+  background: rgba(0,0,0,.35); border: 1px solid rgba(255,255,255,.2);
+  color: rgba(247,236,243,.8); font-size: .64rem; letter-spacing: .03em;
+  padding: 7px 12px; border-radius: 999px; cursor: pointer;
+}
+.cine-reset-toggle:hover { color: #fff; border-color: rgba(255,255,255,.4); }
 
 @media (prefers-reduced-motion: reduce) {
   .cine-scene { transition: none !important; }
