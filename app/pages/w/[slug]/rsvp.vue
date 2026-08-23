@@ -16,11 +16,17 @@
       <UIcon name="i-heroicons-envelope" class="w-10 h-10 text-gold-300/60 mb-4 mx-auto" />
       <p class="text-xl font-display mb-2">RSVP isn't needed for this celebration.</p>
       <p class="text-sm text-white/60 mb-6">{{ wedding.content.brideName }} &amp; {{ wedding.content.groomName }} aren't collecting RSVPs online — this is an invitation-only card.</p>
-      <UButton :to="`/w/${slug}`" variant="soft" color="neutral" class="rounded-full">Back to invitation</UButton>
+      <UButton :to="backHref" variant="soft" color="neutral" class="rounded-full">Back to invitation</UButton>
     </div>
   </div>
 
-  <section v-else class="min-h-screen theme-surface text-white flex items-center justify-center px-4 py-12 relative overflow-x-hidden" :style="styleVars">
+  <!-- VIP guests get a page that actually belongs to the cinematic world
+       they just came from (the same layered gradient backdrop and
+       double-ring gold frame VipCinematicInvite.vue uses) instead of the
+       plain classic RSVP look - see .vip-rsvp-surface/.vip-rsvp-card below.
+       A wedding with vipEnabled=false still gets the original classic
+       treatment, unchanged. -->
+  <section v-else class="min-h-screen theme-surface text-white flex items-center justify-center px-4 py-12 relative overflow-x-hidden" :class="{ 'vip-rsvp-surface': isVip }" :style="styleVars">
     <!-- The .theme-surface class (main.css) paints the gradient directly on
          this section, which grows to fit all content (step form, then the
          much-taller Thank You + Wishes Wall screen). An absolutely-positioned
@@ -36,7 +42,11 @@
     </div>
 
     <PetalsBackground v-if="wedding.content.enablePetals !== false" :style-name="wedding.content.petalStyle" class="z-0 pointer-events-none" />
-    <CardOrnament :style="wedding.content.ornamentStyle" color="var(--theme-accent)" class="z-0 pointer-events-none" />
+    <!-- The classic ornament SVG is styled to sit around the classic
+         layout's plainer card - it clashes with the VIP double-ring frame
+         below, so VIP guests simply don't see it (the frame itself is the
+         ornament here). -->
+    <CardOrnament v-if="!isVip" :style="wedding.content.ornamentStyle" color="var(--theme-accent)" class="z-0 pointer-events-none" />
 
     <!-- Same background-music track as the Opening/Details pages -
          MusicToggle just hooks into the already-running singleton player,
@@ -47,14 +57,18 @@
 
     <UContainer class="max-w-xl w-full relative z-10 animate-fade-up">
       <div class="flex justify-center mb-6">
-        <UButton :to="`/w/${slug}`" variant="ghost" color="neutral" size="sm" icon="i-heroicons-arrow-left" aria-label="Back to Cover" class="text-white/70 hover:text-white rounded-full bg-white/5 border border-white/10 backdrop-blur-sm px-4">
+        <UButton :to="backHref" variant="ghost" color="neutral" size="sm" icon="i-heroicons-arrow-left" aria-label="Back to Cover" class="text-white/70 hover:text-white rounded-full bg-white/5 border border-white/10 backdrop-blur-sm px-4">
           {{ wedding.content.rsvpReturnButton || 'Return to Invitation' }}
         </UButton>
       </div>
 
       <div class="text-center space-y-3 mb-8">
+        <!-- VIP: same eyebrow-label-over-names shape every cinematic scene
+             uses, so this page reads as a continuation of that card rather
+             than a hand-off to a completely different, plainer page. -->
+        <p v-if="isVip" class="vip-rsvp-eyebrow">{{ wedding.content.brideName }} &amp; {{ wedding.content.groomName }}</p>
         <!-- FIXED: Injected custom Google Font styling directly into the header -->
-        <h1 class="text-5xl font-bold tracking-wide drop-shadow-md" :style="{ color: 'var(--theme-ink)', fontFamily: 'var(--theme-heading-font)' }">
+        <h1 class="text-5xl font-bold tracking-wide drop-shadow-md" :class="{ 'vip-rsvp-title': isVip }" :style="{ color: 'var(--theme-ink)', fontFamily: 'var(--theme-heading-font)' }">
           {{ wedding.content.rsvpTitle || 'RSVP' }}
         </h1>
         <div class="h-px w-24 mx-auto" :style="{ background: 'var(--theme-accent)' }" />
@@ -73,7 +87,11 @@
         class="mb-6 rounded-2xl"
       />
 
-      <div class="rounded-3xl border bg-ink-900/40 backdrop-blur-xl shadow-2xl px-6 py-10 sm:px-10" :style="{ borderColor: 'var(--theme-accent-soft)' }">
+      <div
+        class="rounded-3xl border backdrop-blur-xl shadow-2xl px-6 py-10 sm:px-10"
+        :class="isVip ? 'vip-rsvp-card' : 'bg-ink-900/40'"
+        :style="isVip ? {} : { borderColor: 'var(--theme-accent-soft)' }"
+      >
         <template v-if="!submitted">
           <div class="flex items-center justify-center gap-3 mb-10">
             <template v-for="(label, index) in steps" :key="label">
@@ -236,6 +254,19 @@ const { wedding, loading, notFound } = useWeddingBySlug(slug)
 const { themeStyleVars } = useThemes()
 const { db, isConfigured } = useFirebase()
 const toast = useToast()
+
+// Whether this wedding is on the VIP Cinematic tier - drives both the
+// visual skin below (.vip-rsvp-surface/.vip-rsvp-card) and where "Return to
+// Invitation" sends the guest. Without this, VIP guests who tap RSVP get
+// dropped onto the plain classic page with no way back into the cinematic
+// one - see the bug report this fixes.
+const isVip = computed(() => !!wedding.value?.vipEnabled)
+const backHref = computed(() => {
+  const toParam = typeof route.query.to === 'string' && route.query.to
+    ? `?to=${encodeURIComponent(route.query.to)}`
+    : ''
+  return isVip.value ? `/w/${slug}/vip${toParam}` : `/w/${slug}${toParam}`
+})
 
 const styleVars = computed(() =>
   themeStyleVars(
@@ -505,5 +536,42 @@ watch(
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background-color: rgba(255, 255, 255, 0.1);
   border-radius: 10px;
+}
+
+/* VIP Cinematic skin - deliberately matches VipCinematicInvite.vue's own
+   .cine-bg (same gradient recipe) and .cine-bordered-card (same double-ring
+   frame) so this page reads as the same designed object as the invitation
+   the guest just came from, not a hand-off to a generic form page. */
+.vip-rsvp-surface {
+  background:
+    radial-gradient(600px 500px at 30% 4%, rgba(227, 176, 74, .14), transparent 60%),
+    radial-gradient(700px 600px at 70% 22%, rgba(201, 120, 150, .10), transparent 60%),
+    radial-gradient(700px 600px at 30% 45%, rgba(120, 140, 180, .08), transparent 60%),
+    linear-gradient(175deg, var(--theme-bg-from, #2a1245), var(--theme-bg-via, #1c0f2e) 45%, var(--theme-bg-to, #150a20) 100%) !important;
+}
+
+.vip-rsvp-eyebrow {
+  font-size: .66rem;
+  letter-spacing: .32em;
+  text-transform: uppercase;
+  color: var(--theme-accent);
+  margin-bottom: 2px;
+}
+
+.vip-rsvp-title {
+  font-family: var(--theme-heading-font, 'Great Vibes', cursive) !important;
+  font-weight: 500 !important;
+  font-size: 3.25rem !important;
+  letter-spacing: normal !important;
+}
+
+.vip-rsvp-card {
+  background: linear-gradient(165deg, color-mix(in srgb, var(--theme-accent) 12%, var(--theme-bg-via, #1c0f2e)) 0%, var(--theme-bg-via, #1c0f2e) 55%, var(--theme-bg-to, #150a20) 100%);
+  border-color: transparent;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--theme-accent) 70%, transparent),
+    0 0 0 7px var(--theme-bg-to, #150a20),
+    0 0 0 8px color-mix(in srgb, var(--theme-accent) 45%, transparent),
+    0 25px 55px -20px rgba(0, 0, 0, .7);
 }
 </style>
