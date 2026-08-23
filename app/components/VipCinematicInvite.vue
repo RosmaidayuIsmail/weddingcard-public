@@ -62,6 +62,15 @@
             @keydown.enter="handleGateTap"
             @keydown.space.prevent="handleGateTap"
           >
+            <!-- Floor-standing flower pedestals flanking the gate - real
+                 set dressing, not part of the arch or the couple, so they
+                 move independently of both (their own slow sway, and their
+                 own slight settle when the gate opens). This is what
+                 actually reads as depth: several things in the frame
+                 moving at different rates instead of one flat picture
+                 being scaled. Same asset mirrored for the right side. -->
+            <img src="/vip-scene/flowers/flowers-1.webp" alt="" class="cine-gate-flora cine-gate-flora-left" />
+            <img src="/vip-scene/flowers/flowers-1.webp" alt="" class="cine-gate-flora cine-gate-flora-right" />
             <!-- The couple stand just inside the gate, hidden until it
                  opens - their own uploaded illustration if they have one,
                  otherwise a ready-made couple illustration so the gate
@@ -916,6 +925,37 @@ onBeforeUnmount(() => {
 .cine-scene-gate { padding: 0; }
 .cine-gate { position: absolute; inset: 0; overflow: hidden; }
 
+/* Flower pedestals - floor-level set dressing, behind the couple (z-index
+   0 vs the couple's 1) and behind the arch, sized and positioned like real
+   vases standing either side of an entrance. Each sways on its own slow
+   loop, independent of the 42s background drift and of anything the tap
+   triggers, and settles a little closer when the gate opens - three
+   different things in the frame moving at three different rates is what
+   reads as real depth, not just one image being scaled up. */
+.cine-gate-flora {
+  position: absolute;
+  bottom: 2%;
+  width: 30%;
+  max-width: 130px;
+  z-index: 0;
+  filter: drop-shadow(0 10px 18px rgba(0, 0, 0, .35));
+  transform-origin: 50% 100%;
+  /* rotate is its own transform property (independent of `transform`), so
+     the continuous sway below and the "settle closer on open" transform
+     transition run at the same time without one overwriting the other. */
+  rotate: -1.5deg;
+  animation: cine-flora-sway 7s ease-in-out infinite alternate;
+  transition: transform 1.6s cubic-bezier(.25, .46, .45, .94);
+}
+.cine-gate-flora-left { left: -4%; }
+.cine-gate-flora-right { right: -4%; transform: scaleX(-1); animation-delay: -3.2s; }
+.cine-gate-open .cine-gate-flora-left { transform: translateX(2%) scale(1.05); }
+.cine-gate-open .cine-gate-flora-right { transform: scaleX(-1) translateX(2%) scale(1.05); }
+@keyframes cine-flora-sway {
+  0% { rotate: -1.5deg; }
+  100% { rotate: 1.5deg; }
+}
+
 /* The couple, standing just inside the gate - sits behind the arch image
    (z-index 1 vs the arch's 2) and bottom-anchored so a tall two-person
    illustration reads as "standing on the ground" of the frame. Hidden until
@@ -1304,5 +1344,6 @@ onBeforeUnmount(() => {
   .cine-gate-spotlight, .cine-gate-name-panel { transition: none !important; }
   .cine-gate-tap-hint { animation: none !important; }
   .cine-photo-backdrop { animation: none !important; }
+  .cine-gate-flora { animation: none !important; transition: none !important; }
 }
 </style>
