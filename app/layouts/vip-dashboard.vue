@@ -73,7 +73,6 @@ const { wedding } = useMyWedding()
 const navItems = [
   { to: '/vip/dashboard/overview', label: 'Overview', icon: 'i-heroicons-squares-2x2' },
   { to: '/vip/dashboard', label: 'Wedding Details', icon: 'i-heroicons-heart' },
-  { to: '/vip/dashboard/opening', label: 'Opening Screen', icon: 'i-heroicons-envelope-open' },
   { to: '/vip/dashboard/design', label: 'Design', icon: 'i-heroicons-swatch' },
   { to: '/vip/dashboard/scenes', label: 'Your Scenes', icon: 'i-heroicons-film' },
   { to: '/vip/dashboard/flow', label: 'Event Flow', icon: 'i-heroicons-clock' },

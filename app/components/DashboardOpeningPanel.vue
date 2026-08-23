@@ -272,39 +272,16 @@
             <p class="text-xs font-semibold uppercase tracking-widest text-gold-200/70 flex items-center gap-2">
               <UIcon name="i-heroicons-device-phone-mobile" class="w-4 h-4" /> Live Preview
             </p>
-            <!-- VIP's own preview has its own Replay button baked into
-                 VipCinematicInvite itself (embedded mode) - this one only
-                 drives the classic EnvelopeIntro's previewOpened state, so
-                 it'd be a dead control here. -->
-            <UButton v-if="!vip" variant="link" color="gray" size="xs" icon="i-heroicons-arrow-path" :padded="false" @click="previewOpened = false">
+            <UButton variant="link" color="gray" size="xs" icon="i-heroicons-arrow-path" :padded="false" @click="previewOpened = false">
               Reset Preview
             </UButton>
           </div>
-          
+
           <!-- Smartphone Mockup Wrapper -->
           <div class="phone-bezel w-full max-w-[360px] shadow-2xl shrink-0">
             <div class="phone-notch"></div>
-
-            <!-- VIP: the real VipCinematicInvite component, not a classic
-                 stand-in - tapping the envelope leads straight into the
-                 actual gate-opening reveal and fly-through, same as the
-                 live guest page, instead of a flat "(Inner card revealed)"
-                 placeholder that looks identical to every classic couple's
-                 preview. Same previewWedding/embedded pattern as Your
-                 Scenes and Wedding Details - reflects the form as you
-                 type, even before Save. -->
-            <div v-if="vip" class="phone-screen hide-scrollbar relative">
-              <VipCinematicInvite
-                v-if="previewWedding"
-                :key="wedding?.id"
-                :wedding="previewWedding"
-                :rsvp-link="rsvpLink"
-                embedded
-              />
-            </div>
-
-            <!-- Classic: the actual Envelope preview component -->
-            <div v-else class="phone-screen hide-scrollbar relative bg-[#04101f]" :style="styleVars">
+            <!-- The actual Envelope preview component -->
+            <div class="phone-screen hide-scrollbar relative bg-[#04101f]" :style="styleVars">
               <!-- Pass "Guest Name" as dummy text so you can see the auto-filling -->
               <EnvelopeIntro v-model:opened="previewOpened" guest-name="Guest Name" :content="form" />
               <!-- Show something behind it so opening it looks natural -->
@@ -335,17 +312,11 @@ import { createDefaultContent, type WeddingContent } from '~/composables/useWedd
 
 import type { TextPreset } from '~/composables/useThemes'
 
-// This is the real Opening Design editor, shared by /dashboard/opening,
-// /vip/dashboard/opening (vip=true), and the /admin/wedding/[id]/opening
-// admin page. overrideWeddingId is only ever set by the admin page; couples
-// hitting their own dashboard never pass it, so useMyWedding() falls back
-// to its normal own-wedding lookup. Every editable field below (style,
-// title, greeting, background, audio, fonts) is genuinely shared - VIP's
-// own gate/fly-through reads these exact same fields via EnvelopeIntro
-// inside VipCinematicInvite - only the live preview on the right differs,
-// so a VIP couple sees their real cinematic reveal instead of a classic
-// stand-in that looks identical to every non-VIP couple's preview.
-const props = defineProps<{ overrideWeddingId?: string | null; vip?: boolean }>()
+// This is the real Opening Design editor, shared by /dashboard/opening and
+// the /admin/wedding/[id]/opening admin page. overrideWeddingId is only
+// ever set by the admin page; couples hitting their own dashboard never
+// pass it, so useMyWedding() falls back to its normal own-wedding lookup.
+const props = defineProps<{ overrideWeddingId?: string | null }>()
 const { wedding, loading, saving, updateContent } = useMyWedding(toRef(props, 'overrideWeddingId'))
 const { isConfigured: cloudinaryConfigured, uploadImage, uploadAudio } = useCloudinary()
 const { themeStyleVars, allFontOptions, allTextPresets, enabledOpeningStyles: openingStyles } = useThemes()
@@ -440,16 +411,6 @@ const styleVars = computed(() => {
     form.customFontFamily || form.fontFamily
   )
 })
-
-// VIP preview only: the couple's real wedding doc with its content swapped
-// for the live `form` state (every opening field lives in `form` already),
-// so unsaved edits show up in the real VipCinematicInvite preview exactly
-// like every other VIP dashboard page's "Live Preview" panel.
-const previewWedding = computed(() => {
-  if (!wedding.value) return null
-  return { ...wedding.value, content: { ...form } }
-})
-const rsvpLink = computed(() => (wedding.value ? `/w/${wedding.value.slug}/rsvp` : ''))
 
 function applyTranslation(preset: TextPreset) {
   form.openingTitle = preset.openingTitle

@@ -179,7 +179,6 @@ const checklistItems = computed(() => {
   const c = wedding.value.content
   return [
     { key: 'details', label: 'Fill in your wedding details', done: !!(c.brideName && c.groomName && c.dateISO && c.venueName), to: '/vip/dashboard' },
-    { key: 'opening', label: 'Design your opening screen', done: !!(c.openingTitle || c.openingGreeting || c.openingBgUrl), to: '/vip/dashboard/opening' },
     { key: 'scenes', label: 'Write your story scenes', done: (wedding.value.vipScenes?.length || 0) > 0, to: '/vip/dashboard/scenes' },
     { key: 'flow', label: 'Add your event flow', done: (wedding.value.flow?.length || 0) > 0, to: '/vip/dashboard/flow' },
     { key: 'design', label: 'Style your colors & fonts', done: !!(c.customAccent || c.fontFamily || c.customFontFamily), to: '/vip/dashboard/design' },

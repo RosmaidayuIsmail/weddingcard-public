@@ -196,24 +196,6 @@
         </UFormField>
       </div>
 
-      <!-- Opening Style moved to its own "Opening Screen" page (full text,
-           translation, and per-element font/color control - not just style
-           + picture), same shared component as the classic dashboard's
-           Opening Design page. This is just a hand-off link so it isn't
-           edited in two places. -->
-      <NuxtLink to="/vip/dashboard/opening" class="form-panel opening-linkout">
-        <div class="flex items-center gap-3 min-w-0">
-          <div class="p-2.5 rounded-lg bg-gold-400/10 border border-gold-400/20 shrink-0">
-            <UIcon name="i-heroicons-envelope-open" class="w-5 h-5" style="color: #e3b04a;" />
-          </div>
-          <div class="min-w-0">
-            <h2 class="text-base font-semibold text-white">Opening Screen</h2>
-            <p class="text-xs text-gray-400 mt-0.5">Style, background picture, wording, and translation for the first screen a guest taps to open.</p>
-          </div>
-        </div>
-        <UIcon name="i-heroicons-arrow-right" class="w-5 h-5 text-gray-500 shrink-0" />
-      </NuxtLink>
-
       <!-- Background Photo - a photo of the couple's own venue/place, used
            as a fixed backdrop behind the whole fly-through instead of the
            plain gradient. Optional. -->
