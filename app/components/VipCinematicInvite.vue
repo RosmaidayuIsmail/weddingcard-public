@@ -68,11 +68,11 @@
                  never opens on nothing. Once in place they don't walk
                  anywhere - but the "camera" itself smoothly zooms and pans
                  across them: settling wide on both, then closing in on the
-                 bride's side, then panning across to the groom's, using the
-                 illustration's own bride-left/groom-right layout. A custom
-                 uploaded photo (unknown composition) gets a much gentler,
-                 safer version of the same pan - see coupleImageIsDefault. -->
-            <div class="cine-gate-reveal" :class="{ 'cine-gate-reveal-default-art': coupleImageIsDefault }">
+                 bride's side, then panning across to the groom's, assuming
+                 the standard side-by-side bride-left/groom-right layout
+                 (see the .cine-gate-couple-zoom-* CSS for why this is
+                 applied to every couple image, not just the bundled one). -->
+            <div class="cine-gate-reveal">
               <img
                 v-if="gateCoupleImage"
                 :src="gateCoupleImage"
@@ -212,7 +212,7 @@
             <ellipse cx="170" cy="360" rx="18" ry="9" fill="var(--theme-accent)" opacity="0.14" transform="rotate(-20 170 360)"/>
           </svg>
           <div v-if="wedding.content.coupleIllustrationUrl" class="cine-bio-portrait">
-            <img :src="wedding.content.coupleIllustrationUrl" style="object-position: 80% 12%;" alt="">
+            <img :src="wedding.content.coupleIllustrationUrl" class="cine-bio-portrait-crop-bride" alt="">
           </div>
           <div class="cine-bio-text">
             <div class="cine-bio-label">{{ wedding.content.familyBrideLabel || 'Bride' }}</div>
@@ -238,7 +238,7 @@
             <circle cx="100" cy="24" r="7" fill="none" stroke="var(--theme-accent)" stroke-width="3"/>
           </svg>
           <div v-if="wedding.content.coupleIllustrationUrl" class="cine-bio-portrait">
-            <img :src="wedding.content.coupleIllustrationUrl" style="object-position: 20% 12%;" alt="">
+            <img :src="wedding.content.coupleIllustrationUrl" class="cine-bio-portrait-crop-groom" alt="">
           </div>
           <div class="cine-bio-text">
             <div class="cine-bio-label">{{ wedding.content.familyGroomLabel || 'Groom' }}</div>
@@ -315,8 +315,8 @@
               <circle cx="35" cy="10" r="10" fill="color-mix(in srgb, var(--theme-accent) 70%, white)"/>
             </svg>
             <div class="cine-frames-row">
-              <div class="cine-frame-box"><img :src="wedding.content.coupleIllustrationUrl" style="object-position: 15% 20%;" alt="" /></div>
-              <div class="cine-frame-box"><img :src="wedding.content.coupleIllustrationUrl" style="object-position: 85% 20%;" alt="" /></div>
+              <div class="cine-frame-box"><img :src="wedding.content.coupleIllustrationUrl" class="cine-frame-box-crop-bride" alt="" /></div>
+              <div class="cine-frame-box"><img :src="wedding.content.coupleIllustrationUrl" class="cine-frame-box-crop-groom" alt="" /></div>
             </div>
           </div>
         </div>
@@ -663,14 +663,6 @@ const gateCoupleImage = computed(() => {
   if (c.monogramEnabled) return ''
   return DEFAULT_COUPLE_ILLUSTRATION
 })
-// Whether the gate is showing the ready-made illustration above (known,
-// controlled bride-left/groom-right composition) versus the couple's own
-// uploaded photo (arbitrary composition - could be a close crop, a
-// landscape shot, anything). The bride/groom "camera zoom" CSS below only
-// applies its confident, tightly-cropped pan to the known default art; a
-// custom photo gets a much gentler, safe-for-anything version instead of
-// risking an ugly crop on a composition it knows nothing about.
-const coupleImageIsDefault = computed(() => gateCoupleImage.value === DEFAULT_COUPLE_ILLUSTRATION)
 const gateMonogramImage = computed(() => {
   const c = props.wedding.content
   return c.monogramEnabled && c.monogramType === 'upload' && c.monogramImageUrl ? c.monogramImageUrl : ''
@@ -959,15 +951,15 @@ onBeforeUnmount(() => {
 }
 .cine-gate-open .cine-gate-reveal-couple-image { opacity: 1; transform: translateY(0) scale(1); }
 
-/* The bride/groom "camera" pan - gentle, composition-safe values by default
-   (works on any photo the couple might upload), overridden by a tighter,
-   confident crop for the known ready-made illustration below (its exact
-   bride-left/groom-right layout is measured, so a closer zoom stays
-   well-framed instead of guessing). */
-.cine-gate-reveal-couple-image.cine-gate-couple-zoom-bride { transform: translateY(0) scale(1.14) translateX(7%); }
-.cine-gate-reveal-couple-image.cine-gate-couple-zoom-groom { transform: translateY(0) scale(1.14) translateX(-7%); }
-.cine-gate-reveal-default-art .cine-gate-reveal-couple-image.cine-gate-couple-zoom-bride { transform: translateY(0) scale(3) translateX(26%); }
-.cine-gate-reveal-default-art .cine-gate-reveal-couple-image.cine-gate-couple-zoom-groom { transform: translateY(0) scale(3) translateX(-26%); }
+/* The bride/groom "camera" pan - a real, visible close-up on each side of
+   the couple image, matching the reference video's solo-portrait beats.
+   Applied to every couple image (the bundled illustration AND a couple's
+   own upload) - almost every couple photo for this kind of invite is shot
+   the same way (standing side by side, bride on the left), so guessing that
+   composition and committing to a confident crop reads far better than a
+   barely-visible "safe" nudge that looks like nothing happened. */
+.cine-gate-reveal-couple-image.cine-gate-couple-zoom-bride { transform: translateY(0) scale(3) translateX(26%); }
+.cine-gate-reveal-couple-image.cine-gate-couple-zoom-groom { transform: translateY(0) scale(3) translateX(-26%); }
 
 /* The illustrated arch, framing the couple from in front (z-index 2) -
    at rest it's deliberately the dominant shape in the frame (wider than the
@@ -1140,11 +1132,24 @@ onBeforeUnmount(() => {
 .cine-scene-bio-mirror .cine-bio-branch { transform: scaleX(-1); }
 .cine-bio-dome { position: absolute; top: 6%; left: 50%; transform: translateX(-50%); width: 55%; opacity: .1; z-index: 0; }
 .cine-bio-portrait {
-  position: relative; z-index: 1; width: 44%; max-width: 160px; align-self: flex-end; margin-bottom: 6%;
+  position: relative; z-index: 1; width: 44%; max-width: 160px; aspect-ratio: .776; overflow: hidden;
+  align-self: flex-end; margin-bottom: 6%;
   -webkit-mask-image: linear-gradient(180deg, #000 82%, transparent 100%);
   mask-image: linear-gradient(180deg, #000 82%, transparent 100%);
 }
-.cine-bio-portrait img { width: 100%; display: block; filter: drop-shadow(0 16px 20px rgba(0,0,0,.4)); }
+/* Same solo-portrait crop language as the gate's zoom (see
+   .cine-gate-couple-zoom-* above) and .cine-frame-box-crop-* below - a real
+   close-up on just her or just him, not the two of them together shrunk
+   down, so every scene that names "the bride" or "the groom" actually shows
+   that one person instead of the couple's size/composition seeming to
+   change at random from scene to scene. */
+.cine-bio-portrait img {
+  width: 100%; height: 100%; object-fit: cover; object-position: 50% 8%; display: block;
+  transform-origin: 50% 8%;
+  filter: drop-shadow(0 16px 20px rgba(0,0,0,.4));
+}
+.cine-bio-portrait-crop-bride { transform: scale(2.2) translateX(20%); }
+.cine-bio-portrait-crop-groom { transform: scale(2.2) translateX(-20%); }
 .cine-bio-text { position: relative; z-index: 1; flex: 1; padding-bottom: 22%; }
 .cine-bio-label {
   font-family: var(--theme-heading-font, serif); font-style: italic; font-weight: 500;
@@ -1167,7 +1172,12 @@ onBeforeUnmount(() => {
   border: 6px solid color-mix(in srgb, var(--theme-accent) 45%, #cbb17f);
   box-shadow: 0 16px 28px -10px rgba(0,0,0,.5);
 }
-.cine-frame-box img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cine-frame-box img {
+  width: 100%; height: 100%; object-fit: cover; object-position: 50% 8%; display: block;
+  transform-origin: 50% 8%;
+}
+.cine-frame-box-crop-bride { transform: scale(2.2) translateX(20%); }
+.cine-frame-box-crop-groom { transform: scale(2.2) translateX(-20%); }
 
 /* Location - a mosque-dome-and-minaret skyline silhouette, matching the
    reference's closing card, with the couple's real address/date and a
