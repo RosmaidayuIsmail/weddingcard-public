@@ -65,35 +65,48 @@
             <!-- The couple stand just inside the gate, hidden until it
                  opens - their own uploaded illustration if they have one,
                  otherwise a ready-made couple illustration so the gate
-                 never opens on nothing. They never move again once in
-                 place - only the arch, spotlight and name panels around
-                 them animate from here on. -->
-            <div class="cine-gate-reveal">
-              <img v-if="gateCoupleImage" :src="gateCoupleImage" alt="" class="cine-gate-reveal-couple-image" />
+                 never opens on nothing. Once in place they don't walk
+                 anywhere - but the "camera" itself smoothly zooms and pans
+                 across them: settling wide on both, then closing in on the
+                 bride's side, then panning across to the groom's, using the
+                 illustration's own bride-left/groom-right layout. A custom
+                 uploaded photo (unknown composition) gets a much gentler,
+                 safer version of the same pan - see coupleImageIsDefault. -->
+            <div class="cine-gate-reveal" :class="{ 'cine-gate-reveal-default-art': coupleImageIsDefault }">
+              <img
+                v-if="gateCoupleImage"
+                :src="gateCoupleImage"
+                alt=""
+                class="cine-gate-reveal-couple-image"
+                :class="{
+                  'cine-gate-couple-zoom-bride': gateNamePhase === 'bride',
+                  'cine-gate-couple-zoom-groom': gateNamePhase === 'groom'
+                }"
+              />
               <img v-else-if="gateMonogramImage" :src="gateMonogramImage" alt="" class="cine-gate-reveal-image" />
               <div v-else class="cine-gate-reveal-monogram">{{ gateMonogramLabel }}</div>
             </div>
-            <!-- A soft moving spotlight standing in for the "camera" - dims
-                 evenly at rest, then leans toward the bride's side and later
-                 the groom's side while their name panel is showing, so the
-                 attention shift reads as a camera move even though nothing
-                 underneath it actually moves. -->
+            <!-- A soft vignette that leans toward whichever side the
+                 "camera" above has zoomed to - mostly there to gently hide
+                 the other person peeking in at the frame edge, not to do
+                 the movement itself anymore (the zoom above does that). -->
             <div class="cine-gate-spotlight" :class="{ 'cine-gate-spotlight-bride': gateNamePhase === 'bride', 'cine-gate-spotlight-groom': gateNamePhase === 'groom' }"></div>
             <!-- The illustrated gate arch itself - starts large and close
                  (bigger than the couple, per the couple's own note), then
                  zooms further in and fades away once tapped, as if the
                  camera flew straight through the archway opening. -->
             <img v-if="gateArchImage" :src="gateArchImage" alt="" class="cine-gate-arch" />
-            <!-- The bride's name, sliding in from the left once the couple
-                 have settled - see gateNamePhase timing in the script. -->
+            <!-- The bride's name, sliding in once the camera settles on her
+                 side - typed out letter by letter (typedBrideName in the
+                 script) rather than appearing all at once. -->
             <div class="cine-gate-name-panel cine-gate-name-panel-bride" :class="{ 'cine-gate-name-panel-visible': gateNamePhase === 'bride' }">
               <span class="cine-gate-name-label">{{ wedding.content.familyBrideLabel || 'The Bride' }}</span>
-              <span class="cine-gate-name-value">{{ wedding.content.brideName }}</span>
+              <span class="cine-gate-name-value">{{ typedBrideName }}</span>
             </div>
-            <!-- The groom's name, sliding in from the right right after. -->
+            <!-- The groom's name, right after - same typewriter treatment. -->
             <div class="cine-gate-name-panel cine-gate-name-panel-groom" :class="{ 'cine-gate-name-panel-visible': gateNamePhase === 'groom' }">
               <span class="cine-gate-name-label">{{ wedding.content.familyGroomLabel || 'The Groom' }}</span>
-              <span class="cine-gate-name-value">{{ wedding.content.groomName }}</span>
+              <span class="cine-gate-name-value">{{ typedGroomName }}</span>
             </div>
             <!-- Tap cue - lives on the gate itself instead of a separate
                  screen, so the very first thing a guest sees is already the
@@ -430,6 +443,7 @@
 // video: one fixed card, whole layouts crossfade in place, not a camera
 // moving through space).
 import { autoMonogramText, type WeddingDoc } from '~/composables/useWeddingTypes'
+import type { Ref } from 'vue'
 
 const props = withDefaults(defineProps<{
   wedding: WeddingDoc
@@ -568,22 +582,55 @@ const currentKey = computed(() => sceneKeys.value[currentIndex.value])
 const gateOpen = ref(false)
 let gateTimer: ReturnType<typeof setTimeout> | null = null
 // Once the gate has opened and the couple have settled in place, the
-// "camera" (really just a spotlight + a sliding name panel - the couple
-// image itself never moves, per the couple's explicit note) rests on the
-// bride's side, then the groom's, before handing off to the cover card.
-// Timing below is tuned so each beat has time to read: settle (see the
-// 1100ms delay), ~1.9s on her name, ~1.9s on his.
+// "camera" zooms and pans across them - wide on both, then in on the
+// bride's side, then across to the groom's - before handing off to the
+// cover card. Timing below is tuned so each beat has time to read: settle
+// first (the couple's own reveal transition finishes before the bride pan
+// starts), then a slow ~3.35s beat on her (zoom-in + a real hold once
+// settled), then the same on him - matching the unhurried, held-portrait
+// pacing of the reference video rather than rushing through both.
 const gateNamePhase = ref<'none' | 'bride' | 'groom'>('none')
 let gateNameTimer1: ReturnType<typeof setTimeout> | null = null
 let gateNameTimer2: ReturnType<typeof setTimeout> | null = null
-const GATE_SETTLE_MS = 1100
-const GATE_NAME_HOLD_MS = 1900
+const GATE_SETTLE_MS = 1700
+const GATE_NAME_HOLD_MS = 3350
+
+// A short typewriter reveal for the bride/groom names on the gate (see the
+// template above) - types out at a fixed speed rather than a fixed
+// duration, so a short name and a long one both feel the same pace instead
+// of a long name racing to keep up or a short one crawling.
+const typedBrideName = ref('')
+const typedGroomName = ref('')
+let typeTimer: ReturnType<typeof setInterval> | null = null
+const TYPE_CHARS_PER_SEC = 26
+function typeInto(target: Ref<string>, full: string) {
+  if (typeTimer) clearInterval(typeTimer)
+  target.value = ''
+  if (!full) return
+  let i = 0
+  typeTimer = setInterval(() => {
+    i += 1
+    target.value = full.slice(0, i)
+    if (i >= full.length && typeTimer) {
+      clearInterval(typeTimer)
+      typeTimer = null
+    }
+  }, 1000 / TYPE_CHARS_PER_SEC)
+}
+watch(gateNamePhase, (phase) => {
+  if (phase === 'bride') typeInto(typedBrideName, props.wedding.content.brideName || '')
+  else if (phase === 'groom') typeInto(typedGroomName, props.wedding.content.groomName || '')
+})
+
 function playGateIntro() {
   if (gateTimer) clearTimeout(gateTimer)
   if (gateNameTimer1) clearTimeout(gateNameTimer1)
   if (gateNameTimer2) clearTimeout(gateNameTimer2)
+  if (typeTimer) clearInterval(typeTimer)
   gateOpen.value = false
   gateNamePhase.value = 'none'
+  typedBrideName.value = ''
+  typedGroomName.value = ''
   gateTimer = setTimeout(() => {
     gateOpen.value = true
     gateNameTimer1 = setTimeout(() => { gateNamePhase.value = 'bride' }, GATE_SETTLE_MS)
@@ -616,6 +663,14 @@ const gateCoupleImage = computed(() => {
   if (c.monogramEnabled) return ''
   return DEFAULT_COUPLE_ILLUSTRATION
 })
+// Whether the gate is showing the ready-made illustration above (known,
+// controlled bride-left/groom-right composition) versus the couple's own
+// uploaded photo (arbitrary composition - could be a close crop, a
+// landscape shot, anything). The bride/groom "camera zoom" CSS below only
+// applies its confident, tightly-cropped pan to the known default art; a
+// custom photo gets a much gentler, safe-for-anything version instead of
+// risking an ugly crop on a composition it knows nothing about.
+const coupleImageIsDefault = computed(() => gateCoupleImage.value === DEFAULT_COUPLE_ILLUSTRATION)
 const gateMonogramImage = computed(() => {
   const c = props.wedding.content
   return c.monogramEnabled && c.monogramType === 'upload' && c.monogramImageUrl ? c.monogramImageUrl : ''
@@ -635,7 +690,7 @@ const HOLD_MS: Record<string, number> = {
   // gate is longer than the rest - it has to fit the full zoom-through-the-
   // arch beat plus both name-panel holds (see playGateIntro above) before
   // it's safe to crossfade away.
-  gate: 4800, cover: 4200, couple: 3200, greeting: 3600, brideBio: 3800, groomBio: 3800,
+  gate: 8900, cover: 4200, couple: 3200, greeting: 3600, brideBio: 3800, groomBio: 3800,
   event: 4200, doa: 3800, frames: 3400, location: 4600, gift: 3800, flow: 4000
 }
 function holdFor(key: string) {
@@ -739,6 +794,7 @@ onBeforeUnmount(() => {
   if (gateTimer) clearTimeout(gateTimer)
   if (gateNameTimer1) clearTimeout(gateNameTimer1)
   if (gateNameTimer2) clearTimeout(gateNameTimer2)
+  if (typeTimer) clearInterval(typeTimer)
 })
 </script>
 
@@ -885,18 +941,33 @@ onBeforeUnmount(() => {
    below: "should become bigger than the bride and groom first time"), then
    scales up to full size as the arch zooms past and fades, reading as the
    camera arriving at them rather than them popping into an empty spot. Once
-   at scale(1) they never move or resize again for the rest of the gate
-   beat - only the spotlight and name panels move around them. */
+   settled, the SAME transform property keeps animating as gateNamePhase
+   moves on to 'bride' then 'groom' (see .cine-gate-couple-zoom-* below) -
+   the couple never walk anywhere, but the camera smoothly zooms and pans
+   across the one illustration to close in on each of them in turn, the way
+   the reference video does it, rather than a static image with a label
+   sliding past it. */
 .cine-gate-reveal-couple-image {
   max-width: 60%;
   max-height: 68%;
   object-fit: contain;
+  transform-origin: 50% 28%;
   opacity: 0;
   transform: translateY(10px) scale(.62);
-  transition: opacity .8s ease .35s, transform 1.15s cubic-bezier(.22, .61, .36, 1) .35s;
+  transition: opacity .8s ease .35s, transform 1.3s cubic-bezier(.25, .46, .45, .94) .35s;
   filter: drop-shadow(0 14px 24px rgba(0, 0, 0, .4));
 }
 .cine-gate-open .cine-gate-reveal-couple-image { opacity: 1; transform: translateY(0) scale(1); }
+
+/* The bride/groom "camera" pan - gentle, composition-safe values by default
+   (works on any photo the couple might upload), overridden by a tighter,
+   confident crop for the known ready-made illustration below (its exact
+   bride-left/groom-right layout is measured, so a closer zoom stays
+   well-framed instead of guessing). */
+.cine-gate-reveal-couple-image.cine-gate-couple-zoom-bride { transform: translateY(0) scale(1.14) translateX(7%); }
+.cine-gate-reveal-couple-image.cine-gate-couple-zoom-groom { transform: translateY(0) scale(1.14) translateX(-7%); }
+.cine-gate-reveal-default-art .cine-gate-reveal-couple-image.cine-gate-couple-zoom-bride { transform: translateY(0) scale(3) translateX(26%); }
+.cine-gate-reveal-default-art .cine-gate-reveal-couple-image.cine-gate-couple-zoom-groom { transform: translateY(0) scale(3) translateX(-26%); }
 
 /* The illustrated arch, framing the couple from in front (z-index 2) -
    at rest it's deliberately the dominant shape in the frame (wider than the
@@ -983,7 +1054,7 @@ onBeforeUnmount(() => {
    before the next one takes over. */
 .cine-gate-name-panel {
   position: absolute;
-  top: 46%;
+  top: 64%;
   z-index: 4;
   max-width: 46%;
   display: flex;
