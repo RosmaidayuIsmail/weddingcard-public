@@ -26,6 +26,18 @@
       <div class="cine-bg" :class="{ 'cine-bg-scrim': !!wedding.vipBackgroundImageUrl }"></div>
       <PetalsBackground v-if="wedding.content.enablePetals !== false" :style-name="wedding.content.petalStyle" class="cine-petals" />
 
+      <!-- The couple stays on screen the whole way through - once the gate
+           reveals them they never fully disappear behind a scene the way
+           the old crossfade-in-place engine hid them. They sit anchored
+           here, behind the stage, in full focus during the cover/couple/
+           closing beats and softly present (dimmed, blurred) behind every
+           other scene's translucent card - so the camera reads as moving
+           left/right/up/down AROUND the couple to reveal each detail,
+           never as replacing them outright. -->
+      <div v-if="gateCoupleImage && opened" class="cine-couple-anchor" :class="{ 'cine-couple-anchor-forward': isCoupleForwardScene }">
+        <img :src="gateCoupleImage" alt="" />
+      </div>
+
       <!-- Soft smoke/mist wipe that puffs across the screen at the start of
            each scene change (see puffMist() below). -->
       <div class="cine-mist" ref="mistEl"></div>
@@ -75,7 +87,7 @@
 
         <!-- SCENE: cover - a bordered keepsake card: eyebrow, names, date,
              address. Matches the reference invitation's opening card. -->
-        <div class="cine-scene cine-scene-frame" :class="{ 'cine-scene-active': currentKey === 'cover' }">
+        <div class="cine-scene cine-scene-frame cine-dir-zoom" :class="{ 'cine-scene-active': currentKey === 'cover' }">
           <div class="cine-bordered-card">
             <svg class="cine-corner cine-corner-tl" viewBox="0 0 60 60" aria-hidden="true">
               <path d="M4,2 C24,6 42,18 54,36" fill="none" stroke="var(--theme-accent)" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
@@ -113,7 +125,7 @@
         <!-- SCENE: couple - the same bordered card, this time holding only
              the couple's own photo, no text at all - matching the reference
              exactly. Only appears once a photo is uploaded. -->
-        <div v-if="wedding.content.coupleIllustrationUrl" class="cine-scene cine-scene-frame" :class="{ 'cine-scene-active': currentKey === 'couple' }">
+        <div v-if="wedding.content.coupleIllustrationUrl" class="cine-scene cine-scene-frame cine-dir-zoom" :class="{ 'cine-scene-active': currentKey === 'couple' }">
           <div class="cine-bordered-card cine-bordered-card-photo">
             <svg class="cine-corner cine-corner-tl" viewBox="0 0 60 60" aria-hidden="true">
               <path d="M4,2 C24,6 42,18 54,36" fill="none" stroke="var(--theme-accent)" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
@@ -144,7 +156,7 @@
         </div>
 
         <!-- SCENE: greeting - the couple's own words to their guests. -->
-        <div class="cine-scene cine-scene-flat" :class="{ 'cine-scene-active': currentKey === 'greeting' }">
+        <div class="cine-scene cine-scene-flat cine-dir-top" :class="{ 'cine-scene-active': currentKey === 'greeting' }">
           <div class="cine-card">
             <div class="cine-eyebrow">{{ wedding.content.innerGreeting || "You're Invited" }}</div>
             <p class="cine-story-text">{{ wedding.content.story }}</p>
@@ -157,7 +169,7 @@
              parents on the other, a flat themed background with no border -
              matching the reference's solo bride card exactly. Optional -
              skipped when both fields are empty. -->
-        <div v-if="wedding.content.brideFullName || wedding.content.brideParents" class="cine-scene cine-scene-bio" :class="{ 'cine-scene-active': currentKey === 'brideBio' }">
+        <div v-if="wedding.content.brideFullName || wedding.content.brideParents" class="cine-scene cine-scene-bio cine-dir-left" :class="{ 'cine-scene-active': currentKey === 'brideBio' }">
           <svg class="cine-bio-branch" viewBox="0 0 200 400" preserveAspectRatio="none" aria-hidden="true">
             <path d="M-10,20 C40,60 20,140 90,180 C160,220 130,300 190,410" fill="none" stroke="var(--theme-accent)" stroke-width="2" opacity="0.16"/>
             <ellipse cx="55" cy="88" rx="16" ry="8" fill="var(--theme-accent)" opacity="0.14" transform="rotate(35 55 88)"/>
@@ -178,7 +190,7 @@
         <!-- SCENE: groom biodata - mirrored (see brideBio above), plus a
              faint mosque-dome watermark, matching the reference's groom
              card. Optional - skipped when both fields are empty. -->
-        <div v-if="wedding.content.groomFullName || wedding.content.groomParents" class="cine-scene cine-scene-bio cine-scene-bio-mirror" :class="{ 'cine-scene-active': currentKey === 'groomBio' }">
+        <div v-if="wedding.content.groomFullName || wedding.content.groomParents" class="cine-scene cine-scene-bio cine-scene-bio-mirror cine-dir-right" :class="{ 'cine-scene-active': currentKey === 'groomBio' }">
           <svg class="cine-bio-branch" viewBox="0 0 200 400" preserveAspectRatio="none" aria-hidden="true">
             <path d="M-10,20 C40,60 20,140 90,180 C160,220 130,300 190,410" fill="none" stroke="var(--theme-accent)" stroke-width="2" opacity="0.16"/>
             <ellipse cx="55" cy="88" rx="16" ry="8" fill="var(--theme-accent)" opacity="0.14" transform="rotate(35 55 88)"/>
@@ -206,10 +218,10 @@
              VipScenesPanel.vue). Rendered generically: an optional image,
              a title, and body text - whatever the couple wrote. -->
         <div
-          v-for="scene in vipScenes"
+          v-for="(scene, sceneIndex) in vipScenes"
           :key="scene.id"
           class="cine-scene cine-scene-flat"
-          :class="{ 'cine-scene-active': currentKey === ('vip-' + scene.id) }"
+          :class="[vipSceneDirClass(sceneIndex), { 'cine-scene-active': currentKey === ('vip-' + scene.id) }]"
         >
           <div class="cine-card">
             <img v-if="scene.imageUrl" :src="scene.imageUrl" alt="" class="cine-scene-img">
@@ -219,7 +231,7 @@
         </div>
 
         <!-- SCENE: event details -->
-        <div class="cine-scene cine-scene-flat" :class="{ 'cine-scene-active': currentKey === 'event' }">
+        <div class="cine-scene cine-scene-flat cine-dir-top-left" :class="{ 'cine-scene-active': currentKey === 'event' }">
           <div class="cine-card">
             <h3>{{ wedding.content.detailsHeading || 'The Details' }}</h3>
             <p v-if="wedding.content.timeLabel">{{ wedding.content.timeLabel }}</p>
@@ -247,7 +259,7 @@
 
         <!-- SCENE: doa (prayer) - optional, off by default (see enableDoa on
              the Wedding Details page). -->
-        <div v-if="wedding.content.enableDoa" class="cine-scene cine-scene-flat" :class="{ 'cine-scene-active': currentKey === 'doa' }">
+        <div v-if="wedding.content.enableDoa" class="cine-scene cine-scene-flat cine-dir-top-right" :class="{ 'cine-scene-active': currentKey === 'doa' }">
           <div class="cine-card cine-card-doa">
             <svg class="cine-doa-motif" viewBox="0 0 46 30" aria-hidden="true">
               <path d="M17,15 A9,9 0 1 0 17,-3 A7,7 0 1 1 17,15 Z" fill="var(--theme-accent)" transform="translate(0,9)"/>
@@ -262,7 +274,7 @@
              separate individual bride/groom upload in the VIP dashboard
              yet), cropped to two focal points so each frame reads as its
              own portrait. -->
-        <div v-if="wedding.content.coupleIllustrationUrl" class="cine-scene cine-scene-flat" :class="{ 'cine-scene-active': currentKey === 'frames' }">
+        <div v-if="wedding.content.coupleIllustrationUrl" class="cine-scene cine-scene-flat cine-dir-bottom-left" :class="{ 'cine-scene-active': currentKey === 'frames' }">
           <div class="cine-frames">
             <svg class="cine-frames-ribbon" viewBox="0 0 70 44" aria-hidden="true">
               <path d="M35,10 L15,40 L25,34 L35,42 L45,34 L55,40 Z" fill="var(--theme-accent)"/>
@@ -279,7 +291,7 @@
              matching the reference's closing/location card, plus a real
              scannable QR code (the reference is a generic template with no
              real functionality behind it - guests actually need this). -->
-        <div v-if="wedding.content.mapUrl" class="cine-scene cine-scene-location" :class="{ 'cine-scene-active': currentKey === 'location' }">
+        <div v-if="wedding.content.mapUrl" class="cine-scene cine-scene-location cine-dir-bottom" :class="{ 'cine-scene-active': currentKey === 'location' }">
           <div class="cine-location-sky"></div>
           <svg class="cine-location-skyline" viewBox="0 0 400 180" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
             <defs>
@@ -308,7 +320,7 @@
         </div>
 
         <!-- SCENE: gift -->
-        <div v-if="hasGift" class="cine-scene cine-scene-flat" :class="{ 'cine-scene-active': currentKey === 'gift' }">
+        <div v-if="hasGift" class="cine-scene cine-scene-flat cine-dir-bottom-right" :class="{ 'cine-scene-active': currentKey === 'gift' }">
           <div class="cine-card">
             <h3>A Gift of Love</h3>
             <GiftCard :banks="[wedding.content.bank, wedding.content.bank2]" />
@@ -316,7 +328,7 @@
         </div>
 
         <!-- SCENE: flow -->
-        <div v-if="wedding.flow?.length" class="cine-scene cine-scene-flat" :class="{ 'cine-scene-active': currentKey === 'flow' }">
+        <div v-if="wedding.flow?.length" class="cine-scene cine-scene-flat cine-dir-left" :class="{ 'cine-scene-active': currentKey === 'flow' }">
           <div class="cine-card">
             <h3>{{ wedding.content.eventFlowHeading || 'Event Flow' }}</h3>
             <FlowTimeline :items="wedding.flow" />
@@ -324,7 +336,7 @@
         </div>
 
         <!-- SCENE: closing / RSVP - the sequence settles here. -->
-        <div class="cine-scene cine-scene-frame" :class="{ 'cine-scene-active': currentKey === 'closing' }">
+        <div class="cine-scene cine-scene-frame cine-dir-zoom" :class="{ 'cine-scene-active': currentKey === 'closing' }">
           <div class="cine-bordered-card cine-bordered-card-wide">
             <svg class="cine-corner cine-corner-tl" viewBox="0 0 60 60" aria-hidden="true">
               <path d="M4,2 C24,6 42,18 54,36" fill="none" stroke="var(--theme-accent)" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
@@ -494,6 +506,15 @@ const countdown = computed(() => {
 // automatic data-bound scenes (event/location/gift/flow/closing) below.
 const vipScenes = computed(() => props.wedding.vipScenes || [])
 
+// The couple's own custom story scenes don't have one natural camera side
+// the way bride/groom bio do, so they cycle through the four diagonals in
+// order - still a distinct, deliberate camera move per scene, never the
+// old uniform in-place fade.
+const VIP_SCENE_DIRS = ['cine-dir-top-left', 'cine-dir-top-right', 'cine-dir-bottom-left', 'cine-dir-bottom-right']
+function vipSceneDirClass(index: number) {
+  return VIP_SCENE_DIRS[index % VIP_SCENE_DIRS.length]
+}
+
 // ---- scene sequence ----
 // The full ordered list of possible scenes, each with the same visibility
 // rule as its `v-if` in the template above (kept side by side on purpose -
@@ -523,6 +544,13 @@ const sceneDefs = computed(() => {
 const sceneKeys = computed(() => sceneDefs.value.map((d) => d.key))
 const currentIndex = ref(0)
 const currentKey = computed(() => sceneKeys.value[currentIndex.value])
+
+// The couple-anchor layer (see the template above) comes to full focus on
+// these three beats - the cover (their names, just after the gate), the
+// dedicated couple photo scene, and the closing RSVP card - and stays a
+// softer, blurred presence behind every other scene in between.
+const COUPLE_FORWARD_KEYS = new Set(['cover', 'couple', 'closing'])
+const isCoupleForwardScene = computed(() => COUPLE_FORWARD_KEYS.has(currentKey.value))
 
 // SCENE: gate - see the template below. Doors start closed and swing open
 // a beat later - playGateIntro() arms that beat and is called explicitly
@@ -729,10 +757,45 @@ onBeforeUnmount(() => {
 }
 .cine-mist-active { opacity: 1; }
 
+/* The persistent couple anchor - see the template comment above. Sits
+   behind .cine-stage (z-index 1, stage is 2) so every scene's own content
+   still reads clearly on top; because most scene cards are a narrow
+   translucent panel with margin around it (.cine-card, .cine-bordered-card)
+   rather than a full-bleed opaque background, the couple stays visibly
+   present in that margin and glows softly through the card's own
+   backdrop-filter blur, instead of vanishing the moment another scene
+   takes over. */
+.cine-couple-anchor {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 6%;
+  opacity: .28;
+  filter: blur(5px) brightness(.75);
+  transition: opacity 1.4s ease, filter 1.4s ease;
+  pointer-events: none;
+}
+.cine-couple-anchor-forward {
+  opacity: 1;
+  filter: blur(0) brightness(1);
+}
+.cine-couple-anchor img {
+  max-width: 66%;
+  max-height: 74%;
+  object-fit: contain;
+  filter: drop-shadow(0 14px 28px rgba(0, 0, 0, .5));
+}
+
 /* The stage: every scene is a full-frame layer stacked here, one active at
-   a time - see currentKey in the script. This replaces the old
-   camera-pans-across-a-canvas engine: now each scene is its own fixed,
-   deliberately composed layout that simply crossfades in and out in place. */
+   a time - see currentKey in the script. Each scene carries its own
+   cine-dir-* class (assigned per scene below) so the crossfade reads as a
+   real camera glide to a specific side of the couple - left for her story,
+   right for his, up for the greeting, diagonals for the rest - rather than
+   a single uniform in-place fade. See the cine-dir-* rules further down for
+   the actual per-direction offsets. */
 .cine-stage { position: absolute; inset: 0; z-index: 2; }
 
 .cine-scene {
@@ -744,16 +807,41 @@ onBeforeUnmount(() => {
   padding: 40px 24px;
   opacity: 0;
   pointer-events: none;
-  /* A scene that isn't active sits very slightly drifted/zoomed - when it
-     becomes active it settles into place, and the scene it replaces drifts
-     the opposite way as it fades - so every change reads as the camera
-     gliding to the next moment instead of a flat cut, matching the
-     reference videos' drifting camera instead of a plain crossfade. */
-  transform: scale(1.035) translateX(2.4%);
-  transition: opacity 1s ease, transform 1.4s cubic-bezier(.22, .61, .36, 1);
+  /* Inactive scenes sit softly blurred, not just faded - so a scene that
+     just left (or is about to arrive) reads as "glimpsed through the haze
+     as the camera moves past" rather than snapping to fully invisible. The
+     cine-dir-* class below adds the actual directional offset on top of
+     this shared blur+fade. */
+  filter: blur(16px);
+  transition: opacity 1.1s ease, transform 1.6s cubic-bezier(.22, .61, .36, 1), filter 1.3s ease;
 }
-.cine-scene-active { opacity: 1; pointer-events: auto; z-index: 1; transform: scale(1) translateX(0); }
+.cine-scene-active {
+  opacity: 1;
+  pointer-events: auto;
+  z-index: 1;
+  filter: blur(0);
+  transform: scale(1) translate(0, 0) !important;
+}
 .cine-scene-flat { flex-direction: column; }
+
+/* Per-scene camera direction - the offset (and gentle zoom) an inactive
+   scene rests at, guarded with :not(.cine-scene-active) so the active
+   state's plain transform above always wins outright regardless of source
+   order (same 2-class-beats-1-class lesson as the envelope-collapse fix:
+   without the guard, "cine-scene cine-dir-left" would outrank a bare
+   "cine-scene-active" rule). "Zoom" scenes (cover/couple/closing) pull back
+   slightly instead of sliding sideways - closer to a push-in/pull-out than
+   a pan, for the moments meant to read as "with the couple" rather than
+   "away exploring a detail". */
+.cine-dir-top:not(.cine-scene-active) { transform: scale(1.06) translateY(-9%); }
+.cine-dir-bottom:not(.cine-scene-active) { transform: scale(1.06) translateY(9%); }
+.cine-dir-left:not(.cine-scene-active) { transform: scale(1.06) translateX(-10%); }
+.cine-dir-right:not(.cine-scene-active) { transform: scale(1.06) translateX(10%); }
+.cine-dir-top-left:not(.cine-scene-active) { transform: scale(1.06) translate(-8%, -8%); }
+.cine-dir-top-right:not(.cine-scene-active) { transform: scale(1.06) translate(8%, -8%); }
+.cine-dir-bottom-left:not(.cine-scene-active) { transform: scale(1.06) translate(-8%, 8%); }
+.cine-dir-bottom-right:not(.cine-scene-active) { transform: scale(1.06) translate(8%, 8%); }
+.cine-dir-zoom:not(.cine-scene-active) { transform: scale(1.16); }
 
 /* SCENE: gate - a closed double door filling the whole frame (no padding,
    unlike every other scene) that slides open to the sides, revealing the
@@ -1067,5 +1155,6 @@ onBeforeUnmount(() => {
   .cine-scene { transition: none !important; }
   .cine-gate-panel, .cine-gate-reveal, .cine-gate-reveal-couple-image { transition: none !important; }
   .cine-gate-tap-hint { animation: none !important; }
+  .cine-couple-anchor { transition: none !important; }
 }
 </style>

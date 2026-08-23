@@ -31,6 +31,30 @@
         </div>
       </div>
 
+      <!-- Template picker - the whole cinematic engine (gate, camera moves,
+           the couple staying on screen behind every scene) is a pre-built
+           template rather than something a couple assembles by hand, per
+           how VIP is meant to work: everything is already designed, they
+           just add their own words, photos, and story beats on top of it.
+           Only one template exists today, shown selected - the card is
+           built to hold more later without changing how this page works. -->
+      <div class="template-picker">
+        <p class="template-picker-label">Scene Template</p>
+        <div class="template-card template-card-active">
+          <div class="template-card-thumb">
+            <UIcon name="i-heroicons-film" class="w-6 h-6" style="color: #e3b04a;" />
+          </div>
+          <div class="template-card-body">
+            <div class="template-card-title-row">
+              <h3>Template 1 · Camera Reveal</h3>
+              <span class="template-card-badge"><UIcon name="i-heroicons-check-circle" class="w-3.5 h-3.5" /> Selected</span>
+            </div>
+            <p>Guests tap through a closed gate onto you both, standing together - and you stay on screen the whole way through as the camera glides left, right, and around you to reveal each detail, instead of cutting between separate cards.</p>
+          </div>
+        </div>
+        <p class="template-picker-note">More templates are on the way. Your scenes below plug into whichever template is selected - the template controls the look and camera; you control the words, photos, and order.</p>
+      </div>
+
       <div class="flex flex-col lg:flex-row gap-8 xl:gap-10">
 
         <!-- Left: editing -->
@@ -306,6 +330,76 @@ useSeoMeta({ title: 'Your Scenes — VIP Cinematic' })
   background: #111827;
   border: 1px solid #374151;
   box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5);
+}
+.template-picker { margin-bottom: 1.75rem; }
+.template-picker-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+  margin-bottom: 0.6rem;
+}
+.template-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  border-radius: 1rem;
+  padding: 1.1rem 1.25rem;
+  background: #111827;
+  border: 1px solid #374151;
+}
+.template-card-active {
+  border-color: rgba(212, 160, 23, 0.5);
+  background: linear-gradient(135deg, rgba(212, 160, 23, 0.1), #111827 60%);
+  box-shadow: 0 0 0 1px rgba(212, 160, 23, 0.15);
+}
+.template-card-thumb {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(212, 160, 23, 0.12);
+  border: 1px solid rgba(212, 160, 23, 0.25);
+}
+.template-card-body { min-width: 0; }
+.template-card-title-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-bottom: 0.35rem;
+}
+.template-card-title-row h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: white;
+}
+.template-card-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #f3ddaa;
+  background: rgba(212, 160, 23, 0.15);
+  border-radius: 9999px;
+  padding: 0.15rem 0.6rem;
+}
+.template-card-body p {
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.55);
+}
+.template-picker-note {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.35);
+  margin-top: 0.6rem;
 }
 .camera-controls {
   border-radius: 0.85rem;
