@@ -228,11 +228,20 @@
             <img :src="backgroundImageUrl" class="w-full h-full object-cover" />
           </div>
           <input ref="backgroundImageInput" type="file" accept="image/*" class="hidden" @change="handleBackgroundImageSelect">
-          <div class="flex flex-wrap gap-2">
-            <UButton size="sm" variant="soft" color="gray" icon="i-heroicons-photo" :loading="uploadingBackground" :disabled="!cloudinaryConfigured" @click="backgroundImageInput?.click()">
-              {{ backgroundImageUrl ? 'Change Photo' : 'Upload Photo' }}
-            </UButton>
-            <UButton v-if="backgroundImageUrl" size="sm" variant="ghost" color="error" icon="i-heroicons-trash" @click="backgroundImageUrl = ''" />
+          <div class="flex flex-col gap-2">
+            <div class="flex flex-wrap gap-2">
+              <UButton size="sm" variant="soft" color="gray" icon="i-heroicons-photo" :loading="uploadingBackground" :disabled="!cloudinaryConfigured" @click="backgroundImageInput?.click()">
+                {{ backgroundImageUrl ? 'Change Photo' : 'Upload Photo' }}
+              </UButton>
+              <UButton v-if="backgroundImageUrl" size="sm" variant="ghost" color="error" icon="i-heroicons-trash" @click="backgroundImageUrl = ''" />
+            </div>
+            <!-- Most guests view this on a phone (a few on a laptop too), and
+                 the fly-through fills the whole screen behind every scene -
+                 so a tall portrait photo close to an actual phone screen's
+                 proportions crops the least and looks sharpest on both. -->
+            <p class="text-[11px] text-gray-500 leading-relaxed max-w-xs">
+              Best results: a tall (portrait) photo, at least 1080×1920px, under 5MB. It's cropped to fill the screen behind every scene, so avoid important details near the very top or bottom edges.
+            </p>
           </div>
         </div>
       </div>
