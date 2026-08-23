@@ -328,7 +328,13 @@
       <div class="cine-hud">
         <span v-for="(key, i) in sceneKeys" :key="key" class="cine-dot" :class="{ on: i === currentIndex }"></span>
       </div>
-      <button v-if="currentIndex < sceneKeys.length - 1" type="button" class="cine-skip" @click="skipToEnd">Skip to RSVP &rarr;</button>
+      <button v-if="hasFocus && !playingFull" type="button" class="cine-focus-toggle" @click="playFull">
+        &#9654; Play full fly-through
+      </button>
+      <button v-else-if="hasFocus && playingFull" type="button" class="cine-focus-toggle" @click="backToFocusScene">
+        &#9208; Back to this scene
+      </button>
+      <button v-else-if="!hasFocus && currentIndex < sceneKeys.length - 1" type="button" class="cine-skip" @click="skipToEnd">Skip to RSVP &rarr;</button>
     </div>
   </div>
 </template>
@@ -361,9 +367,23 @@ const props = withDefaults(defineProps<{
    * the live guest page, not a second reimplementation to keep in sync.
    */
   embedded?: boolean
+  /**
+   * When set on an embedded dashboard preview, the preview skips the
+   * tap-to-open envelope entirely and holds on this one scene (by its
+   * currentKey value, e.g. 'gift', 'flow', 'location') instead of playing
+   * through the whole fly-through - so the Gift page's preview actually
+   * shows the Gift scene, the Flow page's shows Flow, etc., rather than
+   * every dashboard page looking like the same autoplaying loop from the
+   * cover. A "Play full fly-through" button lets the couple still watch
+   * the whole thing from here without leaving the page. Ignored (no
+   * effect) when embedded is false - the real guest page always plays the
+   * full sequence from the envelope.
+   */
+  focusScene?: string
 }>(), {
   guestName: '',
-  embedded: false
+  embedded: false,
+  focusScene: ''
 })
 
 const { themeStyleVars, customCode } = useThemes()
@@ -381,14 +401,19 @@ const styleVars = computed(() =>
   )
 )
 
-const opened = ref(false)
+// Embedded dashboard previews skip the tap-to-open envelope entirely and
+// start already "opened" - a couple checking their Gift or Flow editor
+// wants to see the actual scene content immediately, not a closed envelope
+// they have to remember to tap. The real guest page (embedded=false) always
+// starts closed, same tap-to-open ceremony as before.
+const opened = ref(props.embedded)
 
 // EnvelopeIntro's own wrapper reserves a full 100dvh so the closed envelope
 // has room to sit and its open animation has room to play. envelopeCollapsed
 // flips once its slowest close animation has had time to finish, and the
 // now-empty wrapper collapses out of the way so .cine-viewport takes over
 // the screen immediately instead of leaving a blank block to scroll past.
-const envelopeCollapsed = ref(false)
+const envelopeCollapsed = ref(props.embedded)
 watch(opened, (value) => {
   if (!value) return
   setTimeout(() => { envelopeCollapsed.value = true }, 2000)
@@ -504,17 +529,49 @@ function skipToEnd() {
   goTo(sceneKeys.value.length - 1, true)
 }
 
+// focusScene support (embedded dashboard previews only - see the prop doc
+// above). hasFocus is false whenever the couple hasn't filled in whatever
+// makes that scene appear yet (e.g. the Gift page before any bank details
+// are saved) - in that case there's nothing to hold on, so it falls back to
+// the normal full autoplay below instead of showing a blank/missing scene.
+const focusIndex = computed(() => (props.focusScene ? sceneKeys.value.indexOf(props.focusScene) : -1))
+const hasFocus = computed(() => props.embedded && focusIndex.value >= 0)
+const playingFull = ref(false)
+function showFocusScene() {
+  if (timer) clearTimeout(timer)
+  currentIndex.value = focusIndex.value
+}
+function playFull() {
+  playingFull.value = true
+  goTo(0, true)
+}
+function backToFocusScene() {
+  playingFull.value = false
+  showFocusScene()
+}
+// Re-focus automatically the moment this scene becomes available - e.g. the
+// Gift page's preview switches from the full autoplay loop to holding on
+// the actual Gift scene as soon as the couple's typed enough to make it
+// appear, without needing to reopen the page.
+watch(hasFocus, (has) => {
+  if (has && !playingFull.value) showFocusScene()
+})
+
 const reduceMotion = ref(false)
 watch(opened, async (value) => {
   if (!value) return
   await nextTick()
+  if (hasFocus.value && !playingFull.value) {
+    showFocusScene()
+    return
+  }
   reduceMotion.value = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   if (reduceMotion.value) {
     goTo(sceneKeys.value.length - 1, true)
   } else {
     goTo(0, true)
   }
-})
+}, { immediate: true })
 
 onBeforeUnmount(() => {
   if (timer) clearTimeout(timer)
@@ -779,6 +836,14 @@ onBeforeUnmount(() => {
   padding: 8px 14px; border-radius: 999px; cursor: pointer;
 }
 .cine-skip:hover { color: #fff; border-color: rgba(255,255,255,.4); }
+
+.cine-focus-toggle {
+  position: absolute; top: 16px; right: 16px; z-index: 20;
+  background: rgba(0,0,0,.35); border: 1px solid rgba(255,255,255,.2);
+  color: rgba(247,236,243,.8); font-size: .64rem; letter-spacing: .03em;
+  padding: 7px 12px; border-radius: 999px; cursor: pointer;
+}
+.cine-focus-toggle:hover { color: #fff; border-color: rgba(255,255,255,.4); }
 
 @media (prefers-reduced-motion: reduce) {
   .cine-scene { transition: none !important; }

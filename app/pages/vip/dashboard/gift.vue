@@ -156,6 +156,7 @@
                 :wedding="previewWedding"
                 :rsvp-link="rsvpLink"
                 embedded
+                focus-scene="gift"
               />
             </div>
           </div>

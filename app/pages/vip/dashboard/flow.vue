@@ -145,6 +145,7 @@
                 :wedding="previewWedding"
                 :rsvp-link="rsvpLink"
                 embedded
+                focus-scene="flow"
               />
             </div>
           </div>
