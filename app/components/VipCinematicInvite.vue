@@ -41,8 +41,9 @@
              fly-through just cutting straight to a static card. -->
         <div class="cine-scene cine-scene-gate" :class="{ 'cine-scene-active': currentKey === 'gate' }">
           <div class="cine-gate" :class="{ 'cine-gate-open': gateOpen }">
-            <div class="cine-gate-reveal">
-              <img v-if="gateMonogramImage" :src="gateMonogramImage" alt="" class="cine-gate-reveal-image" />
+            <div class="cine-gate-reveal" :class="{ 'cine-gate-reveal-couple': gateCoupleImage }">
+              <img v-if="gateCoupleImage" :src="gateCoupleImage" alt="" class="cine-gate-reveal-couple-image" />
+              <img v-else-if="gateMonogramImage" :src="gateMonogramImage" alt="" class="cine-gate-reveal-image" />
               <div v-else class="cine-gate-reveal-monogram">{{ gateMonogramLabel }}</div>
             </div>
             <div class="cine-gate-panel cine-gate-panel-left">
@@ -529,9 +530,12 @@ function playGateIntro() {
   gateTimer = setTimeout(() => { gateOpen.value = true }, 450)
 }
 
-// What's revealed once the gate opens - the couple's own monogram setup
-// (Wedding Details > Monogram) when they've turned it on, otherwise a
-// simple auto "B & G" initials mark so the gate never opens on nothing.
+// What's revealed once the gate opens - the couple's own illustrated
+// portrait (Wedding Details > Couple Illustration) takes priority when set,
+// so the doors open onto the actual bride and groom standing there. Falls
+// back to their monogram setup, then a simple auto "B & G" mark so the gate
+// never opens on nothing.
+const gateCoupleImage = computed(() => props.wedding.content.coupleIllustrationUrl || '')
 const gateMonogramImage = computed(() => {
   const c = props.wedding.content
   return c.monogramEnabled && c.monogramType === 'upload' && c.monogramImageUrl ? c.monogramImageUrl : ''
@@ -799,6 +803,30 @@ onBeforeUnmount(() => {
   filter: drop-shadow(0 4px 16px rgba(0, 0, 0, .4));
 }
 
+/* The couple's own illustration standing in the doorway - bottom-anchored
+   and sized much larger than the monogram mark, since a tall two-person
+   illustration reads best "standing on the ground" of the frame rather than
+   floating centered. Overrides the shared .cine-gate-reveal container's
+   center-scale-pop treatment (two classes beats one, so this wins outright
+   regardless of source order - see the envelope-collapse fix above for why
+   that matters here). */
+.cine-gate-reveal.cine-gate-reveal-couple {
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 7%;
+  transform: none;
+}
+.cine-gate-reveal-couple-image {
+  max-width: 78%;
+  max-height: 86%;
+  object-fit: contain;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity .8s ease .3s, transform .9s cubic-bezier(.22, .61, .36, 1) .3s;
+  filter: drop-shadow(0 12px 26px rgba(0, 0, 0, .45));
+}
+.cine-gate-open .cine-gate-reveal-couple-image { opacity: 1; transform: translateY(0); }
+
 .cine-gate-panel {
   position: absolute;
   top: 0;
@@ -1017,6 +1045,6 @@ onBeforeUnmount(() => {
 
 @media (prefers-reduced-motion: reduce) {
   .cine-scene { transition: none !important; }
-  .cine-gate-panel, .cine-gate-reveal { transition: none !important; }
+  .cine-gate-panel, .cine-gate-reveal, .cine-gate-reveal-couple-image { transition: none !important; }
 }
 </style>
