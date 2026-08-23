@@ -42,17 +42,17 @@
         <p class="template-picker-label">Scene Template</p>
         <div class="template-card template-card-active">
           <div class="template-card-thumb">
-            <UIcon name="i-heroicons-film" class="w-6 h-6" style="color: #e3b04a;" />
+            <UIcon name="i-heroicons-sparkles" class="w-6 h-6" style="color: #e3b04a;" />
           </div>
           <div class="template-card-body">
             <div class="template-card-title-row">
-              <h3>Template 1 · Camera Reveal</h3>
+              <h3>Template 1 · Illustrated Gate</h3>
               <span class="template-card-badge"><UIcon name="i-heroicons-check-circle" class="w-3.5 h-3.5" /> Selected</span>
             </div>
-            <p>Guests tap through a closed gate onto you both, standing together - and you stay on screen the whole way through as the camera glides left, right, and around you to reveal each detail, instead of cutting between separate cards.</p>
+            <p>Guests tap open your illustrated wedding gate to reveal you both standing in your venue - then each part of your invitation crossfades in its own card on top of that same illustrated backdrop, all the way through to RSVP.</p>
           </div>
         </div>
-        <p class="template-picker-note">More templates are on the way. Your scenes below plug into whichever template is selected - the template controls the look and camera; you control the words, photos, and order.</p>
+        <p class="template-picker-note">More templates are on the way. Your scenes below plug into whichever template is selected - the template controls the look and gate; you control the words, photos, and order.</p>
       </div>
 
       <div class="flex flex-col lg:flex-row gap-8 xl:gap-10">
