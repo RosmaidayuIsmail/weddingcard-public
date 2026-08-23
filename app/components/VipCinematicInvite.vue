@@ -6,23 +6,21 @@
       <MusicToggle :src="wedding.content.audioSrc" autoplay />
     </div>
 
-    <!-- Envelope gate: same tap-to-open ceremony as the classic layout. The
-         tap is also the "user gesture" the browser needs to allow the music
-         to autoplay, and it's the moment that kicks off the scene sequence
-         below. -->
-    <div class="envelope-shell" :class="{ 'envelope-shell-collapsed': envelopeCollapsed, 'cine-embedded': embedded }">
-      <EnvelopeIntro v-model:opened="opened" :guest-name="guestName" :content="wedding.content" />
-    </div>
-
-    <!-- The cinematic stage: a single fixed-size frame. Every scene below is
-         a full-frame layer stacked on top of the others (position:absolute;
-         inset:0) that crossfades in and out on its own timer - see goTo() /
-         sceneKeys in the script. Nothing pans or zooms around a canvas -
-         each scene is its own deliberately composed layout, always in the
-         same place, matching how the reference invitation actually works
-         (confirmed frame-by-frame against the couple's own reference
-         video: one fixed card, whole layouts crossfade in place). -->
-    <div v-if="opened" class="cine-viewport" :class="{ 'cine-embedded': embedded }">
+    <!-- The cinematic stage: a single fixed-size frame, visible from the
+         very first paint - unlike the classic layout, VIP has no separate
+         "You're Invited / Tap to Open" card in front of it. The closed gate
+         below (scene 0) IS the opening: guests see the shut doors
+         immediately and tap them directly to begin. That tap is also the
+         "user gesture" the browser needs to allow the music to autoplay.
+         Every scene is a full-frame layer stacked on top of the others
+         (position:absolute; inset:0) that crossfades in and out on its own
+         timer - see goTo() / sceneKeys in the script. Nothing pans or zooms
+         around a canvas - each scene is its own deliberately composed
+         layout, always in the same place, matching how the reference
+         invitation actually works (confirmed frame-by-frame against the
+         couple's own reference video: one fixed card, whole layouts
+         crossfade in place). -->
+    <div class="cine-viewport" :class="{ 'cine-embedded': embedded }">
       <!-- The couple's own venue photo (optional), fixed behind every scene. -->
       <div v-if="wedding.vipBackgroundImageUrl" class="cine-photo-backdrop" :style="{ backgroundImage: `url(${wedding.vipBackgroundImageUrl})` }"></div>
       <div class="cine-bg" :class="{ 'cine-bg-scrim': !!wedding.vipBackgroundImageUrl }"></div>
@@ -35,12 +33,22 @@
       <div class="cine-stage">
 
         <!-- SCENE: gate - always the very first scene (see sceneDefs in the
-             script). A closed double door that swings open a beat after the
-             envelope opens, revealing the couple's monogram before handing
-             off to the cover card - real opening motion instead of the
-             fly-through just cutting straight to a static card. -->
+             script), and now the VIP page's ONLY opening ceremony - there is
+             no separate classic-style "Tap to Open" card in front of it. A
+             closed double door sits here from first paint; tapping it
+             (handleGateTap below) is what opens it, revealing the couple
+             standing there before handing off to the cover card. -->
         <div class="cine-scene cine-scene-gate" :class="{ 'cine-scene-active': currentKey === 'gate' }">
-          <div class="cine-gate" :class="{ 'cine-gate-open': gateOpen }">
+          <div
+            class="cine-gate"
+            :class="{ 'cine-gate-open': gateOpen, 'cine-gate-tappable': !opened }"
+            role="button"
+            :tabindex="!opened ? 0 : -1"
+            :aria-label="!opened ? 'Tap to open your invitation' : undefined"
+            @click="handleGateTap"
+            @keydown.enter="handleGateTap"
+            @keydown.space.prevent="handleGateTap"
+          >
             <div class="cine-gate-reveal" :class="{ 'cine-gate-reveal-couple': gateCoupleImage }">
               <img v-if="gateCoupleImage" :src="gateCoupleImage" alt="" class="cine-gate-reveal-couple-image" />
               <img v-else-if="gateMonogramImage" :src="gateMonogramImage" alt="" class="cine-gate-reveal-image" />
@@ -53,6 +61,14 @@
             <div class="cine-gate-panel cine-gate-panel-right">
               <div class="cine-gate-panel-seam"></div>
               <div class="cine-gate-panel-medallion"></div>
+            </div>
+            <!-- Tap cue - lives on the gate itself instead of a separate
+                 screen, so the very first thing a guest sees is already the
+                 real VIP opening, not a generic placeholder card. Fades out
+                 the moment the doors start moving. -->
+            <div v-if="!opened" class="cine-gate-tap-hint">
+              <span class="cine-gate-tap-hint-text">Tap to Open</span>
+              <span class="cine-gate-tap-hint-chevron" aria-hidden="true">⌄</span>
             </div>
           </div>
         </div>
@@ -390,8 +406,8 @@ const props = withDefaults(defineProps<{
    * True when this instance is mounted inside a small dashboard preview
    * frame (see the "Live Preview" panels across the VIP dashboard) instead
    * of the real full-screen guest page. The only real difference is that
-   * .envelope-shell/.cine-viewport normally reserve `100dvh` (the real
-   * device screen), which would blow out of a small bezel - in embedded
+   * .cine-viewport normally reserves `100dvh` (the real device screen),
+   * which would blow out of a small bezel - in embedded
    * mode they reserve `100%` of their own parent instead. Everything else
    * (scene content, theme, sequencing) is the exact same component doing
    * the exact same thing at a smaller size - this is the same component as
@@ -400,7 +416,7 @@ const props = withDefaults(defineProps<{
   embedded?: boolean
   /**
    * When set on an embedded dashboard preview, the preview skips the
-   * tap-to-open envelope entirely and holds on this one scene (by its
+   * tap-to-open gate entirely and holds on this one scene (by its
    * currentKey value, e.g. 'gift', 'flow', 'location') instead of playing
    * through the whole fly-through - so the Gift page's preview actually
    * shows the Gift scene, the Flow page's shows Flow, etc., rather than
@@ -408,7 +424,7 @@ const props = withDefaults(defineProps<{
    * cover. A "Play full fly-through" button lets the couple still watch
    * the whole thing from here without leaving the page. Ignored (no
    * effect) when embedded is false - the real guest page always plays the
-   * full sequence from the envelope.
+   * full sequence from the gate.
    */
   focusScene?: string
 }>(), {
@@ -432,23 +448,17 @@ const styleVars = computed(() =>
   )
 )
 
-// Embedded dashboard previews skip the tap-to-open envelope entirely and
-// start already "opened" - a couple checking their Gift or Flow editor
-// wants to see the actual scene content immediately, not a closed envelope
-// they have to remember to tap. The real guest page (embedded=false) always
-// starts closed, same tap-to-open ceremony as before.
+// Embedded dashboard previews skip the tap-to-open gate entirely and start
+// already "opened" - a couple checking their Gift or Flow editor wants to
+// see the actual scene content immediately, not a closed gate they have to
+// remember to tap. The real guest page (embedded=false) always starts
+// closed - the gate itself (see handleGateTap) is the only tap ceremony.
 const opened = ref(props.embedded)
 
-// EnvelopeIntro's own wrapper reserves a full 100dvh so the closed envelope
-// has room to sit and its open animation has room to play. envelopeCollapsed
-// flips once its slowest close animation has had time to finish, and the
-// now-empty wrapper collapses out of the way so .cine-viewport takes over
-// the screen immediately instead of leaving a blank block to scroll past.
-const envelopeCollapsed = ref(props.embedded)
-watch(opened, (value) => {
-  if (!value) return
-  setTimeout(() => { envelopeCollapsed.value = true }, 2000)
-})
+function handleGateTap() {
+  if (opened.value) return
+  opened.value = true
+}
 
 const qrCodeUrl = computed(
   () => `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(props.wedding.content.mapUrl ?? '')}&size=200x200`
@@ -660,39 +670,14 @@ onBeforeUnmount(() => {
 <style scoped>
 /* Embedded mode (see the `embedded` prop above) - a small dashboard preview
    frame has a fixed pixel height, not a real device screen, so `100dvh`
-   would blow out of it. These three rules are the ONLY difference between
-   the embedded and real full-screen render. */
+   would blow out of it. This rule is the ONLY difference between the
+   embedded and real full-screen render. */
 .cine-embedded-root {
   height: 100%;
-}
-.envelope-shell.cine-embedded {
-  min-height: 100%;
-  height: 100%;
-}
-/* .envelope-shell-collapsed alone (1 class) loses a specificity fight
-   against .envelope-shell.cine-embedded (2 classes) - without this rule,
-   an embedded preview's envelope wrapper never actually collapses once the
-   envelope opens, so it keeps reserving the full 100% height of the phone
-   bezel and pushes .cine-viewport (the actual scene content) out of the
-   visible, overflow-hidden frame - leaving only the flat background color
-   showing. This 3-class rule outranks both and forces the real collapse. */
-.envelope-shell.cine-embedded.envelope-shell-collapsed {
-  min-height: 0;
-  height: 0;
 }
 .cine-viewport.cine-embedded {
   min-height: 100%;
   height: 100%;
-}
-
-.envelope-shell {
-  position: relative;
-  overflow: hidden;
-  min-height: 100dvh;
-  transition: min-height 0.4s ease;
-}
-.envelope-shell-collapsed {
-  min-height: 0;
 }
 
 .cine-viewport {
@@ -826,6 +811,41 @@ onBeforeUnmount(() => {
   filter: drop-shadow(0 12px 26px rgba(0, 0, 0, .45));
 }
 .cine-gate-open .cine-gate-reveal-couple-image { opacity: 1; transform: translateY(0); }
+
+/* The tap-to-open cue lives directly on the closed gate - see
+   handleGateTap() - so a VIP guest's very first screen is already the real
+   opening, not a separate generic "You're Invited / Tap to Open" card. */
+.cine-gate-tappable { cursor: pointer; }
+.cine-gate-tap-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 12%;
+  z-index: 3;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  pointer-events: none;
+  animation: cine-gate-hint-pulse 2.2s ease-in-out infinite;
+}
+.cine-gate-tap-hint-text {
+  font-size: .68rem;
+  font-weight: 600;
+  letter-spacing: .34em;
+  text-transform: uppercase;
+  color: var(--theme-accent);
+  text-shadow: 0 1px 10px rgba(0, 0, 0, .5);
+}
+.cine-gate-tap-hint-chevron {
+  font-size: 1rem;
+  line-height: 1;
+  color: var(--theme-accent);
+}
+@keyframes cine-gate-hint-pulse {
+  0%, 100% { opacity: .55; transform: translateX(-50%) translateY(0); }
+  50% { opacity: 1; transform: translateX(-50%) translateY(6px); }
+}
 
 .cine-gate-panel {
   position: absolute;
@@ -1046,5 +1066,6 @@ onBeforeUnmount(() => {
 @media (prefers-reduced-motion: reduce) {
   .cine-scene { transition: none !important; }
   .cine-gate-panel, .cine-gate-reveal, .cine-gate-reveal-couple-image { transition: none !important; }
+  .cine-gate-tap-hint { animation: none !important; }
 }
 </style>
