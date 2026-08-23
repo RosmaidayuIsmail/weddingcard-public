@@ -34,6 +34,28 @@
 
       <div class="cine-stage">
 
+        <!-- SCENE: gate - always the very first scene (see sceneDefs in the
+             script). A closed double door that swings open a beat after the
+             envelope opens, revealing the couple's monogram before handing
+             off to the cover card - real opening motion instead of the
+             fly-through just cutting straight to a static card. -->
+        <div class="cine-scene cine-scene-gate" :class="{ 'cine-scene-active': currentKey === 'gate' }">
+          <div class="cine-gate" :class="{ 'cine-gate-open': gateOpen }">
+            <div class="cine-gate-reveal">
+              <img v-if="gateMonogramImage" :src="gateMonogramImage" alt="" class="cine-gate-reveal-image" />
+              <div v-else class="cine-gate-reveal-monogram">{{ gateMonogramLabel }}</div>
+            </div>
+            <div class="cine-gate-panel cine-gate-panel-left">
+              <div class="cine-gate-panel-seam"></div>
+              <div class="cine-gate-panel-medallion"></div>
+            </div>
+            <div class="cine-gate-panel cine-gate-panel-right">
+              <div class="cine-gate-panel-seam"></div>
+              <div class="cine-gate-panel-medallion"></div>
+            </div>
+          </div>
+        </div>
+
         <!-- SCENE: cover - a bordered keepsake card: eyebrow, names, date,
              address. Matches the reference invitation's opening card. -->
         <div class="cine-scene cine-scene-frame" :class="{ 'cine-scene-active': currentKey === 'cover' }">
@@ -357,7 +379,7 @@
 // built (confirmed frame-by-frame against the couple's own reference
 // video: one fixed card, whole layouts crossfade in place, not a camera
 // moving through space).
-import type { WeddingDoc } from '~/composables/useWeddingTypes'
+import { autoMonogramText, type WeddingDoc } from '~/composables/useWeddingTypes'
 
 const props = withDefaults(defineProps<{
   wedding: WeddingDoc
@@ -470,6 +492,7 @@ const vipScenes = computed(() => props.wedding.vipScenes || [])
 const sceneDefs = computed(() => {
   const c = props.wedding.content
   const defs: Array<{ key: string; visible: boolean }> = [
+    { key: 'gate', visible: true },
     { key: 'cover', visible: true },
     { key: 'couple', visible: !!c.coupleIllustrationUrl },
     { key: 'greeting', visible: true },
@@ -490,13 +513,42 @@ const sceneKeys = computed(() => sceneDefs.value.map((d) => d.key))
 const currentIndex = ref(0)
 const currentKey = computed(() => sceneKeys.value[currentIndex.value])
 
+// SCENE: gate - see the template below. Doors start closed and swing open
+// a beat later - playGateIntro() arms that beat and is called explicitly
+// everywhere playback restarts from scene 0 (first envelope open, the
+// Replay button, "Play full fly-through"), rather than being driven off
+// currentKey - currentIndex is already 0 by default before the envelope
+// even opens, so a plain watch(currentKey) would fire (and start the timer)
+// the instant the component mounts, long before the guest actually taps
+// the envelope, leaving the doors already open by the time they see them.
+const gateOpen = ref(false)
+let gateTimer: ReturnType<typeof setTimeout> | null = null
+function playGateIntro() {
+  if (gateTimer) clearTimeout(gateTimer)
+  gateOpen.value = false
+  gateTimer = setTimeout(() => { gateOpen.value = true }, 450)
+}
+
+// What's revealed once the gate opens - the couple's own monogram setup
+// (Wedding Details > Monogram) when they've turned it on, otherwise a
+// simple auto "B & G" initials mark so the gate never opens on nothing.
+const gateMonogramImage = computed(() => {
+  const c = props.wedding.content
+  return c.monogramEnabled && c.monogramType === 'upload' && c.monogramImageUrl ? c.monogramImageUrl : ''
+})
+const gateMonogramLabel = computed(() => {
+  const c = props.wedding.content
+  if (c.monogramEnabled && c.monogramType === 'custom-text' && c.monogramText) return c.monogramText
+  return autoMonogramText(c.brideName, c.groomName)
+})
+
 // How long each scene type holds before crossfading to the next - tuned to
 // match the reference video's own pacing (roughly 3-4 seconds per beat).
 // VIP custom scenes use the couple's own explicit hold (see
 // VipScenesPanel.vue) when set, or an auto value based on how much they
 // wrote.
 const HOLD_MS: Record<string, number> = {
-  cover: 4200, couple: 3200, greeting: 3600, brideBio: 3800, groomBio: 3800,
+  gate: 3400, cover: 4200, couple: 3200, greeting: 3600, brideBio: 3800, groomBio: 3800,
   event: 4200, doa: 3800, frames: 3400, location: 4600, gift: 3800, flow: 4000
 }
 function holdFor(key: string) {
@@ -551,6 +603,7 @@ function showFocusScene() {
 }
 function playFull() {
   playingFull.value = true
+  playGateIntro()
   goTo(0, true)
 }
 function backToFocusScene() {
@@ -564,6 +617,7 @@ function backToFocusScene() {
 function restartPreview() {
   if (!props.embedded) return
   playingFull.value = true
+  playGateIntro()
   goTo(0, true)
 }
 // Re-focus automatically the moment this scene becomes available - e.g. the
@@ -584,14 +638,18 @@ watch(opened, async (value) => {
   }
   reduceMotion.value = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   if (reduceMotion.value) {
+    // Reduced-motion guests skip the whole fly-through (existing behavior,
+    // unchanged) - so there's no point arming the gate's door animation.
     goTo(sceneKeys.value.length - 1, true)
   } else {
+    playGateIntro()
     goTo(0, true)
   }
 }, { immediate: true })
 
 onBeforeUnmount(() => {
   if (timer) clearTimeout(timer)
+  if (gateTimer) clearTimeout(gateTimer)
 })
 </script>
 
@@ -697,10 +755,86 @@ onBeforeUnmount(() => {
   padding: 40px 24px;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 1s ease;
+  /* A scene that isn't active sits very slightly drifted/zoomed - when it
+     becomes active it settles into place, and the scene it replaces drifts
+     the opposite way as it fades - so every change reads as the camera
+     gliding to the next moment instead of a flat cut, matching the
+     reference videos' drifting camera instead of a plain crossfade. */
+  transform: scale(1.035) translateX(2.4%);
+  transition: opacity 1s ease, transform 1.4s cubic-bezier(.22, .61, .36, 1);
 }
-.cine-scene-active { opacity: 1; pointer-events: auto; z-index: 1; }
+.cine-scene-active { opacity: 1; pointer-events: auto; z-index: 1; transform: scale(1) translateX(0); }
 .cine-scene-flat { flex-direction: column; }
+
+/* SCENE: gate - a closed double door filling the whole frame (no padding,
+   unlike every other scene) that slides open to the sides, revealing the
+   couple's monogram sitting behind it. See gateOpen/playGateIntro() above. */
+.cine-scene-gate { padding: 0; }
+.cine-gate { position: absolute; inset: 0; overflow: hidden; }
+
+.cine-gate-reveal {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: scale(.82);
+  transition: opacity .7s ease .25s, transform .7s cubic-bezier(.34, 1.56, .64, 1) .25s;
+}
+.cine-gate-open .cine-gate-reveal { opacity: 1; transform: scale(1); }
+
+.cine-gate-reveal-monogram {
+  font-family: var(--theme-heading-font, 'Great Vibes', cursive);
+  font-size: 2.8rem;
+  color: var(--theme-accent);
+  letter-spacing: .04em;
+  text-shadow: 0 2px 18px color-mix(in srgb, var(--theme-accent) 50%, transparent);
+}
+.cine-gate-reveal-image {
+  max-width: 140px;
+  max-height: 140px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 16px rgba(0, 0, 0, .4));
+}
+
+.cine-gate-panel {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  z-index: 2;
+  background: linear-gradient(165deg, color-mix(in srgb, var(--theme-accent) 14%, var(--theme-bg-via, #1c0f2e)) 0%, var(--theme-bg-via, #1c0f2e) 55%, var(--theme-bg-to, #150a20) 100%);
+  transition: transform 1.1s cubic-bezier(.65, 0, .35, 1);
+}
+.cine-gate-panel-left { left: 0; transform: translateX(0); box-shadow: inset -1px 0 0 color-mix(in srgb, var(--theme-accent) 40%, transparent); }
+.cine-gate-panel-right { right: 0; transform: translateX(0); box-shadow: inset 1px 0 0 color-mix(in srgb, var(--theme-accent) 40%, transparent); }
+.cine-gate-open .cine-gate-panel-left { transform: translateX(-102%); }
+.cine-gate-open .cine-gate-panel-right { transform: translateX(102%); }
+
+.cine-gate-panel-seam {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(to bottom, transparent, var(--theme-accent), transparent);
+}
+.cine-gate-panel-left .cine-gate-panel-seam { right: 0; }
+.cine-gate-panel-right .cine-gate-panel-seam { left: 0; }
+
+.cine-gate-panel-medallion {
+  position: absolute;
+  top: 20%;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 2px solid var(--theme-accent);
+  background: color-mix(in srgb, var(--theme-accent) 18%, var(--theme-bg-via, #1c0f2e));
+  box-shadow: 0 0 0 4px var(--theme-bg-to, #150a20), 0 4px 14px rgba(0, 0, 0, .4);
+}
+.cine-gate-panel-left .cine-gate-panel-medallion { right: -17px; }
+.cine-gate-panel-right .cine-gate-panel-medallion { left: -17px; }
 
 /* Bordered keepsake card - cover, couple photo, and closing all share this
    frame, the way the reference invitation's cover and couple pages share
@@ -883,5 +1017,6 @@ onBeforeUnmount(() => {
 
 @media (prefers-reduced-motion: reduce) {
   .cine-scene { transition: none !important; }
+  .cine-gate-panel, .cine-gate-reveal { transition: none !important; }
 }
 </style>
