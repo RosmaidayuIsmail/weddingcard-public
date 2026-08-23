@@ -55,7 +55,10 @@ const guestName = computed(() => {
   return typeof raw === 'string' ? raw : ''
 })
 
-const rsvpLink = computed(() => (guestName.value ? `/w/${slug}/rsvp?to=${encodeURIComponent(guestName.value)}` : `/w/${slug}/rsvp`))
+// VIP guests get their own RSVP page (vip-rsvp.vue) instead of the classic
+// step wizard - see that file for why. Classic (non-VIP) links elsewhere
+// still point at the plain /rsvp route, unchanged.
+const rsvpLink = computed(() => (guestName.value ? `/w/${slug}/vip-rsvp?to=${encodeURIComponent(guestName.value)}` : `/w/${slug}/vip-rsvp`))
 
 watch(
   wedding,

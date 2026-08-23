@@ -42,11 +42,15 @@
         <!-- SCENE: gate - always the very first scene (see sceneDefs in the
              script), and the VIP page's ONLY opening ceremony - there is no
              separate classic-style "Tap to Open" card in front of it. The
-             couple's own illustrated wedding gate (pintu gerbang) stands
-             here from first paint, on the illustrated venue backdrop, with
-             the couple's illustration waiting just inside it; tapping the
-             gate (handleGateTap below) is what reveals them standing there,
-             before handing off to the cover card. -->
+             gate starts big and close, filling the frame - tapping it
+             (handleGateTap below) plays a single continuous beat: the camera
+             zooms IN THROUGH the archway (the arch itself scales up and
+             fades away, like flying past it) to reveal the couple standing
+             there, already in place and full size; the couple then hold
+             perfectly still while the "camera" settles first on the bride's
+             side (her name slides in) and then the groom's (his name slides
+             in) - see gateOpen/gateNamePhase/playGateIntro() below - before
+             handing off to the cover card. -->
         <div class="cine-scene cine-scene-gate" :class="{ 'cine-scene-active': currentKey === 'gate' }">
           <div
             class="cine-gate"
@@ -61,17 +65,36 @@
             <!-- The couple stand just inside the gate, hidden until it
                  opens - their own uploaded illustration if they have one,
                  otherwise a ready-made couple illustration so the gate
-                 never opens on nothing. -->
+                 never opens on nothing. They never move again once in
+                 place - only the arch, spotlight and name panels around
+                 them animate from here on. -->
             <div class="cine-gate-reveal">
               <img v-if="gateCoupleImage" :src="gateCoupleImage" alt="" class="cine-gate-reveal-couple-image" />
               <img v-else-if="gateMonogramImage" :src="gateMonogramImage" alt="" class="cine-gate-reveal-image" />
               <div v-else class="cine-gate-reveal-monogram">{{ gateMonogramLabel }}</div>
             </div>
-            <!-- The illustrated gate arch itself - a static piece of set
-                 dressing framing the couple, not a pair of swinging doors.
-                 It softens and steps back once tapped, letting the couple
-                 (above) and the tap hint (below) take over the frame. -->
+            <!-- A soft moving spotlight standing in for the "camera" - dims
+                 evenly at rest, then leans toward the bride's side and later
+                 the groom's side while their name panel is showing, so the
+                 attention shift reads as a camera move even though nothing
+                 underneath it actually moves. -->
+            <div class="cine-gate-spotlight" :class="{ 'cine-gate-spotlight-bride': gateNamePhase === 'bride', 'cine-gate-spotlight-groom': gateNamePhase === 'groom' }"></div>
+            <!-- The illustrated gate arch itself - starts large and close
+                 (bigger than the couple, per the couple's own note), then
+                 zooms further in and fades away once tapped, as if the
+                 camera flew straight through the archway opening. -->
             <img v-if="gateArchImage" :src="gateArchImage" alt="" class="cine-gate-arch" />
+            <!-- The bride's name, sliding in from the left once the couple
+                 have settled - see gateNamePhase timing in the script. -->
+            <div class="cine-gate-name-panel cine-gate-name-panel-bride" :class="{ 'cine-gate-name-panel-visible': gateNamePhase === 'bride' }">
+              <span class="cine-gate-name-label">{{ wedding.content.familyBrideLabel || 'The Bride' }}</span>
+              <span class="cine-gate-name-value">{{ wedding.content.brideName }}</span>
+            </div>
+            <!-- The groom's name, sliding in from the right right after. -->
+            <div class="cine-gate-name-panel cine-gate-name-panel-groom" :class="{ 'cine-gate-name-panel-visible': gateNamePhase === 'groom' }">
+              <span class="cine-gate-name-label">{{ wedding.content.familyGroomLabel || 'The Groom' }}</span>
+              <span class="cine-gate-name-value">{{ wedding.content.groomName }}</span>
+            </div>
             <!-- Tap cue - lives on the gate itself instead of a separate
                  screen, so the very first thing a guest sees is already the
                  real VIP opening, not a generic placeholder card. Fades out
@@ -534,20 +557,38 @@ const sceneKeys = computed(() => sceneDefs.value.map((d) => d.key))
 const currentIndex = ref(0)
 const currentKey = computed(() => sceneKeys.value[currentIndex.value])
 
-// SCENE: gate - see the template below. Doors start closed and swing open
-// a beat later - playGateIntro() arms that beat and is called explicitly
-// everywhere playback restarts from scene 0 (first envelope open, the
-// Replay button, "Play full fly-through"), rather than being driven off
-// currentKey - currentIndex is already 0 by default before the envelope
-// even opens, so a plain watch(currentKey) would fire (and start the timer)
-// the instant the component mounts, long before the guest actually taps
-// the envelope, leaving the doors already open by the time they see them.
+// SCENE: gate - see the template below. The gate starts closed and zooms
+// open a beat later - playGateIntro() arms that beat and is called
+// explicitly everywhere playback restarts from scene 0 (first envelope
+// open, the Replay button, "Play full fly-through"), rather than being
+// driven off currentKey - currentIndex is already 0 by default before the
+// envelope even opens, so a plain watch(currentKey) would fire (and start
+// the timer) the instant the component mounts, long before the guest
+// actually taps, leaving the gate already open by the time they see it.
 const gateOpen = ref(false)
 let gateTimer: ReturnType<typeof setTimeout> | null = null
+// Once the gate has opened and the couple have settled in place, the
+// "camera" (really just a spotlight + a sliding name panel - the couple
+// image itself never moves, per the couple's explicit note) rests on the
+// bride's side, then the groom's, before handing off to the cover card.
+// Timing below is tuned so each beat has time to read: settle (see the
+// 1100ms delay), ~1.9s on her name, ~1.9s on his.
+const gateNamePhase = ref<'none' | 'bride' | 'groom'>('none')
+let gateNameTimer1: ReturnType<typeof setTimeout> | null = null
+let gateNameTimer2: ReturnType<typeof setTimeout> | null = null
+const GATE_SETTLE_MS = 1100
+const GATE_NAME_HOLD_MS = 1900
 function playGateIntro() {
   if (gateTimer) clearTimeout(gateTimer)
+  if (gateNameTimer1) clearTimeout(gateNameTimer1)
+  if (gateNameTimer2) clearTimeout(gateNameTimer2)
   gateOpen.value = false
-  gateTimer = setTimeout(() => { gateOpen.value = true }, 450)
+  gateNamePhase.value = 'none'
+  gateTimer = setTimeout(() => {
+    gateOpen.value = true
+    gateNameTimer1 = setTimeout(() => { gateNamePhase.value = 'bride' }, GATE_SETTLE_MS)
+    gateNameTimer2 = setTimeout(() => { gateNamePhase.value = 'groom' }, GATE_SETTLE_MS + GATE_NAME_HOLD_MS)
+  }, 450)
 }
 
 // The ready-made illustrated wedding-gate set - the couple's own venue
@@ -591,7 +632,10 @@ const gateMonogramLabel = computed(() => {
 // VipScenesPanel.vue) when set, or an auto value based on how much they
 // wrote.
 const HOLD_MS: Record<string, number> = {
-  gate: 3400, cover: 4200, couple: 3200, greeting: 3600, brideBio: 3800, groomBio: 3800,
+  // gate is longer than the rest - it has to fit the full zoom-through-the-
+  // arch beat plus both name-panel holds (see playGateIntro above) before
+  // it's safe to crossfade away.
+  gate: 4800, cover: 4200, couple: 3200, greeting: 3600, brideBio: 3800, groomBio: 3800,
   event: 4200, doa: 3800, frames: 3400, location: 4600, gift: 3800, flow: 4000
 }
 function holdFor(key: string) {
@@ -693,6 +737,8 @@ watch(opened, async (value) => {
 onBeforeUnmount(() => {
   if (timer) clearTimeout(timer)
   if (gateTimer) clearTimeout(gateTimer)
+  if (gateNameTimer1) clearTimeout(gateNameTimer1)
+  if (gateNameTimer2) clearTimeout(gateNameTimer2)
 })
 </script>
 
@@ -835,36 +881,49 @@ onBeforeUnmount(() => {
 .cine-gate-open .cine-gate-reveal-image {
   opacity: 1;
 }
+/* The couple - starts noticeably smaller than the arch (see .cine-gate-arch
+   below: "should become bigger than the bride and groom first time"), then
+   scales up to full size as the arch zooms past and fades, reading as the
+   camera arriving at them rather than them popping into an empty spot. Once
+   at scale(1) they never move or resize again for the rest of the gate
+   beat - only the spotlight and name panels move around them. */
 .cine-gate-reveal-couple-image {
-  max-width: 62%;
-  max-height: 70%;
+  max-width: 60%;
+  max-height: 68%;
   object-fit: contain;
   opacity: 0;
-  transform: translateY(24px) scale(.94);
-  transition: opacity .9s ease .2s, transform 1s cubic-bezier(.22, .61, .36, 1) .2s;
+  transform: translateY(10px) scale(.62);
+  transition: opacity .8s ease .35s, transform 1.15s cubic-bezier(.22, .61, .36, 1) .35s;
   filter: drop-shadow(0 14px 24px rgba(0, 0, 0, .4));
 }
 .cine-gate-open .cine-gate-reveal-couple-image { opacity: 1; transform: translateY(0) scale(1); }
 
 /* The illustrated arch, framing the couple from in front (z-index 2) -
-   settles with a soft scale + glow once tapped, standing in for the gate
-   "opening" without inventing swinging doors the artwork doesn't have. */
+   at rest it's deliberately the dominant shape in the frame (wider than the
+   couple ever gets), so the very first thing a guest sees is the gate
+   itself, not a cramped composition. Once tapped it scales up hard and
+   fades out, transform-origin pinned roughly on the archway's own opening,
+   so the motion reads as the camera flying straight through the arch
+   rather than the arch merely growing in place - that's what clears the
+   couple from behind its fabric instead of leaving them overlapping it. */
 .cine-gate-arch {
   position: absolute;
   left: 50%;
   bottom: 0;
   z-index: 2;
-  width: 94%;
-  max-width: 440px;
-  transform: translateX(-50%);
+  width: 108%;
+  max-width: 480px;
+  transform-origin: 50% 40%;
+  transform: translateX(-50%) scale(1);
+  opacity: 1;
   object-fit: contain;
   pointer-events: none;
   filter: drop-shadow(0 20px 34px rgba(0, 0, 0, .35));
-  transition: transform 1.1s cubic-bezier(.22, .61, .36, 1), filter 1.1s ease;
+  transition: transform 1.15s cubic-bezier(.45, 0, .55, 1), opacity 1.05s ease .1s;
 }
 .cine-gate-open .cine-gate-arch {
-  transform: translateX(-50%) scale(1.035);
-  filter: drop-shadow(0 26px 44px rgba(0, 0, 0, .4)) brightness(1.06);
+  transform: translateX(-50%) scale(2.4);
+  opacity: 0;
 }
 
 /* The tap-to-open cue lives directly on the closed gate - see
@@ -900,6 +959,62 @@ onBeforeUnmount(() => {
 @keyframes cine-gate-hint-pulse {
   0%, 100% { opacity: .55; transform: translateX(-50%) translateY(0); }
   50% { opacity: 1; transform: translateX(-50%) translateY(6px); }
+}
+
+/* The moving "camera" spotlight - see gateNamePhase in the script. The
+   couple image never actually moves (per the couple's own note), so this
+   soft off-center vignette is what sells "the camera panned to her side,
+   then his side" - a wide, dim radial mask that leans left, then right. */
+.cine-gate-spotlight {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background: radial-gradient(70% 60% at 50% 55%, transparent 0%, transparent 45%, rgba(10, 5, 14, .5) 100%);
+  background-repeat: no-repeat;
+  opacity: 0;
+  transition: opacity .9s ease, background-position 1.3s cubic-bezier(.45, 0, .55, 1);
+}
+.cine-gate-spotlight-bride { opacity: 1; background-position: -18% 0; }
+.cine-gate-spotlight-groom { opacity: 1; background-position: 18% 0; }
+
+/* The bride/groom name panels - slide in from their own side once the
+   spotlight above settles on them, holding for GATE_NAME_HOLD_MS (script)
+   before the next one takes over. */
+.cine-gate-name-panel {
+  position: absolute;
+  top: 46%;
+  z-index: 4;
+  max-width: 46%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 16px;
+  border-radius: 6px;
+  background: rgba(20, 10, 24, .55);
+  backdrop-filter: blur(6px);
+  border: 1px solid color-mix(in srgb, var(--theme-accent) 45%, transparent);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .8s ease, transform .9s cubic-bezier(.22, .61, .36, 1);
+}
+.cine-gate-name-panel-bride { left: 6%; text-align: left; transform: translateX(-24px); }
+.cine-gate-name-panel-groom { right: 6%; text-align: right; align-items: flex-end; transform: translateX(24px); }
+.cine-gate-name-panel-visible { opacity: 1; transform: translateX(0); }
+.cine-gate-name-label {
+  font-size: .6rem;
+  letter-spacing: .28em;
+  text-transform: uppercase;
+  color: var(--theme-accent);
+}
+.cine-gate-name-value {
+  font-family: var(--theme-heading-font, serif);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 1.4rem;
+  line-height: 1.2;
+  color: var(--theme-ink, #f7ecf3);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, .5);
 }
 
 /* Bordered keepsake card - cover, couple photo, and closing all share this
@@ -1084,6 +1199,7 @@ onBeforeUnmount(() => {
 @media (prefers-reduced-motion: reduce) {
   .cine-scene { transition: none !important; }
   .cine-gate-arch, .cine-gate-reveal-couple-image, .cine-gate-reveal-image, .cine-gate-reveal-monogram { transition: none !important; }
+  .cine-gate-spotlight, .cine-gate-name-panel { transition: none !important; }
   .cine-gate-tap-hint { animation: none !important; }
 }
 </style>
