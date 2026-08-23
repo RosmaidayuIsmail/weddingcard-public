@@ -18,3 +18,8 @@ node_modules
 !.vscode/extensions.json
 *.log
 .firebase/
+
+# One-off admin scripts that carry live service-account keys - never commit
+# these, delete the folder once you've run what you needed to run.
+_vip-demo-seed/
+*firebaseadminsdk*.json
