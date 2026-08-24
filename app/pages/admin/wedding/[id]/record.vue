@@ -129,19 +129,17 @@
             </p>
           </div>
 
-          <!-- Smartphone Mockup Wrapper - the recording crops to the iframe
-               itself (frameEl below), not this outer bezel, so the dark
-               phone-bezel border and notch decoration (added purely for
-               this admin dashboard's own display) never end up in the
-               recorded video - only the actual guest-visible page, exactly
-               like a real phone screen. Sized bigger than an actual iPhone
-               (scales with the column instead of a fixed 390px) purely so
-               there's more real on-screen detail to capture - the output
-               video is then scaled to a fixed 1080-wide HD target
-               regardless of exactly how big this renders on her screen
-               (see the OUTPUT_WIDTH constant below), so recording quality
-               doesn't depend on her monitor or zoom level. -->
-          <div class="phone-bezel shadow-2xl shrink-0">
+          <!-- Smartphone Mockup Wrapper - matches the exact same bezel
+               proportions as the Opening Design page's Live Preview (fixed
+               height, capped width - not aspect-ratio-derived), so this
+               looks identical rather than a differently-shaped phone. The
+               recording itself crops to the iframe (frameEl below), not
+               this outer bezel, so the dark border/notch decoration never
+               ends up in the recorded video either way - the output video
+               is scaled to a fixed 1080-wide HD target regardless of how
+               big this renders on her screen (see OUTPUT_WIDTH below), so
+               recording quality doesn't depend on this preview's size. -->
+          <div class="phone-bezel w-full max-w-[390px] shadow-2xl shrink-0">
             <div class="phone-notch"></div>
             <iframe
               ref="frameEl"
@@ -515,19 +513,16 @@ onBeforeUnmount(() => {
   box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5);
 }
 
-/* Smartphone Bezel - same look as the Opening Design live preview */
-/* This is now purely a reference preview - actual recording happens in
-   its own popup window (see startRecording), not from this element - so
-   there's no longer a reason to cap it at a small fixed height. It scales
-   up to fill most of the available column height on a big screen instead
-   of sitting small in a lot of empty space, while still shrinking to fit
-   on a short window. */
+/* Smartphone Bezel - exact same rule as the Opening Design page's Live
+   Preview (fixed height, width capped by the max-w-[390px] class on the
+   element, not derived from aspect-ratio). Using aspect-ratio here
+   previously let the width get clamped by the column's max-width without
+   the height following it back down, which is what made this bezel render
+   narrower/more elongated than the Opening Design one instead of matching
+   it. */
 .phone-bezel {
   position: relative;
-  width: auto;
-  height: min(1400px, calc(100vh - 140px));
-  max-width: 100%;
-  aspect-ratio: 390 / 844;
+  height: 844px;
   background: #000;
   border: 12px solid #1e293b;
   border-radius: 2.5rem;
