@@ -231,6 +231,14 @@
                   <UInput v-model="form.openingGreeting" placeholder="e.g. Menjemput {guestName} sekeluarga" size="lg" class="w-full" />
                   <template #help><span class="text-xs text-gray-500">Use <code class="text-gold-300">{guestName}</code> anywhere in the sentence - text before and after it both work, e.g. "Menjemput {guestName} sekeluarga". Each of the three parts - before, the name, and after - can have its own font below, so e.g. "Menjemput" and "sekeluarga" don't have to match.</span></template>
                 </UFormField>
+                <UFormField label="Frosted box behind the greeting" class="flex items-center justify-between">
+                  <template #help><span class="text-xs text-gray-500">Off by default - the greeting sits directly over the background, using its own drop shadow to stay readable. Turn on for a card look instead.</span></template>
+                  <USwitch
+                    :model-value="form.openingGuestNameBox === 'boxed'"
+                    size="lg"
+                    @update:model-value="(v: boolean) => (form.openingGuestNameBox = v ? 'boxed' : 'none')"
+                  />
+                </UFormField>
                 <button type="button" class="text-xs text-gold-300 hover:text-gold-200 flex items-center gap-1" @click="showGreetingStyle = !showGreetingStyle">
                   <UIcon :name="showGreetingStyle ? 'i-heroicons-chevron-down' : 'i-heroicons-chevron-right'" class="w-3.5 h-3.5" /> Customize font for the text before the name (e.g. "Menjemput")
                 </button>
@@ -433,6 +441,7 @@ watch(
     if (!form.openingTitle) form.openingTitle = "You're Invited"
     if (!form.openingGreeting) form.openingGreeting = 'Dear'
     if (!form.openingActionText) form.openingActionText = 'Tap to open'
+    if (!form.openingGuestNameBox) form.openingGuestNameBox = 'none'
   },
   { immediate: true }
 )

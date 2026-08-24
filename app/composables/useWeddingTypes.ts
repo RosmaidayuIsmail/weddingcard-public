@@ -131,6 +131,13 @@ export interface WeddingContent {
   openingGuestNameSize: number
   openingGuestNameColor: string
   openingGuestNameWeight: string
+  /** Whether the guest's name sits inside a frosted box on the opening
+   *  screen, or just as plain text over the background (relying on the
+   *  existing title-shadow treatment for legibility). Old weddings with no
+   *  value saved yet fall back to 'none' - the box was a default nobody
+   *  could turn off, not a deliberate choice, so removing it is the fix
+   *  rather than something to migrate carefully around. */
+  openingGuestNameBox: 'none' | 'boxed'
   openingGreetingAfterFont: string
   openingGreetingAfterFontUrl: string
   openingGreetingAfterFontFamily: string
@@ -396,6 +403,7 @@ export function createDefaultContent(brideName = '', groomName = ''): WeddingCon
     openingGuestNameSize: 100,
     openingGuestNameColor: '',
     openingGuestNameWeight: '',
+    openingGuestNameBox: 'none',
     openingGreetingAfterFont: '',
     openingGreetingAfterFontUrl: '',
     openingGreetingAfterFontFamily: '',

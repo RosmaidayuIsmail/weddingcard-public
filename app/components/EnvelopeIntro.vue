@@ -197,8 +197,17 @@
           {{ content.openingTitle || "You're Invited" }}
         </p>
 
-        <!-- Dynamic Guest Name Box -->
-        <div v-if="guestName" class="mt-4 mb-6 p-5 border border-white/20 rounded-xl backdrop-blur-md min-w-[200px] max-w-[300px] flex flex-col items-center gap-1.5" :style="guestBoxStyle">
+        <!-- Dynamic Guest Name - plain text by default (openingGuestNameBox
+             'none'), relying on the titleShadow drop-shadow above for
+             legibility over a photo background rather than a frosted box
+             nobody could turn off. 'boxed' brings back the card look for
+             whoever wants it (see DashboardOpeningPanel.vue). -->
+        <div
+          v-if="guestName"
+          class="mt-4 mb-6 min-w-[200px] max-w-[300px] flex flex-col items-center gap-1.5"
+          :class="{ 'p-5 border border-white/20 rounded-xl backdrop-blur-md': content.openingGuestNameBox === 'boxed' }"
+          :style="guestBoxStyle"
+        >
           <p v-if="greetingParts.before" class="text-sm sm:text-base uppercase tracking-[0.15em] opacity-90" :style="[textStyleBase, titleShadow, greetingStyle]">{{ greetingParts.before }}</p>
           <p class="font-display font-semibold text-2xl sm:text-3xl leading-tight" :style="[textStyleBase, titleShadow, guestNameStyle]">{{ guestName }}</p>
           <p v-if="greetingParts.after" class="text-sm sm:text-base uppercase tracking-[0.15em] opacity-90" :style="[textStyleBase, titleShadow, greetingAfterStyle]">{{ greetingParts.after }}</p>
@@ -425,6 +434,7 @@ const greetingParts = computed(() => {
 })
 
 const guestBoxStyle = computed(() => {
+  if (props.content.openingGuestNameBox !== 'boxed') return {}
   if (props.content.openingStyle === 'minimal-light') return { backgroundColor: 'rgba(255, 255, 255, 0.6)', borderColor: 'rgba(0, 0, 0, 0.1)' }
   return { backgroundColor: 'rgba(255, 255, 255, 0.05)', borderColor: 'rgba(255, 255, 255, 0.15)' }
 })
