@@ -292,10 +292,34 @@ async function startRecording() {
     await new Promise<void>((resolve) => { sourceVideo!.onloadedmetadata = () => resolve() })
   }
 
-  // Whatever got shared is recorded whole, edge-to-edge - as long as she
-  // picked the recording window that just opened, its entire content IS
-  // the mobile invite, so there's nothing left to crop.
-  const crop = { x: 0, y: 0, w: sourceVideo.videoWidth, h: sourceVideo.videoHeight }
+  // Some browsers (Safari especially) ignore the location=no/toolbar=no
+  // hints and still show a thin address-bar strip along the top of the
+  // popup, which then ends up baked into the recording - and, since the
+  // output height below is derived from the captured frame's own aspect
+  // ratio, that extra strip also skewed the whole video to look like a
+  // different, taller "screen" than the real phone content. Trim exactly
+  // that strip off, measured live from the popup's own outer-vs-inner
+  // window size (not a guessed constant, since chrome height varies by
+  // browser/OS) - whatever's left is just the real invite, edge-to-edge.
+  let crop = { x: 0, y: 0, w: sourceVideo.videoWidth, h: sourceVideo.videoHeight }
+  try {
+    if (!popup.closed) {
+      const chromeHeightCss = Math.max(0, popup.outerHeight - popup.innerHeight)
+      if (chromeHeightCss > 0) {
+        const scaleY = sourceVideo.videoHeight / popup.outerHeight
+        const chromeHeightPx = Math.round(chromeHeightCss * scaleY)
+        crop = {
+          x: 0,
+          y: chromeHeightPx,
+          w: sourceVideo.videoWidth,
+          h: Math.max(2, sourceVideo.videoHeight - chromeHeightPx)
+        }
+      }
+    }
+  } catch {
+    // If the popup's window metrics aren't readable for some reason, fall
+    // back to recording the frame whole rather than failing the take.
+  }
 
   // Output canvas fills edge-to-edge with the phone screen itself - fixed
   // width, height derived from the phone's own aspect ratio, no black bars
