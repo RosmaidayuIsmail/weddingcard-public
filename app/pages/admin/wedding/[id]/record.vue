@@ -71,7 +71,7 @@
 
               <div v-if="recordingState === 'idle'" class="space-y-3">
                 <p class="text-xs text-gray-400 leading-relaxed">
-                  Click Start, then when your browser asks what to share, choose <strong class="text-gray-200">This Tab</strong> (Chrome/Edge) or <strong class="text-gray-200">this browser window</strong> (Safari/Firefox) - sharing a different tab, window, or your whole screen will crop the video incorrectly. Keep this tab visible while recording, and interact with the phone preview on the right exactly like a guest would - tap to open the envelope, scroll through it. Click Stop when you're done.
+                  Click Start and a small new window will pop up with just the live invite in it - nothing else. When your browser asks what to share, pick <strong class="text-gray-200">that new window</strong> (it'll be labeled with the wedding's page). Interact with it exactly like a guest would - tap to open the envelope, scroll through it - then come back here and click Stop.
                 </p>
                 <UButton size="lg" color="primary" icon="i-heroicons-video-camera" class="w-full font-semibold" @click="startRecording">
                   Start Recording
@@ -218,6 +218,7 @@ let recordedChunks: Blob[] = []
 let recordedMimeType = ''
 let rafId = 0
 let timerInterval: ReturnType<typeof setInterval> | null = null
+let recordingPopup: Window | null = null
 
 function resetToIdle() {
   if (downloadUrl.value) URL.revokeObjectURL(downloadUrl.value)
@@ -234,83 +235,53 @@ async function startRecording() {
   errorMessage.value = ''
   recordingState.value = 'requesting'
 
-  // Make sure the whole phone frame is actually on-screen before anything
-  // gets captured - only what's visible in the viewport can be recorded,
-  // and a settle pause after scrolling avoids capturing mid-scroll.
-  frameEl.value?.scrollIntoView({ block: 'center' })
-  await new Promise((resolve) => setTimeout(resolve, 200))
+  // Previous approach: share this whole admin tab, then mathematically
+  // crop out just the phone region (by element bounds, or a browser-level
+  // CropTarget). That crop math depended on assumptions - which surface
+  // got shared, whether the browser reports displaySurface at all, tab
+  // coordinates matching viewport coordinates - that didn't hold on every
+  // browser/OS, and kept recording the wrong region no matter what was
+  // shared. New approach: open a separate, minimal popup window that
+  // contains nothing but the live guest page - no dashboard, no sidebar,
+  // no controls around it. Sharing THAT window is the mobile screen; there
+  // is nothing else in it to crop out, so no crop math is needed at all.
+  const popup = window.open(
+    previewUrl.value,
+    'wc_promo_recording',
+    'width=440,height=956,menubar=no,toolbar=no,location=no,status=no,scrollbars=no,resizable=yes'
+  )
+  if (!popup) {
+    recordingState.value = 'idle'
+    errorMessage.value = "Your browser blocked the recording window from opening - allow pop-ups for this site and click Start Recording again."
+    return
+  }
+  recordingPopup = popup
+
+  // Let it actually finish loading the invite before asking what to share,
+  // so the share picker shows the real page (not a blank window) and the
+  // recording doesn't start on a placeholder background.
+  await new Promise((resolve) => {
+    const check = () => {
+      if (popup.closed || popup.document?.readyState === 'complete') resolve(undefined)
+      else setTimeout(check, 100)
+    }
+    check()
+  })
+  await new Promise((resolve) => setTimeout(resolve, 300))
 
   try {
-    // preferCurrentTab/selfBrowserSurface are Chrome-only hints that
-    // streamline the share picker toward "this tab" - harmless no-ops on
-    // browsers that don't recognize them.
     displayStream = await navigator.mediaDevices.getDisplayMedia({
-      video: {
-        displaySurface: 'browser',
-        width: { ideal: 2560 },
-        height: { ideal: 1440 },
-        frameRate: { ideal: 30 }
-      } as MediaTrackConstraints,
-      audio: false,
-      // @ts-expect-error Chrome-only extensions to getDisplayMedia, not in the lib.dom types yet
-      preferCurrentTab: true,
-      selfBrowserSurface: 'include'
+      video: { width: { ideal: 2560 }, height: { ideal: 1440 }, frameRate: { ideal: 30 } },
+      audio: false
     })
   } catch (err: any) {
+    popup.close()
+    recordingPopup = null
     recordingState.value = 'idle'
     errorMessage.value = err?.name === 'NotAllowedError'
       ? "Recording wasn't started - you closed the share dialog or denied permission. Click Start Recording to try again."
       : `Couldn't start recording: ${err?.message || err}`
     return
-  }
-
-  if (!frameEl.value) {
-    recordingState.value = 'idle'
-    errorMessage.value = 'Preview frame not ready - try again in a moment.'
-    displayStream.getTracks().forEach((t) => t.stop())
-    return
-  }
-
-  // Give the invite a moment to actually finish loading before we start
-  // capturing - otherwise the first stretch of the recording is just the
-  // phone screen's own dark placeholder background, not the real page.
-  if (!previewLoaded.value) {
-    await Promise.race([
-      new Promise<void>((resolve) => {
-        const stop = watch(previewLoaded, (v) => { if (v) { stop(); resolve() } })
-      }),
-      new Promise<void>((resolve) => setTimeout(resolve, 4000))
-    ])
-  }
-
-  // If she picked something other than "This Tab" in the share dialog -
-  // her whole screen, a different window, another tab - there is no
-  // reliable way to know where the phone frame even is inside that
-  // capture, and guessing produced exactly the "recording my full screen"
-  // bug this replaces. Fail loud with a fixable instruction instead of
-  // silently recording the wrong thing.
-  const track = displayStream.getVideoTracks()[0]
-  const settings = track.getSettings() as MediaTrackSettings & { displaySurface?: string }
-  if (settings.displaySurface && settings.displaySurface !== 'browser') {
-    displayStream.getTracks().forEach((t) => t.stop())
-    recordingState.value = 'idle'
-    errorMessage.value = "That shared your whole screen or a different window, not this tab, so it can't be cropped to just the phone. Click Start Recording again and choose \"This Tab\" (Chrome/Edge) or \"this browser window\" (Safari/Firefox) in the share dialog."
-    return
-  }
-
-  // Chrome 125+: Region Capture crops the stream itself to exactly this
-  // element's rendered area, at the browser level - no coordinate math to
-  // get wrong. Falls back to a manual crop (below) on browsers that don't
-  // support it yet.
-  const CropTargetCtor = (window as any).CropTarget
-  if (CropTargetCtor && typeof track.cropTo === 'function') {
-    try {
-      const cropTarget = await CropTargetCtor.fromElement(frameEl.value)
-      await track.cropTo(cropTarget)
-    } catch {
-      // Element wasn't croppable for some reason - manual crop below still
-      // works since we've already confirmed this is a same-tab capture.
-    }
   }
 
   sourceVideo = document.createElement('video')
@@ -321,27 +292,10 @@ async function startRecording() {
     await new Promise<void>((resolve) => { sourceVideo!.onloadedmetadata = () => resolve() })
   }
 
-  const nativelyCropped = !!(CropTargetCtor && typeof track.cropTo === 'function')
-  let crop: { x: number; y: number; w: number; h: number }
-  if (nativelyCropped) {
-    // The video's own frames are already just the phone region - draw them
-    // through as-is.
-    crop = { x: 0, y: 0, w: sourceVideo.videoWidth, h: sourceVideo.videoHeight }
-  } else {
-    // Manual fallback: ratio between the captured tab's actual pixel size
-    // and this page's CSS viewport size - safe now that displaySurface is
-    // confirmed to be 'browser' (this tab), so the two coordinate spaces
-    // actually correspond.
-    const scaleX = sourceVideo.videoWidth / window.innerWidth
-    const scaleY = sourceVideo.videoHeight / window.innerHeight
-    const rect = frameEl.value.getBoundingClientRect()
-    crop = {
-      x: Math.max(0, Math.round(rect.left * scaleX)),
-      y: Math.max(0, Math.round(rect.top * scaleY)),
-      w: Math.max(2, Math.round(Math.min(sourceVideo.videoWidth - rect.left * scaleX, rect.width * scaleX))),
-      h: Math.max(2, Math.round(Math.min(sourceVideo.videoHeight - rect.top * scaleY, rect.height * scaleY)))
-    }
-  }
+  // Whatever got shared is recorded whole, edge-to-edge - as long as she
+  // picked the recording window that just opened, its entire content IS
+  // the mobile invite, so there's nothing left to crop.
+  const crop = { x: 0, y: 0, w: sourceVideo.videoWidth, h: sourceVideo.videoHeight }
 
   // Output canvas fills edge-to-edge with the phone screen itself - fixed
   // width, height derived from the phone's own aspect ratio, no black bars
@@ -395,6 +349,8 @@ function stopRecording() {
   if (timerInterval) { clearInterval(timerInterval); timerInterval = null }
   cancelAnimationFrame(rafId)
   displayStream?.getTracks().forEach((t) => t.stop())
+  recordingPopup?.close()
+  recordingPopup = null
   recordingState.value = 'converting'
   conversionLabel.value = 'Finishing recording...'
   conversionProgress.value = 0
@@ -493,6 +449,7 @@ onBeforeUnmount(() => {
   if (timerInterval) clearInterval(timerInterval)
   cancelAnimationFrame(rafId)
   displayStream?.getTracks().forEach((t) => t.stop())
+  recordingPopup?.close()
   if (downloadUrl.value) URL.revokeObjectURL(downloadUrl.value)
 })
 </script>
