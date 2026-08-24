@@ -71,7 +71,7 @@
 
               <div v-if="recordingState === 'idle'" class="space-y-3">
                 <p class="text-xs text-gray-400 leading-relaxed">
-                  Click Start and a small new window will pop up with just the live invite in it - nothing else. When your browser asks what to share, pick <strong class="text-gray-200">that new window</strong> (it'll be labeled with the wedding's page). Interact with it exactly like a guest would - tap to open the envelope, scroll through it - then come back here and click Stop.
+                  Click Start and a small new window will pop up with just the live invite in it - nothing else. When your browser asks what to share, click the <strong class="text-gray-200">Chrome Tab</strong> tab at the top of that picker (not "Window" or "Entire Screen"), select the tab for that new page, and turn on <strong class="text-gray-200">Share tab audio</strong> if you want the invite's music in the recording - sharing the window instead of the tab is why audio doesn't come through. Interact with it exactly like a guest would - tap to open the envelope, scroll through it - then come back here and click Stop.
                 </p>
                 <UButton size="lg" color="primary" icon="i-heroicons-video-camera" class="w-full font-semibold" @click="startRecording">
                   Start Recording
@@ -336,18 +336,21 @@ async function startRecording() {
     await new Promise<void>((resolve) => { sourceVideo!.onloadedmetadata = () => resolve() })
   }
 
-  // Some browsers (Safari especially) ignore the location=no/toolbar=no
-  // hints and still show a thin address-bar strip along the top of the
-  // popup, which then ends up baked into the recording - and, since the
-  // output height below is derived from the captured frame's own aspect
-  // ratio, that extra strip also skewed the whole video to look like a
-  // different, taller "screen" than the real phone content. Trim exactly
-  // that strip off, measured live from the popup's own outer-vs-inner
-  // window size (not a guessed constant, since chrome height varies by
-  // browser/OS) - whatever's left is just the real invite, edge-to-edge.
+  // Sharing the Chrome Tab (now what the instructions ask for, since only
+  // tab sharing reliably offers audio) never includes the address bar to
+  // begin with - Chrome's tab capture is exactly the page content. The
+  // chrome-trim below only applies to a Window/Screen share, where some
+  // browsers (Safari especially) ignore the location=no/toolbar=no hints
+  // and leave a thin address-bar strip baked into the capture. Trimming it
+  // unconditionally would instead cut real content off a tab share, so
+  // check which surface actually got shared first.
+  const sharedTrack = displayStream.getVideoTracks()[0]
+  const sharedSettings = sharedTrack.getSettings() as MediaTrackSettings & { displaySurface?: string }
+  const isTabShare = sharedSettings.displaySurface === 'browser'
+
   let crop = { x: 0, y: 0, w: sourceVideo.videoWidth, h: sourceVideo.videoHeight }
   try {
-    if (!popup.closed) {
+    if (!isTabShare && !popup.closed) {
       const chromeHeightCss = Math.max(0, popup.outerHeight - popup.innerHeight)
       if (chromeHeightCss > 0) {
         const scaleY = sourceVideo.videoHeight / popup.outerHeight
