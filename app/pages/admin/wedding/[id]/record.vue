@@ -408,7 +408,11 @@ async function startRecording() {
   const mimeType = mimeCandidates.find((m) => MediaRecorder.isTypeSupported(m)) || 'video/webm'
   recordedMimeType = mimeType
   recordedChunks = []
-  recorder = new MediaRecorder(recordingStream, { mimeType, videoBitsPerSecond: 14_000_000 })
+  // Higher than before (was 14 Mbps) - a richer intermediate before the
+  // ffmpeg pass above still has more real detail to work with on flat,
+  // dark backgrounds instead of already having lost it to the live
+  // capture encoder.
+  recorder = new MediaRecorder(recordingStream, { mimeType, videoBitsPerSecond: 22_000_000 })
   recorder.ondataavailable = (e) => { if (e.data.size) recordedChunks.push(e.data) }
   recorder.onstop = handleRecordingStopped
   recorder.start()
@@ -533,32 +537,30 @@ async function convertWebmToMp4(webmBlob: Blob, isH264: boolean, onProgress: (ra
   try {
     const inputData = new Uint8Array(await webmBlob.arrayBuffer())
     await ffmpeg.writeFile('input.webm', inputData)
-    // Audio (when the recording has any) always gets transcoded to AAC -
-    // MP4 doesn't support the Opus codec MediaRecorder uses in the webm
-    // source, so "-c:a copy" would fail even on the H.264 fast path.
-    if (isH264) {
-      // Video is already H.264 - just move it into an MP4 container with
-      // no re-encode, so nothing further is lost.
-      await ffmpeg.exec(['-i', 'input.webm', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '192k', '-movflags', '+faststart', 'output.mp4'])
-    } else {
-      // VP9 fallback path: re-encode with a quality target (CRF) instead
-      // of the previous default-quality "fast" preset, and pin a
-      // broadly-compatible profile/level so phones and social apps decode
-      // it cleanly instead of re-encoding it themselves.
-      await ffmpeg.exec([
-        '-i', 'input.webm',
-        '-c:v', 'libx264',
-        '-preset', 'medium',
-        '-crf', '18',
-        '-pix_fmt', 'yuv420p',
-        '-profile:v', 'high',
-        '-level', '4.2',
-        '-c:a', 'aac',
-        '-b:a', '192k',
-        '-movflags', '+faststart',
-        'output.mp4'
-      ])
-    }
+    // Always re-encode rather than "copy" the H.264 path straight through -
+    // the invite designs lean on large flat/dark, softly-gradiented
+    // backgrounds (deep maroon, navy, etc.), which is exactly the content
+    // real-time browser encoders (what MediaRecorder itself used live)
+    // handle worst - it shows up as a faint blocky/gridded pattern in those
+    // backgrounds. A proper non-realtime x264 pass at a low CRF, plus a
+    // deband filter aimed at that exact artifact, cleans it up - re-encoding
+    // an already-compressed H.264 source loses a little vs. a true copy,
+    // but it's imperceptible at this quality level and worth it to remove
+    // the visible blocking.
+    await ffmpeg.exec([
+      '-i', 'input.webm',
+      '-vf', 'deband=1thr=0.02:2thr=0.02:3thr=0.02:4thr=0.02',
+      '-c:v', 'libx264',
+      '-preset', 'medium',
+      '-crf', '15',
+      '-pix_fmt', 'yuv420p',
+      '-profile:v', 'high',
+      '-level', '4.2',
+      '-c:a', 'aac',
+      '-b:a', '192k',
+      '-movflags', '+faststart',
+      'output.mp4'
+    ])
     const data = await ffmpeg.readFile('output.mp4')
     // Pass the Uint8Array itself, not .buffer - the view's underlying
     // ArrayBuffer can be larger than the actual file (WASM memory isn't
