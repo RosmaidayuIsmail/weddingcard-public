@@ -129,17 +129,23 @@
             </p>
           </div>
 
-          <!-- Smartphone Mockup Wrapper - this is the exact region that gets
-               cropped out of the screen-share and recorded, so its size here
-               (390x844, roughly iPhone-sized) is also the output video's
-               resolution before HD upscaling from the capture. -->
-          <div ref="frameEl" class="phone-bezel shadow-2xl shrink-0">
+          <!-- Smartphone Mockup Wrapper - the recording crops to the iframe
+               itself (frameEl below), not this outer bezel, so the dark
+               phone-bezel border and notch decoration (added purely for
+               this admin dashboard's own display) never end up in the
+               recorded video - only the actual guest-visible page, exactly
+               like a real phone screen. Its size here (390x844, roughly
+               iPhone-sized) is also the output video's resolution before
+               HD upscaling from the capture. -->
+          <div class="phone-bezel shadow-2xl shrink-0">
             <div class="phone-notch"></div>
             <iframe
+              ref="frameEl"
               :key="previewReloadKey"
               :src="previewUrl"
               class="phone-screen"
               title="Live guest preview"
+              @load="previewLoaded = true"
             ></iframe>
           </div>
         </div>
@@ -159,7 +165,8 @@ const { wedding, loading } = useMyWedding(weddingId)
 const previewMode = ref<'classic' | 'vip'>('classic')
 const previewGuestName = ref('Ahmad & Family')
 const previewReloadKey = ref(0)
-const frameEl = ref<HTMLElement | null>(null)
+const frameEl = ref<HTMLIFrameElement | null>(null)
+const previewLoaded = ref(false)
 
 const previewUrl = computed(() => {
   if (!wedding.value) return 'about:blank'
@@ -169,6 +176,7 @@ const previewUrl = computed(() => {
 })
 
 function reloadPreview() {
+  previewLoaded.value = false
   previewReloadKey.value++
 }
 
@@ -221,6 +229,12 @@ async function startRecording() {
   errorMessage.value = ''
   recordingState.value = 'requesting'
 
+  // Make sure the whole phone frame is actually on-screen before anything
+  // gets captured - only what's visible in the viewport can be recorded,
+  // and a settle pause after scrolling avoids capturing mid-scroll.
+  frameEl.value?.scrollIntoView({ block: 'center' })
+  await new Promise((resolve) => setTimeout(resolve, 200))
+
   try {
     // preferCurrentTab/selfBrowserSurface are Chrome-only hints that
     // streamline the share picker toward "this tab" - harmless no-ops on
@@ -250,6 +264,18 @@ async function startRecording() {
     errorMessage.value = 'Preview frame not ready - try again in a moment.'
     displayStream.getTracks().forEach((t) => t.stop())
     return
+  }
+
+  // Give the invite a moment to actually finish loading before we start
+  // capturing - otherwise the first stretch of the recording is just the
+  // phone screen's own dark placeholder background, not the real page.
+  if (!previewLoaded.value) {
+    await Promise.race([
+      new Promise<void>((resolve) => {
+        const stop = watch(previewLoaded, (v) => { if (v) { stop(); resolve() } })
+      }),
+      new Promise<void>((resolve) => setTimeout(resolve, 4000))
+    ])
   }
 
   // If she picked something other than "This Tab" in the share dialog -
@@ -373,10 +399,13 @@ async function handleRecordingStopped() {
     // MP4 conversion is a nice-to-have on top of a recording that already
     // succeeded - if it fails for any reason (e.g. the CDN encoder
     // couldn't load), hand back the raw WebM rather than losing the take.
+    // eslint-disable-next-line no-console
+    console.error('MP4 conversion failed:', err)
     downloadUrl.value = URL.createObjectURL(webmBlob)
     downloadFilename.value = `${wedding.value?.slug || 'wedding'}-promo-${previewMode.value}.webm`
     downloadIsFallback.value = true
-    errorMessage.value = "Couldn't convert to MP4, so here's the recording as WebM instead - it plays in most browsers and video editors, just not natively on all phones/social apps. Try again for an MP4."
+    const detail = err instanceof Error ? err.message : String(err)
+    errorMessage.value = `Couldn't convert to MP4 (${detail}), so here's the recording as WebM instead - it plays in most browsers and video editors, just not natively on all phones/social apps.`
   }
   recordingState.value = 'ready'
 }
@@ -409,7 +438,11 @@ async function convertWebmToMp4(webmBlob: Blob, onProgress: (ratio: number) => v
     await ffmpeg.writeFile('input.webm', inputData)
     await ffmpeg.exec(['-i', 'input.webm', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-preset', 'fast', '-movflags', '+faststart', 'output.mp4'])
     const data = await ffmpeg.readFile('output.mp4')
-    return new Blob([data.buffer], { type: 'video/mp4' })
+    // Pass the Uint8Array itself, not .buffer - the view's underlying
+    // ArrayBuffer can be larger than the actual file (WASM memory isn't
+    // tightly sized to it), so .buffer risks trailing garbage bytes in
+    // the resulting MP4.
+    return new Blob([data], { type: 'video/mp4' })
   } finally {
     ffmpeg.off('progress', onProgressEvent)
   }
@@ -433,11 +466,20 @@ onBeforeUnmount(() => {
 }
 
 /* Smartphone Bezel - same look as the Opening Design live preview */
+/* Sized by height first (capped to whatever actually fits this screen),
+   with width following from the aspect-ratio - a fixed 844px height used
+   to run taller than short/laptop viewports, so the bottom of the phone
+   sat below the fold and never got captured (the recording would show
+   blank space up top and cut-off content lower down). This way the whole
+   phone is always on-screen, just proportionally smaller on a short
+   window, which matters here since only what's actually visible on
+   screen can be recorded. */
 .phone-bezel {
   position: relative;
-  width: 100%;
-  max-width: 390px;
-  height: 844px;
+  width: auto;
+  height: min(844px, calc(100vh - 220px));
+  max-width: 100%;
+  aspect-ratio: 390 / 844;
   background: #000;
   border: 12px solid #1e293b;
   border-radius: 2.5rem;
