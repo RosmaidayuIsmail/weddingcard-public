@@ -122,7 +122,7 @@
         </div>
 
         <!-- Right Column: Live Mobile Preview (the real guest-facing page) -->
-        <div class="w-full lg:w-[560px] shrink-0 flex flex-col items-center pb-8 lg:pb-0 overflow-y-auto hide-scrollbar order-1 lg:order-2">
+        <div class="w-full lg:w-[720px] shrink-0 flex flex-col items-center pb-8 lg:pb-0 overflow-y-auto hide-scrollbar order-1 lg:order-2">
           <div class="flex items-center justify-between w-full mb-4 px-2">
             <p class="text-xs font-semibold uppercase tracking-widest text-gold-200/70 flex items-center gap-2">
               <UIcon name="i-heroicons-device-phone-mobile" class="w-4 h-4" /> Live Preview
@@ -270,9 +270,14 @@ async function startRecording() {
   await new Promise((resolve) => setTimeout(resolve, 300))
 
   try {
+    // audio: true asks for the shared window/tab's own sound (e.g.
+    // background music on the invite) to be captured along with the video.
+    // Whether the browser actually offers/grants it depends on the OS and
+    // which surface she shares - if it isn't available, recording still
+    // proceeds silently rather than failing the take.
     displayStream = await navigator.mediaDevices.getDisplayMedia({
       video: { width: { ideal: 2560 }, height: { ideal: 1440 }, frameRate: { ideal: 30 } },
-      audio: false
+      audio: true
     })
   } catch (err: any) {
     popup.close()
@@ -342,17 +347,26 @@ async function startRecording() {
   drawFrame()
 
   const canvasStream = outputCanvas.captureStream(30)
+  // The canvas only ever carries video (drawImage doesn't touch audio), so
+  // graft the shared window's own audio track onto it, when one came
+  // through, into a single stream to actually record from.
+  const audioTracks = displayStream.getAudioTracks()
+  const recordingStream = new MediaStream([...canvasStream.getVideoTracks(), ...audioTracks])
+  const hasAudio = audioTracks.length > 0
+
   // Capture H.264 directly when the browser supports it (still a webm
   // container) so the MP4 step below can be a lossless remux instead of a
   // second lossy re-encode stacked on top of VP9 - that double-compression
   // was the other half of "HD on the Mac, awful after upload": every
   // re-encode throws away more detail before the destination platform even
   // gets to do its own compression.
-  const mimeCandidates = ['video/webm;codecs=h264', 'video/webm;codecs=vp9', 'video/webm']
+  const mimeCandidates = hasAudio
+    ? ['video/webm;codecs=h264,opus', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=h264', 'video/webm;codecs=vp9', 'video/webm']
+    : ['video/webm;codecs=h264', 'video/webm;codecs=vp9', 'video/webm']
   const mimeType = mimeCandidates.find((m) => MediaRecorder.isTypeSupported(m)) || 'video/webm'
   recordedMimeType = mimeType
   recordedChunks = []
-  recorder = new MediaRecorder(canvasStream, { mimeType, videoBitsPerSecond: 14_000_000 })
+  recorder = new MediaRecorder(recordingStream, { mimeType, videoBitsPerSecond: 14_000_000 })
   recorder.ondataavailable = (e) => { if (e.data.size) recordedChunks.push(e.data) }
   recorder.onstop = handleRecordingStopped
   recorder.start()
@@ -422,9 +436,18 @@ async function getFfmpeg() {
   const { toBlobURL } = await import(/* @vite-ignore */ 'https://unpkg.com/@ffmpeg/util@0.12.2/dist/esm/index.js')
   const ffmpeg = new FFmpeg()
   const coreBase = 'https://unpkg.com/@ffmpeg/core@0.12.10/dist/umd'
+  // @ffmpeg/ffmpeg internally runs the core in a background Worker, and by
+  // default points that Worker straight at its own script on unpkg - but
+  // Workers (unlike normal fetches) are blocked from loading cross-origin,
+  // so the browser throws "Failed to construct 'Worker': ... cannot be
+  // accessed from origin ..." the moment conversion starts, which is
+  // exactly what silently fell back to WebM every time. Blobbing the
+  // worker script itself (classWorkerURL), the same trick already used for
+  // the core/wasm files below, makes it same-origin and fixes that.
   await ffmpeg.load({
     coreURL: await toBlobURL(`${coreBase}/ffmpeg-core.js`, 'text/javascript'),
-    wasmURL: await toBlobURL(`${coreBase}/ffmpeg-core.wasm`, 'application/wasm')
+    wasmURL: await toBlobURL(`${coreBase}/ffmpeg-core.wasm`, 'application/wasm'),
+    classWorkerURL: await toBlobURL('https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/esm/worker.js', 'text/javascript')
   })
   ffmpegInstance = ffmpeg
   return ffmpeg
@@ -437,10 +460,13 @@ async function convertWebmToMp4(webmBlob: Blob, isH264: boolean, onProgress: (ra
   try {
     const inputData = new Uint8Array(await webmBlob.arrayBuffer())
     await ffmpeg.writeFile('input.webm', inputData)
+    // Audio (when the recording has any) always gets transcoded to AAC -
+    // MP4 doesn't support the Opus codec MediaRecorder uses in the webm
+    // source, so "-c:a copy" would fail even on the H.264 fast path.
     if (isH264) {
-      // The recording is already H.264 - just move it into an MP4
-      // container with no re-encode, so nothing further is lost.
-      await ffmpeg.exec(['-i', 'input.webm', '-c:v', 'copy', '-movflags', '+faststart', 'output.mp4'])
+      // Video is already H.264 - just move it into an MP4 container with
+      // no re-encode, so nothing further is lost.
+      await ffmpeg.exec(['-i', 'input.webm', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '192k', '-movflags', '+faststart', 'output.mp4'])
     } else {
       // VP9 fallback path: re-encode with a quality target (CRF) instead
       // of the previous default-quality "fast" preset, and pin a
@@ -454,6 +480,8 @@ async function convertWebmToMp4(webmBlob: Blob, isH264: boolean, onProgress: (ra
         '-pix_fmt', 'yuv420p',
         '-profile:v', 'high',
         '-level', '4.2',
+        '-c:a', 'aac',
+        '-b:a', '192k',
         '-movflags', '+faststart',
         'output.mp4'
       ])
@@ -488,18 +516,16 @@ onBeforeUnmount(() => {
 }
 
 /* Smartphone Bezel - same look as the Opening Design live preview */
-/* Sized by height first (capped to whatever actually fits this screen),
-   with width following from the aspect-ratio - a fixed 844px height used
-   to run taller than short/laptop viewports, so the bottom of the phone
-   sat below the fold and never got captured (the recording would show
-   blank space up top and cut-off content lower down). This way the whole
-   phone is always on-screen, just proportionally smaller on a short
-   window, which matters here since only what's actually visible on
-   screen can be recorded. */
+/* This is now purely a reference preview - actual recording happens in
+   its own popup window (see startRecording), not from this element - so
+   there's no longer a reason to cap it at a small fixed height. It scales
+   up to fill most of the available column height on a big screen instead
+   of sitting small in a lot of empty space, while still shrinking to fit
+   on a short window. */
 .phone-bezel {
   position: relative;
   width: auto;
-  height: min(844px, calc(100vh - 220px));
+  height: min(1400px, calc(100vh - 140px));
   max-width: 100%;
   aspect-ratio: 390 / 844;
   background: #000;
