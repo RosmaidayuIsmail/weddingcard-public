@@ -146,6 +146,13 @@ export interface WeddingContent {
    *  ribbon, or box graphic of their own instead of picking from the
    *  built-in styles. */
   openingGuestNameBoxImageUrl: string
+  /** When true, the guest's name unrolls into view (like a scroll or
+   *  parchment opening) instead of just appearing on load - independent of
+   *  which openingGuestNameBox shape is chosen above. Off by default: it's
+   *  an optional flourish, not something every wedding should get without
+   *  asking for it. Also switched off automatically for guests who have
+   *  requested reduced motion, regardless of this setting. */
+  openingGuestNameAnimate: boolean
   openingGreetingAfterFont: string
   openingGreetingAfterFontUrl: string
   openingGreetingAfterFontFamily: string
@@ -413,6 +420,7 @@ export function createDefaultContent(brideName = '', groomName = ''): WeddingCon
     openingGuestNameWeight: '',
     openingGuestNameBox: 'none',
     openingGuestNameBoxImageUrl: '',
+    openingGuestNameAnimate: false,
     openingGreetingAfterFont: '',
     openingGreetingAfterFontUrl: '',
     openingGreetingAfterFontFamily: '',

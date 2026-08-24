@@ -207,7 +207,7 @@
         <div
           v-if="guestName"
           class="guest-name-box relative mt-4 mb-6 min-w-[200px] max-w-[300px] flex flex-col items-center gap-1.5"
-          :class="guestBoxClass"
+          :class="[guestBoxClass, { 'guest-name-box-animated': content.openingGuestNameAnimate }]"
           :style="guestBoxStyle"
         >
           <div v-if="content.openingGuestNameBox === 'custom' && content.openingGuestNameBoxImageUrl" class="guest-name-box-custom-bg" :style="{ backgroundImage: `url(${content.openingGuestNameBoxImageUrl})` }"></div>
@@ -517,6 +517,27 @@ const guestBoxStyle = computed(() => {
     0% 100%, 0% 64%, 10% 50%, 0% 36%
   );
   box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+}
+
+/* Optional "unroll" reveal for the guest name (see openingGuestNameAnimate
+   on WeddingContent, toggled in DashboardOpeningPanel.vue) - like a scroll
+   or parchment opening to show the name, independent of which shape above
+   is chosen. Uses clip-path rather than transform:scaleX so the text
+   itself is never squashed mid-animation, only progressively uncovered
+   from the center outward. Off by default - see the reduced-motion
+   override further down, which shows the name instantly instead. */
+.guest-name-box-animated {
+  /* A steady ease-in-out, not the sharp ease-out used for the letter/seal
+     animations elsewhere in this file - those are meant to feel like a
+     snap, this is meant to read as a slow unroll, so the motion needs to
+     stay visible across the full duration instead of front-loading into
+     the first 150ms. */
+  animation: guest-name-unroll 1.1s cubic-bezier(0.65, 0, 0.35, 1) both;
+}
+@keyframes guest-name-unroll {
+  0% { clip-path: inset(0 50% 0 50%); opacity: 0; }
+  45% { opacity: 1; }
+  100% { clip-path: inset(0 0% 0 0%); opacity: 1; }
 }
 
 /* The couple's own uploaded backdrop image - sized as a fixed-ratio box so
@@ -1140,6 +1161,12 @@ const guestBoxStyle = computed(() => {
   .modern-dark-bg .md-blob,
   .minimal-light-bg .ml-blob {
     animation: none;
+  }
+
+  .guest-name-box-animated {
+    animation: none;
+    clip-path: none;
+    opacity: 1;
   }
 }
 </style>

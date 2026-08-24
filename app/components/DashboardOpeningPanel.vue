@@ -278,6 +278,25 @@
                     </div>
                   </div>
                 </Transition>
+
+                <!-- Guest Name Animation - its own section, scoped only to
+                     the guest-name box above (doesn't touch the title,
+                     background, or anything else on the opening screen).
+                     An optional "unroll" reveal, like a scroll or
+                     parchment opening to show the name - off by default,
+                     a couple has to opt in. Works with whichever shape is
+                     picked above, including Plain. -->
+                <div class="p-4 rounded-xl bg-[#111827] border border-gray-700 flex items-center justify-between gap-4">
+                  <div class="min-w-0">
+                    <p class="text-sm font-semibold text-white flex items-center gap-2">
+                      <UIcon name="i-heroicons-sparkles" class="w-4 h-4 text-gold-300 shrink-0" />
+                      Guest Name Animation
+                    </p>
+                    <p class="text-xs text-gray-400 mt-1">Let the guest's name unroll into view like a scroll, instead of appearing all at once. Works with whichever shape you picked above.</p>
+                  </div>
+                  <USwitch v-model="form.openingGuestNameAnimate" size="lg" />
+                </div>
+
                 <button type="button" class="text-xs text-gold-300 hover:text-gold-200 flex items-center gap-1" @click="showGreetingStyle = !showGreetingStyle">
                   <UIcon :name="showGreetingStyle ? 'i-heroicons-chevron-down' : 'i-heroicons-chevron-right'" class="w-3.5 h-3.5" /> Customize font for the text before the name (e.g. "Menjemput")
                 </button>
