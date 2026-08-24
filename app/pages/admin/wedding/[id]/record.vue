@@ -218,6 +218,21 @@ let rafId = 0
 let timerInterval: ReturnType<typeof setInterval> | null = null
 let recordingPopup: Window | null = null
 
+// This deployment sends a Cross-Origin-Opener-Policy header that blocks
+// even same-origin window.close()/`.closed` calls between the admin tab
+// and the popup ("Cross-Origin-Opener-Policy policy would block the
+// window.closed call.", confirmed in the console) - every touch of the
+// popup window's close/closed goes through here so that never throws
+// uncaught and derails the recording flow (the popup is harmless left
+// open; she can close it herself).
+function safeClosePopup(win: Window | null) {
+  try {
+    win?.close()
+  } catch {
+    // COOP blocked it - nothing more to do.
+  }
+}
+
 function resetToIdle() {
   if (downloadUrl.value) URL.revokeObjectURL(downloadUrl.value)
   downloadUrl.value = ''
@@ -271,10 +286,22 @@ async function startRecording() {
 
   // Let it actually finish loading the invite before asking what to share,
   // so the share picker shows the real page (not a blank window) and the
-  // recording doesn't start on a placeholder background.
+  // recording doesn't start on a placeholder background. Reading
+  // popup.closed can itself throw ("Cross-Origin-Opener-Policy policy
+  // would block the window.closed call.") on a deployment that sends COOP
+  // headers, so this is wrapped defensively and capped at 5s rather than
+  // ever looping forever on a blocked read.
   await new Promise((resolve) => {
+    let waitedMs = 0
     const check = () => {
-      if (popup.closed || popup.document?.readyState === 'complete') resolve(undefined)
+      let done = false
+      try {
+        done = popup.closed || popup.document?.readyState === 'complete'
+      } catch {
+        done = true
+      }
+      waitedMs += 100
+      if (done || waitedMs >= 5000) resolve(undefined)
       else setTimeout(check, 100)
     }
     check()
@@ -292,7 +319,7 @@ async function startRecording() {
       audio: true
     })
   } catch (err: any) {
-    popup.close()
+    safeClosePopup(popup)
     recordingPopup = null
     recordingState.value = 'idle'
     errorMessage.value = err?.name === 'NotAllowedError'
@@ -399,7 +426,7 @@ function stopRecording() {
   if (timerInterval) { clearInterval(timerInterval); timerInterval = null }
   cancelAnimationFrame(rafId)
   displayStream?.getTracks().forEach((t) => t.stop())
-  recordingPopup?.close()
+  safeClosePopup(recordingPopup)
   recordingPopup = null
   recordingState.value = 'converting'
   conversionLabel.value = 'Finishing recording...'
@@ -454,7 +481,16 @@ let ffmpegLoadPromise: Promise<any> | null = null
 async function getFfmpeg() {
   if (ffmpegInstance) return ffmpegInstance
   if (!ffmpegLoadPromise) {
-    ffmpegLoadPromise = loadFfmpeg().catch((err) => {
+    // Previously this could hang forever with no feedback - e.g. if an ad
+    // blocker or privacy extension silently blocks the CDN fetch (her own
+    // console showed exactly that pattern - ERR_BLOCKED_BY_CLIENT - on
+    // other unrelated requests on this page). A hard timeout turns a
+    // silent, permanent "Loading video encoder..." into an actual error
+    // that falls back to the WebM download instead of never finishing.
+    const timeout = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error("Timed out loading the video encoder - if you have an ad blocker or privacy extension enabled, it may be blocking the CDN this needs. Try turning it off for this site, or use an incognito window, then record again.")), 25000)
+    })
+    ffmpegLoadPromise = Promise.race([loadFfmpeg(), timeout]).catch((err) => {
       // A failed load shouldn't permanently wedge future attempts - clear
       // the cached promise so the next call (e.g. after Stop) tries fresh
       // instead of forever returning the same rejected promise.
@@ -535,7 +571,7 @@ onBeforeUnmount(() => {
   if (timerInterval) clearInterval(timerInterval)
   cancelAnimationFrame(rafId)
   displayStream?.getTracks().forEach((t) => t.stop())
-  recordingPopup?.close()
+  safeClosePopup(recordingPopup)
   if (downloadUrl.value) URL.revokeObjectURL(downloadUrl.value)
 })
 </script>
