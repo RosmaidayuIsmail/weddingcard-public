@@ -231,14 +231,53 @@
                   <UInput v-model="form.openingGreeting" placeholder="e.g. Menjemput {guestName} sekeluarga" size="lg" class="w-full" />
                   <template #help><span class="text-xs text-gray-500">Use <code class="text-gold-300">{guestName}</code> anywhere in the sentence - text before and after it both work, e.g. "Menjemput {guestName} sekeluarga". Each of the three parts - before, the name, and after - can have its own font below, so e.g. "Menjemput" and "sekeluarga" don't have to match.</span></template>
                 </UFormField>
-                <UFormField label="Frosted box behind the greeting" class="flex items-center justify-between">
-                  <template #help><span class="text-xs text-gray-500">Off by default - the greeting sits directly over the background, using its own drop shadow to stay readable. Turn on for a card look instead.</span></template>
-                  <USwitch
-                    :model-value="form.openingGuestNameBox === 'boxed'"
-                    size="lg"
-                    @update:model-value="(v: boolean) => (form.openingGuestNameBox = v ? 'boxed' : 'none')"
-                  />
+                <UFormField label="Guest Name Style">
+                  <template #help><span class="text-xs text-gray-500">How the guest's name is set off from the background - pick a built-in shape, or upload your own frame/ribbon/box design.</span></template>
+                  <div class="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                    <button
+                      v-for="opt in guestNameBoxOptions"
+                      :key="opt.value"
+                      type="button"
+                      class="flex flex-col items-center gap-1.5 p-2 rounded-lg border transition-colors"
+                      :class="form.openingGuestNameBox === opt.value ? 'border-gold-400 bg-gold-400/10' : 'border-gray-700 hover:border-gray-600'"
+                      @click="form.openingGuestNameBox = opt.value"
+                    >
+                      <div class="w-full h-10 rounded flex items-center justify-center bg-[#1a1f2e]">
+                        <UIcon v-if="opt.value === 'custom'" name="i-heroicons-arrow-up-tray" class="w-4 h-4 text-gray-400" />
+                        <span v-else class="gn-preview text-[9px] text-white px-2" :class="`gn-preview-${opt.value}`">Name</span>
+                      </div>
+                      <span class="text-[10px] text-gray-400">{{ opt.label }}</span>
+                    </button>
+                  </div>
                 </UFormField>
+
+                <Transition name="fade-down">
+                  <div v-if="form.openingGuestNameBox === 'custom'" class="p-5 rounded-xl bg-indigo-900/20 border border-indigo-800 space-y-4">
+                    <div class="flex items-center gap-3">
+                      <div class="p-2 rounded-lg bg-indigo-800/40 shrink-0">
+                        <UIcon name="i-heroicons-photo" class="w-5 h-5 text-indigo-300" />
+                      </div>
+                      <div>
+                        <p class="text-sm font-semibold text-white">Upload your own design</p>
+                        <p class="text-xs text-gray-400">A frame, ribbon, or box graphic to sit behind the guest's name - a transparent PNG works best.</p>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-4">
+                      <div v-if="form.openingGuestNameBoxImageUrl" class="w-24 h-16 rounded-lg overflow-hidden border border-gray-700 shrink-0 shadow-md bg-[#111827]">
+                        <img :src="form.openingGuestNameBoxImageUrl" class="w-full h-full object-contain" />
+                      </div>
+                      <div class="flex flex-col gap-2">
+                        <input ref="guestNameBoxInput" type="file" accept="image/*" class="hidden" @change="handleGuestNameBoxSelect">
+                        <div class="flex flex-wrap gap-2">
+                          <UButton size="sm" variant="soft" color="gray" icon="i-heroicons-arrow-up-tray" :loading="guestNameBoxUploading" :disabled="!cloudinaryConfigured" @click="guestNameBoxInput?.click()">
+                            {{ form.openingGuestNameBoxImageUrl ? 'Change Image' : 'Upload Image' }}
+                          </UButton>
+                          <UButton v-if="form.openingGuestNameBoxImageUrl" size="sm" variant="ghost" color="error" icon="i-heroicons-trash" @click="form.openingGuestNameBoxImageUrl = ''" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </Transition>
                 <button type="button" class="text-xs text-gold-300 hover:text-gold-200 flex items-center gap-1" @click="showGreetingStyle = !showGreetingStyle">
                   <UIcon :name="showGreetingStyle ? 'i-heroicons-chevron-down' : 'i-heroicons-chevron-right'" class="w-3.5 h-3.5" /> Customize font for the text before the name (e.g. "Menjemput")
                 </button>
@@ -337,6 +376,32 @@ const fontSelectItems = computed(() => [
 const showTitleStyle = ref(false)
 const showGreetingStyle = ref(false)
 const showGuestNameStyle = ref(false)
+
+const guestNameBoxOptions: { value: WeddingContent['openingGuestNameBox']; label: string }[] = [
+  { value: 'none', label: 'Plain' },
+  { value: 'arch', label: 'Arch' },
+  { value: 'pill', label: 'Oval' },
+  { value: 'hexagon', label: 'Hexagon' },
+  { value: 'ribbon', label: 'Ribbon' },
+  { value: 'custom', label: 'Upload your own' }
+]
+const guestNameBoxInput = ref<HTMLInputElement | null>(null)
+const guestNameBoxUploading = ref(false)
+async function handleGuestNameBoxSelect(event: Event) {
+  const file = (event.target as HTMLInputElement).files?.[0]
+  if (!file || !wedding.value) return
+  guestNameBoxUploading.value = true
+  try {
+    const url = await uploadImage(file, `weddings/${wedding.value.id}/opening`)
+    form.openingGuestNameBoxImageUrl = url
+    toast.add({ title: 'Guest name design uploaded', color: 'success' })
+  } catch (error) {
+    toast.add({ title: 'Upload failed', color: 'error' })
+  } finally {
+    guestNameBoxUploading.value = false
+  }
+  if (guestNameBoxInput.value) guestNameBoxInput.value.value = ''
+}
 const showGreetingAfterStyle = ref(false)
 const showActionStyle = ref(false)
 const toast = useToast()
@@ -473,6 +538,21 @@ useSeoMeta({ title: 'Opening Design — WeddingCard' })
 </script>
 
 <style scoped>
+/* Small style-swatch previews for the Guest Name Style picker above - each
+   one is a scaled-down version of the actual shape in EnvelopeIntro.vue
+   (.guest-name-shape-*), not just a color/border tweak, so the swatch a
+   couple clicks looks like what they'll actually get on the opening
+   screen. */
+.gn-preview { white-space: nowrap; }
+.gn-preview-arch { background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 50% 50% 2px 2px / 85% 85% 2px 2px; padding-top: 3px; padding-bottom: 1px; }
+.gn-preview-pill { background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 999px; padding-top: 2px; padding-bottom: 2px; }
+.gn-preview-hexagon { background: rgba(255, 255, 255, 0.1); clip-path: polygon(30% 0%, 70% 0%, 100% 50%, 70% 100%, 30% 100%, 0% 50%); padding-top: 2px; padding-bottom: 2px; padding-left: 9px; padding-right: 9px; }
+.gn-preview-ribbon {
+  background: #c9a876; color: #1a1f2e !important;
+  clip-path: polygon(0% 0%, 100% 0%, 100% 28%, 88% 50%, 100% 72%, 100% 100%, 0% 100%, 0% 72%, 12% 50%, 0% 28%);
+  padding-top: 3px; padding-bottom: 3px;
+}
+
 /* Form Panels */
 .form-panel {
   border-radius: 1.25rem;

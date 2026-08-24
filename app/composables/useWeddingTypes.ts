@@ -131,13 +131,21 @@ export interface WeddingContent {
   openingGuestNameSize: number
   openingGuestNameColor: string
   openingGuestNameWeight: string
-  /** Whether the guest's name sits inside a frosted box on the opening
-   *  screen, or just as plain text over the background (relying on the
-   *  existing title-shadow treatment for legibility). Old weddings with no
-   *  value saved yet fall back to 'none' - the box was a default nobody
-   *  could turn off, not a deliberate choice, so removing it is the fix
-   *  rather than something to migrate carefully around. */
-  openingGuestNameBox: 'none' | 'boxed'
+  /** How the guest's name is set off from the background on the opening
+   *  screen - a gallery of actual SHAPES (dome arch, oval pill, hexagon,
+   *  notched ribbon banner), not color/border variations on one rectangle,
+   *  so each couple can pick a silhouette that matches their own invitation
+   *  instead of getting one fixed box. 'custom' means their own uploaded
+   *  decorative image sits behind the text (see openingGuestNameBoxImageUrl
+   *  below). Old weddings with no value saved yet fall back to 'none' - the
+   *  frosted box used to be a default nobody could turn off, not a
+   *  deliberate choice, so plain text is the safe fallback. */
+  openingGuestNameBox: 'none' | 'arch' | 'pill' | 'hexagon' | 'ribbon' | 'custom'
+  /** The couple's own uploaded image, shown behind the guest-name text when
+   *  openingGuestNameBox is 'custom' - lets them bring a decorative frame,
+   *  ribbon, or box graphic of their own instead of picking from the
+   *  built-in styles. */
+  openingGuestNameBoxImageUrl: string
   openingGreetingAfterFont: string
   openingGreetingAfterFontUrl: string
   openingGreetingAfterFontFamily: string
@@ -404,6 +412,7 @@ export function createDefaultContent(brideName = '', groomName = ''): WeddingCon
     openingGuestNameColor: '',
     openingGuestNameWeight: '',
     openingGuestNameBox: 'none',
+    openingGuestNameBoxImageUrl: '',
     openingGreetingAfterFont: '',
     openingGreetingAfterFontUrl: '',
     openingGreetingAfterFontFamily: '',

@@ -197,20 +197,26 @@
           {{ content.openingTitle || "You're Invited" }}
         </p>
 
-        <!-- Dynamic Guest Name - plain text by default (openingGuestNameBox
-             'none'), relying on the titleShadow drop-shadow above for
-             legibility over a photo background rather than a frosted box
-             nobody could turn off. 'boxed' brings back the card look for
-             whoever wants it (see DashboardOpeningPanel.vue). -->
+        <!-- Dynamic Guest Name - a gallery of actual set-off SHAPES, not
+             one fixed box (see openingGuestNameBox in useWeddingTypes.ts
+             for the full list and DashboardOpeningPanel.vue for the
+             picker). 'none' (default) is plain text over the background,
+             relying on the titleShadow drop-shadow above for legibility.
+             'custom' uses the couple's own uploaded image as the backdrop
+             instead of any built-in shape. -->
         <div
           v-if="guestName"
-          class="mt-4 mb-6 min-w-[200px] max-w-[300px] flex flex-col items-center gap-1.5"
-          :class="{ 'p-5 border border-white/20 rounded-xl backdrop-blur-md': content.openingGuestNameBox === 'boxed' }"
+          class="guest-name-box relative mt-4 mb-6 min-w-[200px] max-w-[300px] flex flex-col items-center gap-1.5"
+          :class="guestBoxClass"
           :style="guestBoxStyle"
         >
-          <p v-if="greetingParts.before" class="text-sm sm:text-base uppercase tracking-[0.15em] opacity-90" :style="[textStyleBase, titleShadow, greetingStyle]">{{ greetingParts.before }}</p>
-          <p class="font-display font-semibold text-2xl sm:text-3xl leading-tight" :style="[textStyleBase, titleShadow, guestNameStyle]">{{ guestName }}</p>
-          <p v-if="greetingParts.after" class="text-sm sm:text-base uppercase tracking-[0.15em] opacity-90" :style="[textStyleBase, titleShadow, greetingAfterStyle]">{{ greetingParts.after }}</p>
+          <div v-if="content.openingGuestNameBox === 'custom' && content.openingGuestNameBoxImageUrl" class="guest-name-box-custom-bg" :style="{ backgroundImage: `url(${content.openingGuestNameBoxImageUrl})` }"></div>
+          <p v-if="greetingParts.before" class="relative text-sm sm:text-base uppercase tracking-[0.15em] opacity-90" :style="[textStyleBase, titleShadow, greetingStyle]">{{ greetingParts.before }}</p>
+          <p
+            class="relative font-display font-semibold text-2xl sm:text-3xl leading-tight"
+            :style="[textStyleBase, titleShadow, guestNameStyle]"
+          >{{ guestName }}</p>
+          <p v-if="greetingParts.after" class="relative text-sm sm:text-base uppercase tracking-[0.15em] opacity-90" :style="[textStyleBase, titleShadow, greetingAfterStyle]">{{ greetingParts.after }}</p>
         </div>
 
         <button class="mt-8 flex flex-col items-center gap-2 group focus:outline-none">
@@ -433,14 +439,102 @@ const greetingParts = computed(() => {
   return { before: raw.trim(), after: '' }
 })
 
+// The gallery of guest-name set-off SHAPES - see openingGuestNameBox on
+// WeddingContent for the full list. Earlier this was just a couple of
+// border/background treatments on the same rectangle (a "boxed" and an
+// "outline" variant were nearly indistinguishable) - real feedback was
+// that these need to actually look like different shapes, so every option
+// below has its own silhouette (dome arch, oval pill, hexagon, notched
+// ribbon banner), not just a color/border tweak. guestBoxClass carries the
+// static utility classes + shape class; guestBoxStyle carries whatever
+// can't be a static class because it depends on the light/dark opening
+// style or the couple's own accent color.
+const guestBoxClass = computed(() => {
+  const style = props.content.openingGuestNameBox
+  if (style === 'arch') return 'guest-name-shape-arch px-7 pt-8 pb-5'
+  if (style === 'pill') return 'guest-name-shape-pill px-9 py-5'
+  if (style === 'hexagon') return 'guest-name-shape-hexagon px-10 py-6'
+  if (style === 'ribbon') return 'guest-name-shape-ribbon px-9 py-5'
+  if (style === 'custom') return 'guest-name-box-custom p-6'
+  return ''
+})
 const guestBoxStyle = computed(() => {
-  if (props.content.openingGuestNameBox !== 'boxed') return {}
-  if (props.content.openingStyle === 'minimal-light') return { backgroundColor: 'rgba(255, 255, 255, 0.6)', borderColor: 'rgba(0, 0, 0, 0.1)' }
-  return { backgroundColor: 'rgba(255, 255, 255, 0.05)', borderColor: 'rgba(255, 255, 255, 0.15)' }
+  const style = props.content.openingGuestNameBox
+  const isLight = props.content.openingStyle === 'minimal-light'
+  if (style === 'arch' || style === 'pill') {
+    return isLight
+      ? { backgroundColor: 'rgba(255, 255, 255, 0.6)', borderColor: 'rgba(0, 0, 0, 0.1)' }
+      : { backgroundColor: 'rgba(255, 255, 255, 0.1)', borderColor: 'rgba(255, 255, 255, 0.28)' }
+  }
+  if (style === 'hexagon') {
+    return { backgroundColor: isLight ? 'rgba(255, 255, 255, 0.55)' : 'rgba(255, 255, 255, 0.1)' }
+  }
+  if (style === 'ribbon') {
+    return { backgroundColor: props.content.customAccent || (isLight ? '#8a6d3b' : 'var(--theme-accent, #8a6d3b)') }
+  }
+  return {}
 })
 </script>
 
 <style scoped>
+/* Guest-name set-off SHAPES (see guestBoxClass/guestBoxStyle above). Each
+   one is a real distinct silhouette, verified with both a short name and a
+   long two-line name so none of the corner/edge cuts below ever crop into
+   the text - only the background/border color comes from guestBoxStyle. */
+
+/* Dome top + flat sides/bottom - the classic wedding-invite arch card. The
+   border-radius shorthand splits horizontal/vertical radii (before/after
+   the "/"): wide horizontal curve on top, shallow vertical rise, so it
+   reads as a dome regardless of how many lines the name wraps to. */
+.guest-name-shape-arch {
+  border-radius: 50% 50% 6px 6px / 62% 62% 6px 6px;
+  border: 1px solid transparent;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+}
+
+/* Fully-rounded stadium/oval shape. */
+.guest-name-shape-pill {
+  border-radius: 999px;
+  border: 1px solid transparent;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+}
+
+/* Six-sided hexagon - corners cut deep enough (22%/78%) to clearly read as
+   a hexagon rather than a rectangle with clipped corners; the generous
+   horizontal padding on the class list above keeps text clear of the cut. */
+.guest-name-shape-hexagon {
+  clip-path: polygon(22% 0%, 78% 0%, 100% 50%, 78% 100%, 22% 100%, 0% 50%);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+}
+
+/* Rectangle with a triangular notch cut INTO both ends (concave) - the
+   classic banner/ribbon-tag silhouette, distinct from the hexagon's convex
+   points. Solid accent-color fill (not the frosted-glass look the other
+   shapes share) so it reads as a bold ribbon tag. */
+.guest-name-shape-ribbon {
+  clip-path: polygon(
+    0% 0%, 100% 0%, 100% 36%, 90% 50%, 100% 64%, 100% 100%,
+    0% 100%, 0% 64%, 10% 50%, 0% 36%
+  );
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+}
+
+/* The couple's own uploaded backdrop image - sized as a fixed-ratio box so
+   an arbitrary uploaded image (any aspect ratio) still reads as one
+   deliberate frame rather than stretching oddly, with the greeting text
+   laid on top (see the .guest-name-box-custom-bg z-order note in the
+   template: it comes first in DOM, and every text line above it is
+   `relative` too, so normal stacking order alone puts the text on top -
+   no z-index needed). */
+.guest-name-box-custom { position: relative; width: 260px; aspect-ratio: 1.6; justify-content: center; }
+.guest-name-box-custom-bg {
+  position: absolute;
+  inset: 0;
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
 .envelope-overlay {
   position: absolute;
   inset: 0;
