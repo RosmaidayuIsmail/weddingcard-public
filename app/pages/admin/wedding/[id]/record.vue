@@ -215,6 +215,7 @@ let sourceVideo: HTMLVideoElement | null = null
 let outputCanvas: HTMLCanvasElement | null = null
 let recorder: MediaRecorder | null = null
 let recordedChunks: Blob[] = []
+let recordedMimeType = ''
 let rafId = 0
 let timerInterval: ReturnType<typeof setInterval> | null = null
 
@@ -342,35 +343,49 @@ async function startRecording() {
     }
   }
 
-  // The output resolution is deliberately NOT just crop.w/crop.h - that
-  // ties video quality to however big the phone happens to render on her
-  // actual monitor (small on a modest/non-Retina screen), which is what
-  // produced a "too small" recording before. Instead, always scale up to
-  // a fixed 1080-wide HD target (keeping the phone's real aspect ratio),
-  // same as exporting a proper vertical promo video regardless of screen.
+  // The output canvas is a fixed, true 9:16 vertical frame (1080x1920) -
+  // the exact size Instagram/TikTok/WhatsApp Status expect - instead of
+  // following the phone screen's own narrower shape (390:844). Exporting
+  // off that standard ratio gets silently letterboxed and then heavily
+  // re-compressed by the platform itself on upload, which is what made
+  // recordings look sharp locally but "awful after upload". The phone
+  // content is scaled to fit inside this frame (pillarboxed on the sides,
+  // since it's narrower than 9:16) rather than stretched or cropped.
   const OUTPUT_WIDTH = 1080
-  const outputWidth = OUTPUT_WIDTH
-  const outputHeight = Math.round(OUTPUT_WIDTH * (crop.h / crop.w))
+  const OUTPUT_HEIGHT = 1920
+  const fitScale = Math.min(OUTPUT_WIDTH / crop.w, OUTPUT_HEIGHT / crop.h)
+  const drawWidth = Math.round(crop.w * fitScale)
+  const drawHeight = Math.round(crop.h * fitScale)
+  const drawX = Math.round((OUTPUT_WIDTH - drawWidth) / 2)
+  const drawY = Math.round((OUTPUT_HEIGHT - drawHeight) / 2)
 
   outputCanvas = document.createElement('canvas')
-  outputCanvas.width = outputWidth
-  outputCanvas.height = outputHeight
+  outputCanvas.width = OUTPUT_WIDTH
+  outputCanvas.height = OUTPUT_HEIGHT
   const ctx = outputCanvas.getContext('2d')!
   ctx.imageSmoothingEnabled = true
   ctx.imageSmoothingQuality = 'high'
 
   const drawFrame = () => {
-    if (sourceVideo) ctx.drawImage(sourceVideo, crop.x, crop.y, crop.w, crop.h, 0, 0, outputCanvas!.width, outputCanvas!.height)
+    ctx.fillStyle = '#0b1220'
+    ctx.fillRect(0, 0, OUTPUT_WIDTH, OUTPUT_HEIGHT)
+    if (sourceVideo) ctx.drawImage(sourceVideo, crop.x, crop.y, crop.w, crop.h, drawX, drawY, drawWidth, drawHeight)
     rafId = requestAnimationFrame(drawFrame)
   }
   drawFrame()
 
   const canvasStream = outputCanvas.captureStream(30)
-  const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
-    ? 'video/webm;codecs=vp9'
-    : 'video/webm'
+  // Capture H.264 directly when the browser supports it (still a webm
+  // container) so the MP4 step below can be a lossless remux instead of a
+  // second lossy re-encode stacked on top of VP9 - that double-compression
+  // was the other half of "HD on the Mac, awful after upload": every
+  // re-encode throws away more detail before the destination platform even
+  // gets to do its own compression.
+  const mimeCandidates = ['video/webm;codecs=h264', 'video/webm;codecs=vp9', 'video/webm']
+  const mimeType = mimeCandidates.find((m) => MediaRecorder.isTypeSupported(m)) || 'video/webm'
+  recordedMimeType = mimeType
   recordedChunks = []
-  recorder = new MediaRecorder(canvasStream, { mimeType, videoBitsPerSecond: 8_000_000 })
+  recorder = new MediaRecorder(canvasStream, { mimeType, videoBitsPerSecond: 14_000_000 })
   recorder.ondataavailable = (e) => { if (e.data.size) recordedChunks.push(e.data) }
   recorder.onstop = handleRecordingStopped
   recorder.start()
@@ -399,13 +414,14 @@ function stopRecording() {
 
 async function handleRecordingStopped() {
   const webmBlob = new Blob(recordedChunks, { type: 'video/webm' })
+  const isH264 = recordedMimeType.includes('h264')
   sourceVideo = null
   outputCanvas = null
 
   try {
     conversionLabel.value = 'Loading video encoder...'
-    const mp4Blob = await convertWebmToMp4(webmBlob, (ratio) => {
-      conversionLabel.value = 'Converting to MP4...'
+    const mp4Blob = await convertWebmToMp4(webmBlob, isH264, (ratio) => {
+      conversionLabel.value = isH264 ? 'Finalizing MP4...' : 'Converting to MP4...'
       conversionProgress.value = Math.min(1, Math.max(0, ratio))
     })
     downloadUrl.value = URL.createObjectURL(mp4Blob)
@@ -445,14 +461,34 @@ async function getFfmpeg() {
   return ffmpeg
 }
 
-async function convertWebmToMp4(webmBlob: Blob, onProgress: (ratio: number) => void) {
+async function convertWebmToMp4(webmBlob: Blob, isH264: boolean, onProgress: (ratio: number) => void) {
   const ffmpeg = await getFfmpeg()
   const onProgressEvent = ({ progress }: { progress: number }) => onProgress(progress)
   ffmpeg.on('progress', onProgressEvent)
   try {
     const inputData = new Uint8Array(await webmBlob.arrayBuffer())
     await ffmpeg.writeFile('input.webm', inputData)
-    await ffmpeg.exec(['-i', 'input.webm', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-preset', 'fast', '-movflags', '+faststart', 'output.mp4'])
+    if (isH264) {
+      // The recording is already H.264 - just move it into an MP4
+      // container with no re-encode, so nothing further is lost.
+      await ffmpeg.exec(['-i', 'input.webm', '-c:v', 'copy', '-movflags', '+faststart', 'output.mp4'])
+    } else {
+      // VP9 fallback path: re-encode with a quality target (CRF) instead
+      // of the previous default-quality "fast" preset, and pin a
+      // broadly-compatible profile/level so phones and social apps decode
+      // it cleanly instead of re-encoding it themselves.
+      await ffmpeg.exec([
+        '-i', 'input.webm',
+        '-c:v', 'libx264',
+        '-preset', 'medium',
+        '-crf', '18',
+        '-pix_fmt', 'yuv420p',
+        '-profile:v', 'high',
+        '-level', '4.2',
+        '-movflags', '+faststart',
+        'output.mp4'
+      ])
+    }
     const data = await ffmpeg.readFile('output.mp4')
     // Pass the Uint8Array itself, not .buffer - the view's underlying
     // ArrayBuffer can be larger than the actual file (WASM memory isn't
