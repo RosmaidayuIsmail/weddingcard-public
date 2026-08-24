@@ -86,6 +86,7 @@
       { to: `${base}/rsvp-editor`, label: 'RSVP Text & Localization', icon: 'i-heroicons-pencil-square' },
       { to: `${base}/guests`, label: 'Guest List', icon: 'i-heroicons-users' },
       { to: `${base}/flow`, label: 'Wedding Day Flow', icon: 'i-heroicons-clock' },
+      { to: `${base}/record`, label: 'Promo Video', icon: 'i-heroicons-video-camera' },
       { to: `${base}/billing`, label: 'Billing', icon: 'i-heroicons-credit-card' }
     ]
   })
