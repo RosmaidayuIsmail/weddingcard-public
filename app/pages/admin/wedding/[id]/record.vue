@@ -442,8 +442,30 @@ async function handleRecordingStopped() {
 // the single-threaded core is used deliberately since it works without the
 // cross-origin-isolation headers this app doesn't set.
 let ffmpegInstance: any = null
+// The recording flow now calls getFfmpeg() twice - once to preload as soon
+// as Start is clicked, once for real after Stop. Without caching the
+// in-flight promise itself (not just the finished instance), that second
+// call would see ffmpegInstance still null and kick off a whole second,
+// completely separate CDN download + Worker load in parallel with the
+// first - two competing loads that could contend with each other and
+// never resolve, which is exactly what looked like "stuck on Loading video
+// encoder... forever". Every caller now awaits the one shared load.
+let ffmpegLoadPromise: Promise<any> | null = null
 async function getFfmpeg() {
   if (ffmpegInstance) return ffmpegInstance
+  if (!ffmpegLoadPromise) {
+    ffmpegLoadPromise = loadFfmpeg().catch((err) => {
+      // A failed load shouldn't permanently wedge future attempts - clear
+      // the cached promise so the next call (e.g. after Stop) tries fresh
+      // instead of forever returning the same rejected promise.
+      ffmpegLoadPromise = null
+      throw err
+    })
+  }
+  return ffmpegLoadPromise
+}
+
+async function loadFfmpeg() {
   const { FFmpeg } = await import(/* @vite-ignore */ 'https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js')
   const { toBlobURL } = await import(/* @vite-ignore */ 'https://unpkg.com/@ffmpeg/util@0.12.2/dist/esm/index.js')
   const ffmpeg = new FFmpeg()
