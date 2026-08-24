@@ -343,33 +343,22 @@ async function startRecording() {
     }
   }
 
-  // The output canvas is a fixed, true 9:16 vertical frame (1080x1920) -
-  // the exact size Instagram/TikTok/WhatsApp Status expect - instead of
-  // following the phone screen's own narrower shape (390:844). Exporting
-  // off that standard ratio gets silently letterboxed and then heavily
-  // re-compressed by the platform itself on upload, which is what made
-  // recordings look sharp locally but "awful after upload". The phone
-  // content is scaled to fit inside this frame (pillarboxed on the sides,
-  // since it's narrower than 9:16) rather than stretched or cropped.
+  // Output canvas fills edge-to-edge with the phone screen itself - fixed
+  // width, height derived from the phone's own aspect ratio, no black bars
+  // added around it.
   const OUTPUT_WIDTH = 1080
-  const OUTPUT_HEIGHT = 1920
-  const fitScale = Math.min(OUTPUT_WIDTH / crop.w, OUTPUT_HEIGHT / crop.h)
-  const drawWidth = Math.round(crop.w * fitScale)
-  const drawHeight = Math.round(crop.h * fitScale)
-  const drawX = Math.round((OUTPUT_WIDTH - drawWidth) / 2)
-  const drawY = Math.round((OUTPUT_HEIGHT - drawHeight) / 2)
+  const outputWidth = OUTPUT_WIDTH
+  const outputHeight = Math.round(OUTPUT_WIDTH * (crop.h / crop.w))
 
   outputCanvas = document.createElement('canvas')
-  outputCanvas.width = OUTPUT_WIDTH
-  outputCanvas.height = OUTPUT_HEIGHT
+  outputCanvas.width = outputWidth
+  outputCanvas.height = outputHeight
   const ctx = outputCanvas.getContext('2d')!
   ctx.imageSmoothingEnabled = true
   ctx.imageSmoothingQuality = 'high'
 
   const drawFrame = () => {
-    ctx.fillStyle = '#0b1220'
-    ctx.fillRect(0, 0, OUTPUT_WIDTH, OUTPUT_HEIGHT)
-    if (sourceVideo) ctx.drawImage(sourceVideo, crop.x, crop.y, crop.w, crop.h, drawX, drawY, drawWidth, drawHeight)
+    if (sourceVideo) ctx.drawImage(sourceVideo, crop.x, crop.y, crop.w, crop.h, 0, 0, outputCanvas!.width, outputCanvas!.height)
     rafId = requestAnimationFrame(drawFrame)
   }
   drawFrame()
