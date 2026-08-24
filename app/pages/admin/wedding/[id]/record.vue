@@ -252,6 +252,36 @@ async function startRecording() {
     return
   }
 
+  // If she picked something other than "This Tab" in the share dialog -
+  // her whole screen, a different window, another tab - there is no
+  // reliable way to know where the phone frame even is inside that
+  // capture, and guessing produced exactly the "recording my full screen"
+  // bug this replaces. Fail loud with a fixable instruction instead of
+  // silently recording the wrong thing.
+  const track = displayStream.getVideoTracks()[0]
+  const settings = track.getSettings() as MediaTrackSettings & { displaySurface?: string }
+  if (settings.displaySurface && settings.displaySurface !== 'browser') {
+    displayStream.getTracks().forEach((t) => t.stop())
+    recordingState.value = 'idle'
+    errorMessage.value = "That shared your whole screen or a different window, not this tab, so it can't be cropped to just the phone. Click Start Recording again and choose \"This Tab\" (Chrome/Edge) or \"this browser window\" (Safari/Firefox) in the share dialog."
+    return
+  }
+
+  // Chrome 125+: Region Capture crops the stream itself to exactly this
+  // element's rendered area, at the browser level - no coordinate math to
+  // get wrong. Falls back to a manual crop (below) on browsers that don't
+  // support it yet.
+  const CropTargetCtor = (window as any).CropTarget
+  if (CropTargetCtor && typeof track.cropTo === 'function') {
+    try {
+      const cropTarget = await CropTargetCtor.fromElement(frameEl.value)
+      await track.cropTo(cropTarget)
+    } catch {
+      // Element wasn't croppable for some reason - manual crop below still
+      // works since we've already confirmed this is a same-tab capture.
+    }
+  }
+
   sourceVideo = document.createElement('video')
   sourceVideo.muted = true
   sourceVideo.srcObject = displayStream
@@ -260,17 +290,26 @@ async function startRecording() {
     await new Promise<void>((resolve) => { sourceVideo!.onloadedmetadata = () => resolve() })
   }
 
-  // Ratio between the captured stream's actual pixel size and this page's
-  // CSS viewport size - tab capture isn't always a clean multiple of
-  // devicePixelRatio, so this is measured rather than assumed.
-  const scaleX = sourceVideo.videoWidth / window.innerWidth
-  const scaleY = sourceVideo.videoHeight / window.innerHeight
-  const rect = frameEl.value.getBoundingClientRect()
-  const crop = {
-    x: Math.max(0, Math.round(rect.left * scaleX)),
-    y: Math.max(0, Math.round(rect.top * scaleY)),
-    w: Math.max(2, Math.round(Math.min(sourceVideo.videoWidth - rect.left * scaleX, rect.width * scaleX))),
-    h: Math.max(2, Math.round(Math.min(sourceVideo.videoHeight - rect.top * scaleY, rect.height * scaleY)))
+  const nativelyCropped = !!(CropTargetCtor && typeof track.cropTo === 'function')
+  let crop: { x: number; y: number; w: number; h: number }
+  if (nativelyCropped) {
+    // The video's own frames are already just the phone region - draw them
+    // through as-is.
+    crop = { x: 0, y: 0, w: sourceVideo.videoWidth, h: sourceVideo.videoHeight }
+  } else {
+    // Manual fallback: ratio between the captured tab's actual pixel size
+    // and this page's CSS viewport size - safe now that displaySurface is
+    // confirmed to be 'browser' (this tab), so the two coordinate spaces
+    // actually correspond.
+    const scaleX = sourceVideo.videoWidth / window.innerWidth
+    const scaleY = sourceVideo.videoHeight / window.innerHeight
+    const rect = frameEl.value.getBoundingClientRect()
+    crop = {
+      x: Math.max(0, Math.round(rect.left * scaleX)),
+      y: Math.max(0, Math.round(rect.top * scaleY)),
+      w: Math.max(2, Math.round(Math.min(sourceVideo.videoWidth - rect.left * scaleX, rect.width * scaleX))),
+      h: Math.max(2, Math.round(Math.min(sourceVideo.videoHeight - rect.top * scaleY, rect.height * scaleY)))
+    }
   }
 
   outputCanvas = document.createElement('canvas')
