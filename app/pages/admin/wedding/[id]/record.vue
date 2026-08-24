@@ -233,6 +233,20 @@ async function startRecording() {
   errorMessage.value = ''
   recordingState.value = 'requesting'
 
+  // Kick off loading the video encoder now, in the background, instead of
+  // only after Stop is clicked - it has to fetch a real encoder
+  // (~25-30MB) from a CDN the first time, which is what "Loading video
+  // encoder..." was waiting on after every single recording. Starting it
+  // here lets that download happen while she's recording (which usually
+  // takes longer than the download itself), so by the time she clicks
+  // Stop, it's typically already loaded and that step is instant. It's
+  // cached after the first successful load, so this is a no-op on every
+  // recording after the first.
+  getFfmpeg().catch(() => {
+    // If it fails to preload, convertWebmToMp4 will just try again (and
+    // surface the real error then) after Stop - nothing to do here.
+  })
+
   // Previous approach: share this whole admin tab, then mathematically
   // crop out just the phone region (by element bounds, or a browser-level
   // CropTarget). That crop math depended on assumptions - which surface
