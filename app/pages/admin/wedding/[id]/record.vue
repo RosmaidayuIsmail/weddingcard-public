@@ -28,7 +28,7 @@
       <div class="flex-1 flex flex-col lg:flex-row gap-8 xl:gap-12 lg:min-h-0">
 
         <!-- Left Column: Controls -->
-        <div class="flex-1 w-full lg:overflow-y-auto custom-scrollbar lg:pr-6 pb-8 lg:pb-20 space-y-6 order-2 lg:order-1">
+        <div class="flex-1 w-full lg:min-w-[360px] lg:overflow-y-auto custom-scrollbar lg:pr-6 pb-8 lg:pb-20 space-y-6 order-2 lg:order-1">
 
           <div class="space-y-6 form-panel animate-in fade-in slide-in-from-bottom-4 duration-500">
 
@@ -122,7 +122,7 @@
         </div>
 
         <!-- Right Column: Live Mobile Preview (the real guest-facing page) -->
-        <div class="w-full lg:w-[720px] shrink-0 flex flex-col items-center pb-8 lg:pb-0 overflow-y-auto hide-scrollbar order-1 lg:order-2">
+        <div class="w-full lg:w-[560px] shrink-0 flex flex-col items-center pb-8 lg:pb-0 overflow-y-auto hide-scrollbar order-1 lg:order-2">
           <div class="flex items-center justify-between w-full mb-4 px-2">
             <p class="text-xs font-semibold uppercase tracking-widest text-gold-200/70 flex items-center gap-2">
               <UIcon name="i-heroicons-device-phone-mobile" class="w-4 h-4" /> Live Preview
