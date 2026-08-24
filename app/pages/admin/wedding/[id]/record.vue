@@ -122,7 +122,7 @@
         </div>
 
         <!-- Right Column: Live Mobile Preview (the real guest-facing page) -->
-        <div class="w-full lg:w-[400px] shrink-0 flex flex-col items-center pb-8 lg:pb-0 overflow-y-auto hide-scrollbar order-1 lg:order-2">
+        <div class="w-full lg:w-[560px] shrink-0 flex flex-col items-center pb-8 lg:pb-0 overflow-y-auto hide-scrollbar order-1 lg:order-2">
           <div class="flex items-center justify-between w-full mb-4 px-2">
             <p class="text-xs font-semibold uppercase tracking-widest text-gold-200/70 flex items-center gap-2">
               <UIcon name="i-heroicons-device-phone-mobile" class="w-4 h-4" /> Live Preview
@@ -134,9 +134,13 @@
                phone-bezel border and notch decoration (added purely for
                this admin dashboard's own display) never end up in the
                recorded video - only the actual guest-visible page, exactly
-               like a real phone screen. Its size here (390x844, roughly
-               iPhone-sized) is also the output video's resolution before
-               HD upscaling from the capture. -->
+               like a real phone screen. Sized bigger than an actual iPhone
+               (scales with the column instead of a fixed 390px) purely so
+               there's more real on-screen detail to capture - the output
+               video is then scaled to a fixed 1080-wide HD target
+               regardless of exactly how big this renders on her screen
+               (see the OUTPUT_WIDTH constant below), so recording quality
+               doesn't depend on her monitor or zoom level. -->
           <div class="phone-bezel shadow-2xl shrink-0">
             <div class="phone-notch"></div>
             <iframe
@@ -338,10 +342,22 @@ async function startRecording() {
     }
   }
 
+  // The output resolution is deliberately NOT just crop.w/crop.h - that
+  // ties video quality to however big the phone happens to render on her
+  // actual monitor (small on a modest/non-Retina screen), which is what
+  // produced a "too small" recording before. Instead, always scale up to
+  // a fixed 1080-wide HD target (keeping the phone's real aspect ratio),
+  // same as exporting a proper vertical promo video regardless of screen.
+  const OUTPUT_WIDTH = 1080
+  const outputWidth = OUTPUT_WIDTH
+  const outputHeight = Math.round(OUTPUT_WIDTH * (crop.h / crop.w))
+
   outputCanvas = document.createElement('canvas')
-  outputCanvas.width = crop.w
-  outputCanvas.height = crop.h
+  outputCanvas.width = outputWidth
+  outputCanvas.height = outputHeight
   const ctx = outputCanvas.getContext('2d')!
+  ctx.imageSmoothingEnabled = true
+  ctx.imageSmoothingQuality = 'high'
 
   const drawFrame = () => {
     if (sourceVideo) ctx.drawImage(sourceVideo, crop.x, crop.y, crop.w, crop.h, 0, 0, outputCanvas!.width, outputCanvas!.height)
