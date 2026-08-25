@@ -215,6 +215,7 @@ let recorder: MediaRecorder | null = null
 let recordedChunks: Blob[] = []
 let recordedMimeType = ''
 let rafId = 0
+let rvfcId = 0
 let timerInterval: ReturnType<typeof setInterval> | null = null
 let recordingPopup: Window | null = null
 let endedEarly = false
@@ -403,6 +404,17 @@ async function startRecording() {
   ctx.imageSmoothingEnabled = true
   ctx.imageSmoothingQuality = 'high'
 
+  // Drawing the canvas via requestAnimationFrame is what made the video go
+  // blank while the audio kept going the moment she clicked into the
+  // popup (e.g. to hit RSVP) - rAF on THIS tab (where this script runs,
+  // not the popup) is paused by the browser entirely whenever this tab
+  // isn't the visible/focused one, which stops the canvas from ever being
+  // redrawn again until she clicks back to it. The audio track has no such
+  // dependency, which is exactly why it kept playing while the picture
+  // froze/blanked. sourceVideo.requestVideoFrameCallback() is tied to the
+  // video element actually decoding frames, not to this tab's visibility,
+  // so it keeps the canvas updating no matter which window has focus.
+  const supportsVfc = typeof (sourceVideo as any).requestVideoFrameCallback === 'function'
   const drawFrame = () => {
     if (sourceVideo) {
       ctx.filter = 'blur(60px) brightness(0.45) saturate(1.15)'
@@ -410,7 +422,11 @@ async function startRecording() {
       ctx.filter = 'none'
       ctx.drawImage(sourceVideo, crop.x, crop.y, crop.w, crop.h, fgX, fgY, fgWidth, fgHeight)
     }
-    rafId = requestAnimationFrame(drawFrame)
+    if (supportsVfc) {
+      rvfcId = (sourceVideo as any).requestVideoFrameCallback(drawFrame)
+    } else {
+      rafId = requestAnimationFrame(drawFrame)
+    }
   }
   drawFrame()
 
@@ -467,6 +483,9 @@ function stopRecording() {
   if (recordingState.value !== 'recording') return
   if (timerInterval) { clearInterval(timerInterval); timerInterval = null }
   cancelAnimationFrame(rafId)
+  if (rvfcId && sourceVideo && 'cancelVideoFrameCallback' in sourceVideo) {
+    (sourceVideo as any).cancelVideoFrameCallback(rvfcId)
+  }
   displayStream?.getTracks().forEach((t) => t.stop())
   safeClosePopup(recordingPopup)
   recordingPopup = null
@@ -621,6 +640,9 @@ async function convertWebmToMp4(webmBlob: Blob, isH264: boolean, onProgress: (ra
 onBeforeUnmount(() => {
   if (timerInterval) clearInterval(timerInterval)
   cancelAnimationFrame(rafId)
+  if (rvfcId && sourceVideo && 'cancelVideoFrameCallback' in sourceVideo) {
+    (sourceVideo as any).cancelVideoFrameCallback(rvfcId)
+  }
   displayStream?.getTracks().forEach((t) => t.stop())
   safeClosePopup(recordingPopup)
   if (downloadUrl.value) URL.revokeObjectURL(downloadUrl.value)
