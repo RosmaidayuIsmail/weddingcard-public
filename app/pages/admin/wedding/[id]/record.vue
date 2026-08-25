@@ -71,7 +71,7 @@
 
               <div v-if="recordingState === 'idle'" class="space-y-3">
                 <p class="text-xs text-gray-400 leading-relaxed">
-                  Click Start and a small new window will pop up with just the live invite in it - nothing else. When your browser asks what to share, click the <strong class="text-gray-200">Chrome Tab</strong> tab at the top of that picker (not "Window" or "Entire Screen"), select the tab for that new page, and turn on <strong class="text-gray-200">Share tab audio</strong> if you want the invite's music in the recording - sharing the window instead of the tab is why audio doesn't come through. Interact with it exactly like a guest would - tap to open the envelope, scroll through it - then come back here and click Stop.
+                  Click Start and a small new window will pop up with just the live invite in it - nothing else. When your browser asks what to share, click the <strong class="text-gray-200">Chrome Tab</strong> tab at the top of that picker (not "Window" or "Entire Screen"), select the tab for that new page, and turn on <strong class="text-gray-200">Share tab audio</strong> if you want the invite's music in the recording - this has to be turned back on every single time you record, the browser never remembers it from a previous take. Interact with it exactly like a guest would - tap to open the envelope, scroll through it - then come back here and click Stop. If you're moving between multiple pages (Details, RSVP), try to stay on one page for the whole take where possible - some browsers can silently end sharing mid-recording when the shared tab navigates.
                 </p>
                 <UButton size="lg" color="primary" icon="i-heroicons-video-camera" class="w-full font-semibold" @click="startRecording">
                   Start Recording
@@ -217,6 +217,7 @@ let recordedMimeType = ''
 let rafId = 0
 let timerInterval: ReturnType<typeof setInterval> | null = null
 let recordingPopup: Window | null = null
+let endedEarly = false
 
 // This deployment sends a Cross-Origin-Opener-Policy header that blocks
 // even same-origin window.close()/`.closed` calls between the admin tab
@@ -246,6 +247,7 @@ function resetToIdle() {
 
 async function startRecording() {
   errorMessage.value = ''
+  endedEarly = false
   recordingState.value = 'requesting'
 
   // Kick off loading the video encoder now, in the background, instead of
@@ -441,10 +443,19 @@ async function startRecording() {
   recorder.onstop = handleRecordingStopped
   recorder.start()
 
-  // If she stops sharing via the browser's own "Stop sharing" pill instead
-  // of our button, treat that exactly like clicking Stop.
+  // Calling .stop() ourselves (the Stop button, below) does NOT fire
+  // 'ended' - only the track ending on its own does: she clicked the
+  // browser's native "Stop sharing" pill, OR - when sharing a Chrome Tab
+  // specifically - the browser silently ended the capture because that tab
+  // navigated (e.g. tapping through from the opening to Details/RSVP).
+  // Either way, treat it like Stop was clicked so nothing is lost, but
+  // remember it happened so the "ready" screen can explain why it cut off
+  // instead of just quietly handing back a shorter clip.
   displayStream.getVideoTracks()[0].addEventListener('ended', () => {
-    if (recordingState.value === 'recording') stopRecording()
+    if (recordingState.value === 'recording') {
+      endedEarly = true
+      stopRecording()
+    }
   })
 
   recordingState.value = 'recording'
@@ -491,6 +502,17 @@ async function handleRecordingStopped() {
     downloadIsFallback.value = true
     const detail = err instanceof Error ? err.message : String(err)
     errorMessage.value = `Couldn't convert to MP4 (${detail}), so here's the recording as WebM instead - it plays in most browsers and video editors, just not natively on all phones/social apps.`
+  }
+  if (endedEarly) {
+    // The browser ended sharing on its own mid-take, not from clicking
+    // Stop - most often either the native "Stop sharing" pill got clicked
+    // by accident, or (when sharing a Chrome Tab) the tab navigated to a
+    // new page, which can end tab capture depending on the browser. What
+    // was captured up to that point is still saved below - this just
+    // explains why it may be shorter than expected instead of leaving her
+    // to wonder if something broke.
+    const note = "The recording stopped on its own partway through - either the browser's own \"Stop sharing\" indicator got clicked, or (if you were sharing a Chrome Tab) the tab navigated to a new page, which can end sharing mid-recording on some browsers. What was captured up to that point is below - try staying on one page for the whole take, or record shorter clips per page."
+    errorMessage.value = errorMessage.value ? `${errorMessage.value} ${note}` : note
   }
   recordingState.value = 'ready'
 }
