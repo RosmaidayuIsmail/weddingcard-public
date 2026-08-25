@@ -38,6 +38,14 @@ const ariaLabel = computed(() =>
 </script>
 
 <style scoped>
+/* This sits directly on the page's own theme background (a photo or the
+   theme-surface gradient), which varies from very dark to very light
+   depending on the couple's chosen theme - a fixed white-tinted box with
+   a hardcoded gold border and gold numbers only read correctly on dark
+   themes. It also meant the numbers always showed the app's default gold
+   regardless of theme, instead of the couple's own accent colour (e.g.
+   matcha green for Matcha Strawberry). Using the theme's own ink/accent
+   variables keeps this legible and on-theme on every background. */
 .countdown-cell {
   display: flex;
   flex-direction: column;
@@ -45,8 +53,8 @@ const ariaLabel = computed(() =>
   justify-content: center;
   padding: 0.75rem 0.25rem;
   border-radius: 0.75rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(212, 160, 23, 0.35);
+  background: color-mix(in srgb, var(--theme-ink, #fff) 6%, transparent);
+  border: 1px solid var(--theme-accent-soft, rgba(212, 160, 23, 0.35));
   backdrop-filter: blur(6px);
 }
 
@@ -54,7 +62,7 @@ const ariaLabel = computed(() =>
   font-variant-numeric: tabular-nums;
   font-size: clamp(1.5rem, 5vw, 2.25rem);
   font-weight: 600;
-  color: var(--ui-color-primary-300, #ecc973);
+  color: var(--theme-accent, #ecc973);
   line-height: 1;
 }
 
@@ -63,6 +71,6 @@ const ariaLabel = computed(() =>
   font-size: 0.65rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.65);
+  color: color-mix(in srgb, var(--theme-ink, #fff) 65%, transparent);
 }
 </style>

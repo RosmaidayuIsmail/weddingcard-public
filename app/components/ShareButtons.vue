@@ -1,21 +1,30 @@
 <template>
+  <!-- These sit directly on the page's own theme background, which can be
+       a light palette (Ivory Minimalist, Sky Serenade, Matcha Strawberry).
+       UButton's built-in success/neutral "soft" colors are tuned for a
+       dark backdrop and washed out to near-invisible on a light one -
+       theme-ink-based coloring instead keeps both legible on every theme,
+       same fix already applied to the RSVP page's "Return to Invitation"
+       pill and the "View Details" button. -->
   <div class="flex items-center justify-center gap-3">
     <UButton
       icon="i-heroicons-chat-bubble-left-right"
-      color="success"
       variant="soft"
+      color="neutral"
       :to="whatsappUrl"
       target="_blank"
       external
+      class="border text-[color-mix(in_srgb,var(--theme-ink)_90%,transparent)] bg-[color-mix(in_srgb,var(--theme-ink)_5%,transparent)] hover:bg-[color-mix(in_srgb,var(--theme-ink)_10%,transparent)] border-[color-mix(in_srgb,var(--theme-ink)_12%,transparent)]"
     >
       Share on WhatsApp
     </UButton>
 
     <UButton
       icon="i-heroicons-link"
-      color="neutral"
       variant="soft"
+      color="neutral"
       @click="copyLink"
+      class="border text-[color-mix(in_srgb,var(--theme-ink)_90%,transparent)] bg-[color-mix(in_srgb,var(--theme-ink)_5%,transparent)] hover:bg-[color-mix(in_srgb,var(--theme-ink)_10%,transparent)] border-[color-mix(in_srgb,var(--theme-ink)_12%,transparent)]"
     >
       {{ copied ? 'Copied!' : 'Copy Link' }}
     </UButton>

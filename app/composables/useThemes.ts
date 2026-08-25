@@ -209,6 +209,23 @@ export const themes: Theme[] = [
       ink: '#1e3a4c',
       onAccent: '#eef5fb'
     }
+  },
+  {
+    id: 'matcha-strawberry',
+    name: 'Matcha Strawberry',
+    tagline: 'Soft strawberry cream with matcha green accents for a sweet, playful feel',
+    price: 0,
+    currency: 'RM',
+    headingFont: 'Dancing Script',
+    palette: {
+      bgFrom: '#fef6f3',
+      bgVia: '#fbe8ec',
+      bgTo: '#f6cdd6',
+      accent: '#7c9a6f',
+      accentSoft: 'rgba(124, 154, 111, 0.16)',
+      ink: '#4a3b3a',
+      onAccent: '#fefaf6'
+    }
   }
 ]
 
