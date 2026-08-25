@@ -78,6 +78,18 @@ export interface WeddingContent {
   nameColor: string
   /** Percentage scale for the bride & groom names, 50-200, default 100 */
   nameSize: number
+  /** How the RSVP/Inner Card panel background is styled: '' (auto - follows
+   *  the theme's own default, see Theme.defaultCardStyle) | 'theme' (always
+   *  tint the card with the wedding's own theme colors, keeping the theme's
+   *  own ink for text) | 'dark' (always use a fixed dark card with light
+   *  text, regardless of theme - matches the original Matcha Strawberry
+   *  treatment). A manual override so one couple's choice never changes the
+   *  default for every other theme. */
+  cardStyle: string
+  /** Override text color for content inside the RSVP/Inner Card panel -
+   *  blank uses whatever the resolved cardStyle would use automatically
+   *  (theme ink for 'theme', white for 'dark'). */
+  cardTextColor: string
   /** Monogram / logo emblem shown on the print card and details page */
   monogramEnabled: boolean
   monogramType: string // 'auto' | 'custom-text' | 'upload'
@@ -385,6 +397,8 @@ export function createDefaultContent(brideName = '', groomName = ''): WeddingCon
     textWeight: '300',
     nameColor: '',
     nameSize: 100,
+    cardStyle: '',
+    cardTextColor: '',
     monogramEnabled: false,
     monogramType: 'auto',
     monogramText: '',

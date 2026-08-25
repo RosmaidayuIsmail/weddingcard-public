@@ -5,7 +5,7 @@
           type="button"
           class="flex-1 py-2 text-xs font-medium rounded-md transition-all"
           :class="!useCustomFont ? 'bg-gray-700 text-gold-300' : 'text-gray-400 hover:text-white'"
-          @click="useCustomFont = false"
+          @click="switchToCuratedFont"
         >
           Curated Font
         </button>
@@ -35,10 +35,11 @@
           </div>
         </div>
         <div>
-          <p class="text-xs text-gray-400 mb-2">Size</p>
+          <p class="text-xs text-gray-400 mb-2">Size <span class="text-gray-600">(100% = default)</span></p>
           <div class="flex items-center gap-2 h-9">
             <input v-model.number="sizeValue" type="range" min="50" max="200" step="5" class="flex-1 accent-[#e3b04a]">
             <span class="text-xs text-gray-400 w-9 text-right shrink-0">{{ sizeValue }}%</span>
+            <UButton v-if="sizeValue !== 100" size="xs" variant="ghost" color="neutral" icon="i-heroicons-x-mark" @click="sizeValue = 100" />
           </div>
         </div>
       </div>
@@ -83,6 +84,20 @@
   ]
   
   const useCustomFont = ref(!!props.form[`${props.prefix}FontUrl`])
+
+  // Switching back to Curated Font used to only hide the URL input - the
+  // pasted font's URL AND the FontFamily it derived (see the watcher below)
+  // both stayed set on the form. buildTextOverride() in EnvelopeIntro.vue
+  // always prefers FontFamily over the curated Font value when both are
+  // present, so the title/text kept rendering in the old custom font no
+  // matter what curated font was picked afterwards, and the <link> for the
+  // old Google Font stylesheet kept loading too. Clearing both here is what
+  // actually lets the curated dropdown take effect again.
+  function switchToCuratedFont() {
+    useCustomFont.value = false
+    props.form[`${props.prefix}FontUrl`] = ''
+    props.form[`${props.prefix}FontFamily`] = ''
+  }
   
   const fontValue = computed({
     get: () => props.form[`${props.prefix}Font`] || '',
@@ -124,7 +139,13 @@
   // the font file but never switched the CSS font-family, and looked like
   // the font picker was silently doing nothing.
   watch(fontUrlValue, (newVal) => {
-    if (!newVal) return
+    if (!newVal) {
+      // Font URL cleared by hand (not via the tab button above) - drop the
+      // FontFamily it derived too, for the same reason switchToCuratedFont
+      // does above.
+      props.form[`${props.prefix}FontFamily`] = ''
+      return
+    }
     try {
       let workingUrl = newVal
       if (newVal.includes('fonts.google.com/specimen/')) {

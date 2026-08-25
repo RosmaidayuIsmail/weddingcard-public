@@ -49,6 +49,15 @@ export interface Theme {
   currency: 'RM'
   headingFont: string
   palette: ThemePalette
+  /** Default look for the RSVP/Inner Card panel when a couple hasn't
+   *  chosen one themselves (WeddingContent.cardStyle is empty):
+   *  'theme' (default when unset) tints the card with this theme's own
+   *  bg-via/bg-to and keeps its own ink for text - self-consistent, since
+   *  the theme's ink was chosen to contrast with its own background.
+   *  'dark' forces a fixed dark card with light text regardless of the
+   *  theme's own palette. Every couple can still override either way
+   *  per-wedding via WeddingContent.cardStyle - this is only the default. */
+  defaultCardStyle?: 'theme' | 'dark'
 }
 
 export interface FontOption {
@@ -225,7 +234,8 @@ export const themes: Theme[] = [
       accentSoft: 'rgba(124, 154, 111, 0.16)',
       ink: '#4a3b3a',
       onAccent: '#fefaf6'
-    }
+    },
+    defaultCardStyle: 'dark'
   }
 ]
 
@@ -786,6 +796,17 @@ export function useThemes() {
     return allThemes.value.find((theme) => theme.id === themeId) ?? themes.find((theme) => theme.id === DEFAULT_THEME_ID)!
   }
 
+  // Single source of truth for "should this wedding's RSVP/Inner Card panel
+  // render as a dark card, or tinted with its own theme colors" - used by
+  // rsvp.vue, details.vue, and their admin preview mirrors so they can never
+  // drift out of sync with each other. A couple's own WeddingContent.cardStyle
+  // choice always wins; an empty/unset value falls back to the theme's own
+  // defaultCardStyle (which only Matcha Strawberry sets to 'dark' today).
+  function resolveCardStyle(themeId: string | undefined | null, override?: string | null): 'theme' | 'dark' {
+    if (override === 'dark' || override === 'theme') return override
+    return getTheme(themeId).defaultCardStyle === 'dark' ? 'dark' : 'theme'
+  }
+
   function themeStyleVars(themeId: string | undefined | null, overrides?: ColorOverrides, fontFamily?: string, textWeight?: string) {
     const theme = getTheme(themeId)
     const bgFrom = overrides?.bgFrom || theme.palette.bgFrom
@@ -830,6 +851,7 @@ export function useThemes() {
     allTextPresets,
     allRsvpPresets,
     getTheme,
+    resolveCardStyle,
     themeStyleVars,
     addCustomTheme,
     removeCustomTheme,

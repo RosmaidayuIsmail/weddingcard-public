@@ -17,7 +17,11 @@
         </div>
       </div>
 
-      <div class="relative flex-1 classic-inner-card backdrop-blur-xl border rounded-[1.5rem] shadow-xl p-5 flex flex-col justify-center transition-all duration-300 overflow-y-auto hide-scrollbar" :style="{ borderColor: 'var(--theme-accent-soft)' }">
+      <div
+        class="relative flex-1 backdrop-blur-xl border rounded-[1.5rem] shadow-xl p-5 flex flex-col justify-center transition-all duration-300 overflow-y-auto hide-scrollbar"
+        :class="cardStyleResolved === 'dark' ? 'classic-inner-card' : 'classic-inner-card-theme'"
+        :style="{ borderColor: 'var(--theme-accent-soft)', '--card-text': cardTextColorResolved }"
+      >
          <Transition :name="direction" mode="out-in">
            <div :key="currentSlide" class="space-y-3 text-center w-full px-1 py-2">
               
@@ -38,27 +42,25 @@
                   <UIcon v-else-if="content.detailsTopIcon === 'heart'" name="i-heroicons-heart" :style="{ color: 'var(--theme-accent)', width: `${1.5 * ((content.detailsIconSize ?? 100) / 100)}rem`, height: `${1.5 * ((content.detailsIconSize ?? 100) / 100)}rem` }" />
                   <img v-else-if="content.detailsTopIcon === 'custom' && content.customIconUrl" :src="content.customIconUrl" alt="" class="object-contain drop-shadow" :style="{ width: `${3 * ((content.detailsIconSize ?? 100) / 100)}rem`, height: `${3 * ((content.detailsIconSize ?? 100) / 100)}rem` }">
                 </div>
-                <p v-if="!content.hideSystemText" class="text-white/90 text-sm leading-relaxed whitespace-pre-line font-light">{{ content.story || 'Welcome message...' }}</p>
+                <p v-if="!content.hideSystemText" class="text-[color-mix(in_srgb,var(--card-text)_90%,transparent)] text-sm leading-relaxed whitespace-pre-line font-light">{{ content.story || 'Welcome message...' }}</p>
               </template>
 
               <!-- Couple -->
               <template v-else-if="currentKey === 'couple'">
                 <div v-if="!content.hideSystemText">
-                  <!-- Fixed white default, not var(--theme-ink) - this
-                       sits inside .classic-inner-card, which is always
-                       dark regardless of theme, so theme-ink (dark, for
-                       a light theme like Matcha Strawberry) rendered as
-                       unreadable dark-on-dark text. content.nameColor
-                       (the "Name Color" picker on the Theme tab, also
-                       used for the cover page's names) still overrides
-                       it when a couple sets one explicitly. -->
-                  <h2 class="text-4xl leading-tight drop-shadow-md" :style="{ color: content.nameColor || '#ffffff', fontFamily: 'var(--theme-heading-font)' }">
+                  <!-- var(--card-text), not a literal white or
+                       var(--theme-ink) - see cardStyleResolved/
+                       cardTextColorResolved above. content.nameColor (the
+                       "Name Color" picker on the Theme tab, also used for
+                       the cover page's names) still overrides it when a
+                       couple sets one explicitly. -->
+                  <h2 class="text-4xl leading-tight drop-shadow-md" :style="{ color: content.nameColor || 'var(--card-text)', fontFamily: 'var(--theme-heading-font)' }">
                     {{ content.brideName || 'Bride' }} <br/>
                     <span class="text-[0.5em] opacity-80" :style="{ color: 'var(--theme-accent)' }">&amp;</span> <br/>
                     {{ content.groomName || 'Groom' }}
                   </h2>
                   <div class="h-px w-12 mx-auto my-3" :style="{ background: 'var(--theme-accent)' }"></div>
-                  <p class="text-[0.65rem] uppercase tracking-widest text-white/60">{{ content.coupleDividerLabel || 'Bride & Groom' }}</p>
+                  <p class="text-[0.65rem] uppercase tracking-widest text-[color-mix(in_srgb,var(--card-text)_60%,transparent)]">{{ content.coupleDividerLabel || 'Bride & Groom' }}</p>
                 </div>
               </template>
 
@@ -69,15 +71,15 @@
                   <div v-if="content.brideFullName || content.brideParents" class="space-y-1">
                     <img v-if="content.bridePhotoUrl" :src="content.bridePhotoUrl" alt="" class="w-14 h-14 rounded-full object-cover mx-auto mb-2 border-2" :style="{ borderColor: 'var(--theme-accent)' }">
                     <p class="text-[0.6rem] uppercase tracking-widest font-semibold mb-1" :style="{ color: 'var(--theme-accent)' }">{{ content.familyBrideLabel || 'Bride' }}</p>
-                    <p class="font-bold text-sm text-white/90">{{ content.brideFullName || 'Bride Full Name' }}</p>
-                    <p class="text-xs text-white/60 font-light line-clamp-2">{{ content.childOfLabel || 'Child of' }} <br/>{{ content.brideParents || 'Parents' }}</p>
+                    <p class="font-bold text-sm text-[color-mix(in_srgb,var(--card-text)_90%,transparent)]">{{ content.brideFullName || 'Bride Full Name' }}</p>
+                    <p class="text-xs text-[color-mix(in_srgb,var(--card-text)_60%,transparent)] font-light line-clamp-2">{{ content.childOfLabel || 'Child of' }} <br/>{{ content.brideParents || 'Parents' }}</p>
                   </div>
-                  <div class="h-px bg-white/10 w-16 mx-auto my-4" />
+                  <div class="h-px bg-[color-mix(in_srgb,var(--card-text)_10%,transparent)] w-16 mx-auto my-4" />
                   <div v-if="content.groomFullName || content.groomParents" class="space-y-1">
                     <img v-if="content.groomPhotoUrl" :src="content.groomPhotoUrl" alt="" class="w-14 h-14 rounded-full object-cover mx-auto mb-2 border-2" :style="{ borderColor: 'var(--theme-accent)' }">
                     <p class="text-[0.6rem] uppercase tracking-widest font-semibold mb-1" :style="{ color: 'var(--theme-accent)' }">{{ content.familyGroomLabel || 'Groom' }}</p>
-                    <p class="font-bold text-sm text-white/90">{{ content.groomFullName || 'Groom Full Name' }}</p>
-                    <p class="text-xs text-white/60 font-light line-clamp-2">{{ content.childOfLabel || 'Child of' }} <br/>{{ content.groomParents || 'Parents' }}</p>
+                    <p class="font-bold text-sm text-[color-mix(in_srgb,var(--card-text)_90%,transparent)]">{{ content.groomFullName || 'Groom Full Name' }}</p>
+                    <p class="text-xs text-[color-mix(in_srgb,var(--card-text)_60%,transparent)] font-light line-clamp-2">{{ content.childOfLabel || 'Child of' }} <br/>{{ content.groomParents || 'Parents' }}</p>
                   </div>
                 </div>
               </template>
@@ -86,7 +88,7 @@
               <template v-else-if="currentKey === 'event'">
                 <div v-if="!content.hideSystemText">
                   <h2 class="font-display font-semibold text-xl mb-4" :style="{ color: 'var(--theme-accent)' }">{{ content.detailsHeading || 'The Details' }}</h2>
-                  <div class="space-y-3 text-white/90">
+                  <div class="space-y-3 text-[color-mix(in_srgb,var(--card-text)_90%,transparent)]">
                     <div v-if="content.dateLabel" class="flex flex-col items-center">
                       <UIcon name="i-heroicons-calendar" class="w-4 h-4 mb-1 opacity-70" />
                       <p class="font-medium text-sm">{{ content.dateLabel }}</p>
@@ -98,7 +100,7 @@
                     <div v-if="content.venueName" class="flex flex-col items-center pt-1">
                       <UIcon name="i-heroicons-building-office-2" class="w-4 h-4 mb-1 opacity-70" />
                       <p class="font-semibold text-sm line-clamp-1">{{ content.venueName }}</p>
-                      <p class="text-[0.7rem] text-white/60 mt-0.5 max-w-[200px] mx-auto line-clamp-2">{{ content.venueAddress }}</p>
+                      <p class="text-[0.7rem] text-[color-mix(in_srgb,var(--card-text)_60%,transparent)] mt-0.5 max-w-[200px] mx-auto line-clamp-2">{{ content.venueAddress }}</p>
                     </div>
                   </div>
                 </div>
@@ -107,7 +109,7 @@
               <!-- Location Maps -->
               <template v-else-if="currentKey === 'location'">
                 <h2 class="font-display font-semibold text-xl mb-1" :style="{ color: 'var(--theme-accent)' }">{{ content.locationHeading || 'Location' }}</h2>
-                <p class="text-[0.65rem] text-white/60 mb-4">{{ content.locationSubtitle || 'Scan or tap to open in Maps' }}</p>
+                <p class="text-[0.65rem] text-[color-mix(in_srgb,var(--card-text)_60%,transparent)] mb-4">{{ content.locationSubtitle || 'Scan or tap to open in Maps' }}</p>
                 <div class="flex flex-col items-center gap-4">
                   <div class="p-2 bg-white rounded-xl shadow-lg">
                     <img :src="qrCodeUrl" alt="QR code" class="w-24 h-24">
@@ -151,14 +153,22 @@
 import type { WeddingContent, FlowItem } from '~/composables/useWeddingTypes'
 
 const props = defineProps<{ content: WeddingContent; themeId: string; flow: FlowItem[] }>()
-const { themeStyleVars } = useThemes()
+const { themeStyleVars, resolveCardStyle } = useThemes()
 
 const styleVars = computed(() =>
   themeStyleVars(
     props.themeId,
     { bgFrom: props.content.customBgFrom, bgTo: props.content.customBgTo, accent: props.content.customAccent },
-    props.content.customFontFamily || props.content.fontFamily 
+    props.content.customFontFamily || props.content.fontFamily
   )
+)
+
+// Same cardStyle resolution as the real Inner Card page
+// (app/pages/w/[slug]/details.vue) and the RSVP page - see
+// useThemes.ts's resolveCardStyle for the full reasoning.
+const cardStyleResolved = computed(() => resolveCardStyle(props.themeId, props.content.cardStyle))
+const cardTextColorResolved = computed(() =>
+  props.content.cardTextColor || (cardStyleResolved.value === 'dark' ? '#ffffff' : 'var(--theme-ink)')
 )
 
 const qrCodeUrl = computed(
@@ -196,28 +206,28 @@ function prev() {
 </script>
 
 <style scoped>
-/* The couple's names (and everything else in this card) are styled in
-   white/light tones and coloured with var(--theme-ink), which assumes a
-   dark card to sit on - a plain bg-ink-900/40 only stayed dark enough
-   for that on dark themes. On a light theme (Ivory Minimalist, Sky
-   Serenade) it washed out to a near-transparent grey, making the names
-   almost invisible - same bug already fixed on the RSVP card
-   (app/pages/w/[slug]/rsvp.vue's .classic-rsvp-card) and the real
-   Details page (app/pages/w/[slug]/details.vue). Mixing in only a
-   capped share of the theme's own colours keeps a hint of the chosen
-   theme while guaranteeing the card itself always stays dark enough. */
+/* Two looks, mirroring the real Inner Card page's .classic-inner-card/
+   .classic-inner-card-theme in app/pages/w/[slug]/details.vue and the RSVP
+   card's same pattern in app/pages/w/[slug]/rsvp.vue - see that file's
+   detailed comment for the full reasoning. Every descendant above reads
+   its color from --card-text via color-mix(), set inline via
+   cardTextColorResolved in the script setup. */
 .classic-inner-card {
   background: linear-gradient(
     165deg,
     color-mix(in srgb, var(--theme-bg-via, #0b1c30) 30%, #0a1420) 0%,
     color-mix(in srgb, var(--theme-bg-to, #142a45) 25%, #050b14) 100%
   );
-  /* Fixed white, not inherited - see the detailed comment on
-     .classic-rsvp-card in app/pages/w/[slug]/rsvp.vue. Without this,
-     unstyled descendants quietly inherit --theme-ink from the ancestor
-     .theme-surface, which is a dim brown for light themes like Matcha
-     Strawberry. */
-  color: #fff;
+  color: var(--card-text, #fff);
+}
+
+.classic-inner-card-theme {
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--theme-bg-via, #0b1c30) 92%, var(--theme-ink, #000) 8%) 0%,
+    color-mix(in srgb, var(--theme-bg-to, #142a45) 88%, var(--theme-ink, #000) 12%) 100%
+  );
+  color: var(--card-text, var(--theme-ink, #fff));
 }
 
 .slide-next-enter-active,

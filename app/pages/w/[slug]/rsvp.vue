@@ -95,8 +95,8 @@
 
       <div
         class="rounded-3xl border backdrop-blur-xl shadow-2xl px-6 py-10 sm:px-10"
-        :class="isVip ? 'vip-rsvp-card' : 'classic-rsvp-card'"
-        :style="isVip ? {} : { borderColor: 'var(--theme-accent-soft)' }"
+        :class="isVip ? 'vip-rsvp-card' : (cardStyleResolved === 'dark' ? 'classic-rsvp-card' : 'classic-rsvp-card-theme')"
+        :style="isVip ? { '--card-text': '#ffffff' } : { borderColor: 'var(--theme-accent-soft)', '--card-text': cardTextColorResolved }"
       >
         <template v-if="!submitted">
           <div class="flex items-center justify-center gap-3 mb-10">
@@ -106,11 +106,11 @@
                   <UIcon v-if="index < currentStep" name="i-heroicons-check" class="w-4 h-4" />
                   <span v-else>{{ index + 1 }}</span>
                 </div>
-                <span class="hidden sm:inline text-xs uppercase tracking-widest font-medium transition-colors duration-300" :class="index <= currentStep ? '' : 'text-white/30'" :style="index <= currentStep ? { color: 'var(--theme-accent)' } : {}">
+                <span class="hidden sm:inline text-xs uppercase tracking-widest font-medium transition-colors duration-300" :class="index <= currentStep ? '' : 'text-[color-mix(in_srgb,var(--card-text)_30%,transparent)]'" :style="index <= currentStep ? { color: 'var(--theme-accent)' } : {}">
                   {{ label }}
                 </span>
               </div>
-              <div v-if="index < steps.length - 1" class="w-6 sm:w-12 h-px transition-colors duration-500" :class="index < currentStep ? 'bg-gold-400/50' : 'bg-white/10'" />
+              <div v-if="index < steps.length - 1" class="w-6 sm:w-12 h-px transition-colors duration-500" :class="index < currentStep ? 'bg-gold-400/50' : 'bg-[color-mix(in_srgb,var(--card-text)_10%,transparent)]'" />
             </template>
           </div>
 
@@ -125,7 +125,7 @@
                     </UFormField>
 
                     <div>
-                      <p class="text-sm text-white/80 mb-3 font-medium">{{ wedding.content.rsvpAttendQuestion || 'Will you be attending?' }}</p>
+                      <p class="text-sm text-[color-mix(in_srgb,var(--card-text)_80%,transparent)] mb-3 font-medium">{{ wedding.content.rsvpAttendQuestion || 'Will you be attending?' }}</p>
                       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <label class="option-card" :class="{ 'option-card-active': state.attending === 'Yes' }">
                           <input v-model="state.attending" type="radio" value="Yes" class="sr-only">
@@ -146,8 +146,8 @@
                 <template v-else-if="currentStep === 1">
                   <template v-if="state.attending === 'No'">
                     <div class="flex flex-col items-center justify-center h-full text-center space-y-4 pt-10">
-                      <UIcon name="i-heroicons-envelope-open" class="w-12 h-12 text-white/30" />
-                      <p class="text-white/80 italic text-lg">
+                      <UIcon name="i-heroicons-envelope-open" class="w-12 h-12 text-[color-mix(in_srgb,var(--card-text)_30%,transparent)]" />
+                      <p class="text-[color-mix(in_srgb,var(--card-text)_80%,transparent)] italic text-lg">
                         {{ fillNameToken(wedding.content.rsvpDeclineMessage || "We'll miss you, {name}! Feel free to leave us a wish on the next step.", state.name) }}
                       </p>
                     </div>
@@ -161,10 +161,10 @@
                         </div>
                       </UFormField>
 
-                      <div class="h-px w-full bg-white/5"></div>
+                      <div class="h-px w-full bg-[color-mix(in_srgb,var(--card-text)_5%,transparent)]"></div>
 
                       <div>
-                        <p class="text-sm text-white/80 mb-3 font-medium">{{ wedding.content.rsvpSeatingLabel || 'Do you require special seating? (e.g., wheelchair access)' }}</p>
+                        <p class="text-sm text-[color-mix(in_srgb,var(--card-text)_80%,transparent)] mb-3 font-medium">{{ wedding.content.rsvpSeatingLabel || 'Do you require special seating? (e.g., wheelchair access)' }}</p>
                         <div class="grid grid-cols-2 gap-4">
                           <label class="option-card-small" :class="{ 'option-card-active': state.specialSeating === true }">
                             <input v-model="state.specialSeating" type="radio" :value="true" class="sr-only"> {{ wedding.content.rsvpSeatingYesLabel || 'Yes' }}
@@ -190,15 +190,15 @@
                       <UTextarea v-model="state.doa" :placeholder="wedding.content.rsvpWishesPlaceholder || 'May your marriage be blessed...'" :rows="4" class="w-full resize-none custom-scrollbar shadow-inner text-base" />
                     </UFormField>
 
-                    <div class="rounded-xl border border-white/10 bg-white/5 p-5 text-sm space-y-2 backdrop-blur-md shadow-inner">
-                      <h4 class="font-semibold text-white mb-3 border-b border-white/10 pb-2">{{ wedding.content.rsvpSummaryTitle || 'RSVP Summary' }}</h4>
-                      <div class="grid grid-cols-3 gap-2">
-                        <span class="text-white/50">{{ wedding.content.rsvpSummaryNameLabel || 'Name:' }}</span> <span class="col-span-2 font-medium">{{ state.name }}</span>
-                        <span class="text-white/50">{{ wedding.content.rsvpSummaryStatusLabel || 'Status:' }}</span> <span class="col-span-2 font-medium" :class="state.attending === 'Yes' ? 'text-emerald-400' : 'text-red-400'">{{ state.attending === 'Yes' ? (wedding.content.rsvpAttendingText || 'Attending') : (wedding.content.rsvpNotAttendingText || 'Not Attending') }}</span>
+                    <div class="rounded-xl border border-[color-mix(in_srgb,var(--card-text)_10%,transparent)] bg-[color-mix(in_srgb,var(--card-text)_5%,transparent)] p-5 text-sm space-y-2 backdrop-blur-md shadow-inner">
+                      <h4 class="font-semibold text-[var(--card-text)] mb-3 border-b border-[color-mix(in_srgb,var(--card-text)_10%,transparent)] pb-2">{{ wedding.content.rsvpSummaryTitle || 'RSVP Summary' }}</h4>
+                      <div class="grid grid-cols-3 gap-2 text-[var(--card-text)]">
+                        <span class="text-[color-mix(in_srgb,var(--card-text)_50%,transparent)]">{{ wedding.content.rsvpSummaryNameLabel || 'Name:' }}</span> <span class="col-span-2 font-medium">{{ state.name }}</span>
+                        <span class="text-[color-mix(in_srgb,var(--card-text)_50%,transparent)]">{{ wedding.content.rsvpSummaryStatusLabel || 'Status:' }}</span> <span class="col-span-2 font-medium" :class="state.attending === 'Yes' ? 'text-emerald-400' : 'text-red-400'">{{ state.attending === 'Yes' ? (wedding.content.rsvpAttendingText || 'Attending') : (wedding.content.rsvpNotAttendingText || 'Not Attending') }}</span>
                         <template v-if="state.attending === 'Yes'">
-                          <span class="text-white/50">{{ wedding.content.rsvpSummaryGuestsLabel || 'Guests:' }}</span> <span class="col-span-2">{{ state.guestCount }}</span>
-                          <span class="text-white/50">{{ wedding.content.rsvpSummarySpecialLabel || 'Special:' }}</span> <span class="col-span-2">{{ state.specialSeating ? 'Yes' : 'No' }}</span>
-                          <span v-if="state.dietary" class="text-white/50">{{ wedding.content.rsvpSummaryDietaryLabel || 'Dietary:' }}</span> <span v-if="state.dietary" class="col-span-2">{{ state.dietary }}</span>
+                          <span class="text-[color-mix(in_srgb,var(--card-text)_50%,transparent)]">{{ wedding.content.rsvpSummaryGuestsLabel || 'Guests:' }}</span> <span class="col-span-2">{{ state.guestCount }}</span>
+                          <span class="text-[color-mix(in_srgb,var(--card-text)_50%,transparent)]">{{ wedding.content.rsvpSummarySpecialLabel || 'Special:' }}</span> <span class="col-span-2">{{ state.specialSeating ? 'Yes' : 'No' }}</span>
+                          <span v-if="state.dietary" class="text-[color-mix(in_srgb,var(--card-text)_50%,transparent)]">{{ wedding.content.rsvpSummaryDietaryLabel || 'Dietary:' }}</span> <span v-if="state.dietary" class="col-span-2">{{ state.dietary }}</span>
                         </template>
                       </div>
                     </div>
@@ -208,8 +208,8 @@
             </Transition>
           </div>
 
-          <div class="flex items-center justify-between mt-12 pt-6 border-t border-white/10 relative z-20">
-            <UButton v-if="currentStep > 0" variant="ghost" color="neutral" icon="i-heroicons-arrow-left" class="hover:bg-white/10 rounded-full px-4" @click="goBack">{{ wedding.content.rsvpBackButton || 'Back' }}</UButton>
+          <div class="flex items-center justify-between mt-12 pt-6 border-t border-[color-mix(in_srgb,var(--card-text)_10%,transparent)] relative z-20">
+            <UButton v-if="currentStep > 0" variant="ghost" color="neutral" icon="i-heroicons-arrow-left" class="text-[var(--card-text)] hover:bg-[color-mix(in_srgb,var(--card-text)_10%,transparent)] rounded-full px-4" @click="goBack">{{ wedding.content.rsvpBackButton || 'Back' }}</UButton>
             <div v-else></div>
             
             <UButton v-if="currentStep < steps.length - 1" trailing-icon="i-heroicons-arrow-right" class="rounded-full px-8 shadow-md accent-btn" size="lg" @click="goNext">{{ wedding.content.rsvpContinueButton || 'Continue' }}</UButton>
@@ -219,27 +219,29 @@
 
         <template v-else>
           <div class="text-center space-y-6 animate-in zoom-in duration-500 py-10">
-            <div class="inline-flex items-center justify-center w-24 h-24 rounded-full bg-white/5 border-2 mb-2" :style="{ borderColor: 'var(--theme-accent)' }">
+            <div class="inline-flex items-center justify-center w-24 h-24 rounded-full bg-[color-mix(in_srgb,var(--card-text)_5%,transparent)] border-2 mb-2" :style="{ borderColor: 'var(--theme-accent)' }">
               <UIcon name="i-heroicons-check" class="w-12 h-12" :style="{ color: 'var(--theme-accent)' }" />
             </div>
-            
-            <!-- Fixed white, not var(--theme-ink) - this sits inside
-                 .classic-rsvp-card, which is always dark regardless of
-                 theme, so theme-ink (dark, for a light theme) would be
-                 unreadable dark-on-dark here. -->
+
+            <!-- var(--card-text), not a literal white or var(--theme-ink) -
+                 this sits inside the card, which can be either a fixed dark
+                 card (Matcha Strawberry by default) or tinted with the
+                 theme's own colors (every other theme by default) - see the
+                 cardStyleResolved/cardTextColorResolved computeds above and
+                 the --card-text custom property set on the card element. -->
             <div>
-              <h2 class="text-4xl font-display mb-2 drop-shadow-md" :style="{ color: '#fff' }">{{ fillNameToken(wedding.content.rsvpThankYouTitle || 'Thank you, {name}!', lastSubmittedName) }}</h2>
-              <p class="text-white/80 text-lg font-light max-w-md mx-auto leading-relaxed">
+              <h2 class="text-4xl font-display mb-2 drop-shadow-md" :style="{ color: 'var(--card-text)' }">{{ fillNameToken(wedding.content.rsvpThankYouTitle || 'Thank you, {name}!', lastSubmittedName) }}</h2>
+              <p class="text-[color-mix(in_srgb,var(--card-text)_80%,transparent)] text-lg font-light max-w-md mx-auto leading-relaxed">
                 {{ wedding.content.rsvpThankYouIntro || 'Your RSVP has been securely received.' }} {{ lastAttending === 'Yes' ? (wedding.content.rsvpSuccessYes || 'We are absolutely thrilled to celebrate with you.') : (wedding.content.rsvpSuccessNo || 'You will be dearly missed.') }}
               </p>
             </div>
 
             <div class="pt-6">
-              <UButton variant="soft" color="neutral" class="rounded-full px-6 hover:bg-white/10 transition-colors" @click="resetForm">{{ wedding.content.rsvpSubmitAnotherButton || 'Submit another response' }}</UButton>
+              <UButton variant="soft" color="neutral" class="text-[var(--card-text)] rounded-full px-6 hover:bg-[color-mix(in_srgb,var(--card-text)_10%,transparent)] transition-colors" @click="resetForm">{{ wedding.content.rsvpSubmitAnotherButton || 'Submit another response' }}</UButton>
             </div>
           </div>
 
-          <div class="mt-12 pt-10 border-t border-white/10 animate-fade-up delay-2">
+          <div class="mt-12 pt-10 border-t border-[color-mix(in_srgb,var(--card-text)_10%,transparent)] animate-fade-up delay-2">
             <WishesWall
               :wedding-id="wedding.id"
               :title="wedding.content.rsvpWishesWallTitle || 'Wishes & Blessings'"
@@ -261,9 +263,24 @@ const route = useRoute()
 const slug = route.params.slug as string
 
 const { wedding, loading, notFound } = useWeddingBySlug(slug)
-const { themeStyleVars } = useThemes()
+const { themeStyleVars, resolveCardStyle } = useThemes()
 const { db, isConfigured } = useFirebase()
 const toast = useToast()
+
+// Which look the RSVP card panel uses - 'dark' (fixed dark card, light
+// text, only Matcha Strawberry defaults to this) or 'theme' (the card tints
+// itself with the wedding's own theme colors and keeps that theme's own ink
+// for text - self-consistent for every theme, since a theme's ink is always
+// chosen to contrast with its own background). A couple's own cardStyle
+// choice always wins over the theme's default - see useThemes.ts.
+const cardStyleResolved = computed(() => resolveCardStyle(wedding.value?.themeId, wedding.value?.content.cardStyle))
+// The single color every piece of text/border/overlay inside the card
+// derives from (via the --card-text custom property set on the card
+// element below) - a manual override wins, otherwise white for a dark
+// card or the theme's own ink for a theme-tinted card.
+const cardTextColorResolved = computed(() =>
+  wedding.value?.content.cardTextColor || (cardStyleResolved.value === 'dark' ? '#ffffff' : 'var(--theme-ink)')
+)
 
 // Whether this wedding is on the VIP Cinematic tier - drives both the
 // visual skin below (.vip-rsvp-surface/.vip-rsvp-card) and where "Return to
@@ -464,6 +481,14 @@ watch(
   filter: brightness(1.08);
 }
 
+/* .step-dot, .option-card etc below all derive their border/background
+   tints from var(--card-text) - the one color the card element itself
+   resolves to (white for a dark card, the theme's own ink for a
+   theme-tinted card, or a couple's manual override) via the --card-text
+   custom property set on .classic-rsvp-card/.classic-rsvp-card-theme/
+   .vip-rsvp-card below. That keeps every one of these translucent overlays
+   correctly readable no matter which of those three the card resolves to,
+   without needing a separate light/dark copy of each rule. */
 .step-dot {
   width: 2.25rem;
   height: 2.25rem;
@@ -473,18 +498,14 @@ watch(
   justify-content: center;
   font-size: 0.9rem;
   font-weight: 600;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: rgba(255, 255, 255, 0.5);
-  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid color-mix(in srgb, var(--card-text, #fff) 20%, transparent);
+  color: color-mix(in srgb, var(--card-text, #fff) 50%, transparent);
+  background: color-mix(in srgb, var(--card-text, #fff) 5%, transparent);
 }
 
-/* color is a fixed light value, not var(--theme-ink) - this sits inside
-   .classic-rsvp-card, which is always dark regardless of theme (see that
-   class's comment above), so theme-ink (dark, for a light theme) would
-   render as unreadable dark-on-dark text here. */
 .step-dot-active {
   border-color: var(--theme-accent, #e3b04a);
-  color: #fff;
+  color: var(--card-text, #fff);
   background: var(--theme-accent-soft, rgba(212, 160, 23, 0.2));
 }
 
@@ -496,14 +517,14 @@ watch(
   text-align: center;
   padding: 1.5rem 1rem;
   border-radius: 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid color-mix(in srgb, var(--card-text, #fff) 15%, transparent);
+  background: color-mix(in srgb, var(--card-text, #fff) 3%, transparent);
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .option-card:hover {
-  border-color: rgba(255, 255, 255, 0.3);
-  background: rgba(255, 255, 255, 0.06);
+  border-color: color-mix(in srgb, var(--card-text, #fff) 30%, transparent);
+  background: color-mix(in srgb, var(--card-text, #fff) 6%, transparent);
   transform: translateY(-2px);
 }
 
@@ -513,24 +534,21 @@ watch(
   justify-content: center;
   padding: 0.85rem;
   border-radius: 0.75rem;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid color-mix(in srgb, var(--card-text, #fff) 15%, transparent);
+  background: color-mix(in srgb, var(--card-text, #fff) 3%, transparent);
   cursor: pointer;
   font-weight: 500;
   transition: all 0.2s ease;
 }
 .option-card-small:hover {
-  border-color: rgba(255, 255, 255, 0.3);
-  background: rgba(255, 255, 255, 0.06);
+  border-color: color-mix(in srgb, var(--card-text, #fff) 30%, transparent);
+  background: color-mix(in srgb, var(--card-text, #fff) 6%, transparent);
 }
 
-/* Same reasoning as .step-dot-active above - always a fixed light color,
-   never var(--theme-ink), since this also sits inside the always-dark
-   .classic-rsvp-card. */
 .option-card-active, .option-card-small.option-card-active {
   border-color: var(--theme-accent, #e3b04a);
   background: var(--theme-accent-soft, rgba(212, 160, 23, 0.15));
-  color: #fff;
+  color: var(--card-text, #fff);
   box-shadow: 0 4px 12px -2px rgba(212, 160, 23, 0.2);
 }
 
@@ -551,7 +569,7 @@ watch(
 .custom-scrollbar::-webkit-scrollbar { width: 6px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: color-mix(in srgb, var(--card-text, #fff) 10%, transparent);
   border-radius: 10px;
 }
 
@@ -590,42 +608,51 @@ watch(
     0 0 0 7px var(--theme-bg-to, #150a20),
     0 0 0 8px color-mix(in srgb, var(--theme-accent) 45%, transparent),
     0 25px 55px -20px rgba(0, 0, 0, .7);
-  /* Same inheritance fix as .classic-rsvp-card above - this card is
-     always dark too, so unstyled descendants need a fixed white to
-     inherit instead of picking up theme-ink from .theme-surface. */
-  color: #fff;
+  /* --card-text is set inline (see the card element's :style binding
+     above) - always #fff for VIP, so this is just the fallback. */
+  color: var(--card-text, #fff);
 }
 
-/* Everything inside this card (labels, option cards, step dots, the
-   summary box) is styled in white/light tones on purpose - it was built
-   assuming a dark backdrop, same as the rest of the app. That held up
-   fine as long as every theme's own background was dark too, but a light
-   theme (Ivory Minimalist, Sky Serenade) made the old bg-ink-900/40 card
-   render as a washed-out, near-transparent grey - not dark enough to
-   keep that light text readable. Mixing in only a small, capped share of
-   the theme's own bg-via/bg-to (instead of using them directly) keeps a
-   hint of the chosen theme's color while guaranteeing the card itself
-   always stays dark enough for its own white-based content to read
-   clearly, on every theme - the same fix already applied to the VIP
-   card above, just without its double-ring frame. */
+/* Two looks for the classic (non-VIP) card, chosen per-wedding by
+   cardStyleResolved (see the script setup computed above, backed by
+   useThemes.ts's resolveCardStyle):
+     - .classic-rsvp-card: a fixed dark card, used when cardStyleResolved
+       is 'dark' (Matcha Strawberry's default, or any couple's manual
+       override). Guarantees enough darkness for light --card-text to read
+       clearly regardless of the theme's own (possibly light) palette.
+     - .classic-rsvp-card-theme: tints the card with the wedding's OWN
+       theme colors and keeps that theme's own ink for text - the default
+       for every other theme. This is what "follow the theme's colors,
+       don't force a dark card" (as requested) means in practice: since a
+       theme's ink is always chosen by its designer to contrast with that
+       theme's own background, pairing them on the card is self-consistent
+       for every theme without hardcoding a light/dark list anywhere.
+   Every descendant in here (labels, option cards, step dots, the summary
+   box, buttons) reads its color/border/background from --card-text via
+   color-mix(), so both looks - and any couple's custom cardTextColor
+   override - apply everywhere at once instead of needing a second copy of
+   every rule. See the detailed --theme-ink-vs-inheritance note this
+   replaced in git history if you're wondering why this isn't as simple as
+   "just use --theme-ink here": .theme-surface (main.css) sets an unlayered
+   `color: var(--theme-ink)` on the parent <section>, which silently wins
+   over any Tailwind utility color on the same element or its unstyled
+   descendants - --card-text sidesteps that entirely by being set directly,
+   inline, on the card itself. */
 .classic-rsvp-card {
   background: linear-gradient(
     165deg,
     color-mix(in srgb, var(--theme-bg-via, #0b1c30) 30%, #0a1420) 0%,
     color-mix(in srgb, var(--theme-bg-to, #142a45) 25%, #050b14) 100%
   );
-  /* Fixed white, not inherited. .theme-surface (main.css) sets an
-     unlayered `color: var(--theme-ink)` on the parent <section> -
-     unlayered CSS always beats a layered Tailwind utility like the
-     section's own `text-white` class, so every element in here that
-     doesn't set its OWN color (the unselected .option-card, the
-     UFormField "Name" label, etc.) was quietly inheriting theme-ink
-     instead of white. For a light theme like Matcha Strawberry
-     (ink: #4a3b3a) that's a dim brown, unreadable on this always-dark
-     card. Declaring color here directly on the card stops that
-     inheritance chain for every descendant that doesn't override it
-     itself - elements with their own explicit color (accent labels,
-     .option-card-active, etc.) are unaffected. */
-  color: #fff;
+  color: var(--card-text, #fff);
+}
+
+.classic-rsvp-card-theme {
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--theme-bg-via, #0b1c30) 92%, var(--theme-ink, #000) 8%) 0%,
+    color-mix(in srgb, var(--theme-bg-to, #142a45) 88%, var(--theme-ink, #000) 12%) 100%
+  );
+  color: var(--card-text, var(--theme-ink, #fff));
 }
 </style>

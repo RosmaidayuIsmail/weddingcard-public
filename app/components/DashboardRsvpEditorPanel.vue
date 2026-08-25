@@ -47,9 +47,66 @@
         
         <!-- Left Column: Controls -->
         <div class="flex-1 w-full lg:overflow-y-auto custom-scrollbar lg:pr-6 pb-8 lg:pb-20 space-y-8 order-2 lg:order-1">
-          
+
+          <!-- Card Appearance: a manual override so a couple can decide for
+               themselves how the RSVP card (and the matching Inner Card on
+               the Details page - they always use the same setting) looks,
+               instead of the platform picking one look for every theme.
+               Left blank/on "Follow Theme Colors", the card automatically
+               tints itself with the wedding's own theme colors and uses
+               that theme's own ink for text; "Dark Card" always forces a
+               fixed dark card with light text regardless of theme (this is
+               what Matcha Strawberry defaults to, since a light card would
+               otherwise sit too close to its own light option cards) -
+               every theme can be switched either way per-wedding. Card Text
+               Color overrides the automatic choice entirely when set. -->
           <div class="space-y-6 form-panel animate-in fade-in slide-in-from-bottom-4 duration-500">
-            
+            <div class="flex items-center justify-between mb-4 border-b border-gray-700 pb-3">
+              <div>
+                <h2 class="text-lg font-semibold text-white">Card Appearance</h2>
+                <p class="text-xs text-gray-500 mt-1">Controls both the RSVP card above and the Inner Card on your Details page - they always match.</p>
+              </div>
+            </div>
+
+            <div class="space-y-4">
+              <div>
+                <p class="text-xs text-gray-400 mb-2">Card Background</p>
+                <div class="grid sm:grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    class="p-3 rounded-lg border text-left transition-colors"
+                    :class="!form.cardStyle || form.cardStyle === 'theme' ? 'border-gold-400 bg-gold-400/10 text-gold-200' : 'border-gray-700 text-gray-400 hover:border-gray-600'"
+                    @click="form.cardStyle = 'theme'"
+                  >
+                    <span class="block text-xs font-semibold mb-0.5">Follow Theme Colors</span>
+                    <span class="block text-[11px] opacity-75">The card tints itself with your theme's own colors and text</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="p-3 rounded-lg border text-left transition-colors"
+                    :class="form.cardStyle === 'dark' ? 'border-gold-400 bg-gold-400/10 text-gold-200' : 'border-gray-700 text-gray-400 hover:border-gray-600'"
+                    @click="form.cardStyle = 'dark'"
+                  >
+                    <span class="block text-xs font-semibold mb-0.5">Dark Card</span>
+                    <span class="block text-[11px] opacity-75">Always a fixed dark card with light text, regardless of theme</span>
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <p class="text-xs text-gray-400 mb-2">Card Text Color <span class="text-gray-600">(blank = automatic)</span></p>
+                <div class="flex items-center gap-2">
+                  <input v-model="form.cardTextColor" type="color" class="w-9 h-9 rounded-lg border border-gray-700 bg-transparent cursor-pointer shrink-0">
+                  <UInput v-model="form.cardTextColor" placeholder="Automatic" size="md" class="flex-1" />
+                  <UButton v-if="form.cardTextColor" size="xs" variant="ghost" color="neutral" icon="i-heroicons-x-mark" @click="form.cardTextColor = ''" />
+                </div>
+                <p class="text-[11px] text-gray-500 mt-1.5">Overrides every label, option, and border inside the card at once. The bride &amp; groom names have their own separate "Name Color" field in Design Studio.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-6 form-panel animate-in fade-in slide-in-from-bottom-4 duration-500">
+
             <div class="flex items-center justify-between mb-4 border-b border-gray-700 pb-3">
               <h2 class="text-lg font-semibold text-white">RSVP Prompts</h2>
               <div class="flex flex-wrap bg-gray-900 border border-gray-700 rounded-full p-1 gap-0.5">
@@ -304,7 +361,11 @@
                     </p>
                   </div>
 
-                  <div class="rounded-[1.5rem] border classic-rsvp-card backdrop-blur-xl shadow-xl px-4 py-6 flex-1" :style="{ borderColor: 'var(--theme-accent-soft)' }">
+                  <div
+                    class="rounded-[1.5rem] border backdrop-blur-xl shadow-xl px-4 py-6 flex-1"
+                    :class="cardStyleResolved === 'dark' ? 'classic-rsvp-card' : 'classic-rsvp-card-theme'"
+                    :style="{ borderColor: 'var(--theme-accent-soft)', '--card-text': cardTextColorResolved }"
+                  >
 
                     <template v-if="previewStep < 3">
                       <div class="flex items-center justify-center gap-2 mb-6">
@@ -315,7 +376,7 @@
                               <span v-else>{{ index + 1 }}</span>
                             </div>
                           </div>
-                          <div v-if="index < previewSteps.length - 1" class="w-4 h-px" :class="index < previewStep ? 'bg-gold-400/50' : 'bg-white/10'" />
+                          <div v-if="index < previewSteps.length - 1" class="w-4 h-px" :class="index < previewStep ? 'bg-gold-400/50' : 'bg-[color-mix(in_srgb,var(--card-text)_10%,transparent)]'" />
                         </template>
                       </div>
 
@@ -325,7 +386,7 @@
                           <UInput v-model="previewState.name" :placeholder="form.rsvpNamePlaceholder || 'Type your full name'" size="sm" class="w-full" />
                         </UFormField>
                         <div>
-                          <p class="text-xs text-white/80 mb-2 font-medium">{{ form.rsvpAttendQuestion || 'Will you be attending?' }}</p>
+                          <p class="text-xs text-[color-mix(in_srgb,var(--card-text)_80%,transparent)] mb-2 font-medium">{{ form.rsvpAttendQuestion || 'Will you be attending?' }}</p>
                           <div class="grid grid-cols-2 gap-2">
                             <button type="button" class="preview-option-card" :class="{ 'preview-option-card-active': previewState.attending === 'Yes' }" @click="previewState.attending = 'Yes'">
                               <UIcon name="i-heroicons-check-circle" class="w-4 h-4 mb-1" />
@@ -342,15 +403,15 @@
                       <!-- Step 2: Details (or decline message) -->
                       <div v-else-if="previewStep === 1" class="animate-in fade-in duration-300">
                         <div v-if="previewState.attending === 'No'" class="flex flex-col items-center justify-center text-center space-y-3 py-8">
-                          <UIcon name="i-heroicons-envelope-open" class="w-8 h-8 text-white/30" />
-                          <p class="text-white/80 italic text-sm">{{ fillNameToken(form.rsvpDeclineMessage || "We'll miss you, {name}! Feel free to leave us a wish on the next step.", previewState.name) }}</p>
+                          <UIcon name="i-heroicons-envelope-open" class="w-8 h-8 text-[color-mix(in_srgb,var(--card-text)_30%,transparent)]" />
+                          <p class="text-[color-mix(in_srgb,var(--card-text)_80%,transparent)] italic text-sm">{{ fillNameToken(form.rsvpDeclineMessage || "We'll miss you, {name}! Feel free to leave us a wish on the next step.", previewState.name) }}</p>
                         </div>
                         <div v-else class="space-y-5">
                           <UFormField :label="form.rsvpGuestLabel || 'Number of guests attending'">
                             <UInputNumber v-model="previewState.guestCount" :min="1" :max="10" size="sm" class="w-24" />
                           </UFormField>
                           <div>
-                            <p class="text-xs text-white/80 mb-2 font-medium">{{ form.rsvpSeatingLabel || 'Do you require special seating? (e.g., wheelchair access)' }}</p>
+                            <p class="text-xs text-[color-mix(in_srgb,var(--card-text)_80%,transparent)] mb-2 font-medium">{{ form.rsvpSeatingLabel || 'Do you require special seating? (e.g., wheelchair access)' }}</p>
                             <div class="grid grid-cols-2 gap-2">
                               <button type="button" class="preview-option-card-small" :class="{ 'preview-option-card-active': previewState.specialSeating === true }" @click="previewState.specialSeating = true">{{ form.rsvpSeatingYesLabel || 'Yes' }}</button>
                               <button type="button" class="preview-option-card-small" :class="{ 'preview-option-card-active': previewState.specialSeating === false }" @click="previewState.specialSeating = false">{{ form.rsvpSeatingNoLabel || 'No' }}</button>
@@ -368,20 +429,20 @@
                           <p class="italic text-[0.65rem] mb-1.5 opacity-70" :style="{ color: 'var(--theme-accent)' }">{{ form.rsvpWishesSubtitle || 'Write your well wishes for the couple' }}</p>
                           <UTextarea v-model="previewState.doa" :placeholder="form.rsvpWishesPlaceholder || 'May your marriage be blessed...'" :rows="3" class="w-full text-xs" />
                         </UFormField>
-                        <div class="rounded-lg border border-white/10 bg-white/5 p-3 text-[0.7rem] space-y-1.5">
-                          <h4 class="font-semibold text-white mb-1.5 border-b border-white/10 pb-1.5">{{ form.rsvpSummaryTitle || 'RSVP Summary' }}</h4>
-                          <div class="grid grid-cols-3 gap-1">
-                            <span class="text-white/50">{{ form.rsvpSummaryNameLabel || 'Name:' }}</span> <span class="col-span-2 font-medium">{{ previewState.name || 'Guest Name' }}</span>
-                            <span class="text-white/50">{{ form.rsvpSummaryStatusLabel || 'Status:' }}</span> <span class="col-span-2 font-medium" :class="previewState.attending === 'Yes' ? 'text-emerald-400' : 'text-red-400'">{{ previewState.attending === 'Yes' ? (form.rsvpAttendingText || 'Attending') : (form.rsvpNotAttendingText || 'Not Attending') }}</span>
+                        <div class="rounded-lg border border-[color-mix(in_srgb,var(--card-text)_10%,transparent)] bg-[color-mix(in_srgb,var(--card-text)_5%,transparent)] p-3 text-[0.7rem] space-y-1.5">
+                          <h4 class="font-semibold text-[var(--card-text)] mb-1.5 border-b border-[color-mix(in_srgb,var(--card-text)_10%,transparent)] pb-1.5">{{ form.rsvpSummaryTitle || 'RSVP Summary' }}</h4>
+                          <div class="grid grid-cols-3 gap-1 text-[var(--card-text)]">
+                            <span class="text-[color-mix(in_srgb,var(--card-text)_50%,transparent)]">{{ form.rsvpSummaryNameLabel || 'Name:' }}</span> <span class="col-span-2 font-medium">{{ previewState.name || 'Guest Name' }}</span>
+                            <span class="text-[color-mix(in_srgb,var(--card-text)_50%,transparent)]">{{ form.rsvpSummaryStatusLabel || 'Status:' }}</span> <span class="col-span-2 font-medium" :class="previewState.attending === 'Yes' ? 'text-emerald-400' : 'text-red-400'">{{ previewState.attending === 'Yes' ? (form.rsvpAttendingText || 'Attending') : (form.rsvpNotAttendingText || 'Not Attending') }}</span>
                             <template v-if="previewState.attending === 'Yes'">
-                              <span class="text-white/50">{{ form.rsvpSummaryGuestsLabel || 'Guests:' }}</span> <span class="col-span-2">{{ previewState.guestCount }}</span>
-                              <span class="text-white/50">{{ form.rsvpSummarySpecialLabel || 'Special:' }}</span> <span class="col-span-2">{{ previewState.specialSeating ? 'Yes' : 'No' }}</span>
+                              <span class="text-[color-mix(in_srgb,var(--card-text)_50%,transparent)]">{{ form.rsvpSummaryGuestsLabel || 'Guests:' }}</span> <span class="col-span-2">{{ previewState.guestCount }}</span>
+                              <span class="text-[color-mix(in_srgb,var(--card-text)_50%,transparent)]">{{ form.rsvpSummarySpecialLabel || 'Special:' }}</span> <span class="col-span-2">{{ previewState.specialSeating ? 'Yes' : 'No' }}</span>
                             </template>
                           </div>
                         </div>
                       </div>
 
-                      <div class="flex items-center justify-between mt-6 pt-4 border-t border-white/10">
+                      <div class="flex items-center justify-between mt-6 pt-4 border-t border-[color-mix(in_srgb,var(--card-text)_10%,transparent)]">
                         <button v-if="previewStep > 0" type="button" class="preview-nav-btn" @click="goToPreviewStep(previewStep - 1)">
                           <UIcon name="i-heroicons-arrow-left" class="w-3 h-3" /> {{ form.rsvpBackButton || 'Back' }}
                         </button>
@@ -396,23 +457,22 @@
                     <!-- Thank You page -->
                     <template v-else>
                       <div class="text-center space-y-4 py-4 animate-in zoom-in duration-500">
-                        <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-white/5 border-2 mb-1" :style="{ borderColor: 'var(--theme-accent)' }">
+                        <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[color-mix(in_srgb,var(--card-text)_5%,transparent)] border-2 mb-1" :style="{ borderColor: 'var(--theme-accent)' }">
                           <UIcon name="i-heroicons-check" class="w-7 h-7" :style="{ color: 'var(--theme-accent)' }" />
                         </div>
-                        <!-- Fixed white, not var(--theme-ink) - inside the
-                             always-dark .classic-rsvp-card (see its
-                             comment below), so theme-ink would be
-                             unreadable dark-on-dark for a light theme. -->
+                        <!-- var(--card-text), not a literal white or
+                             var(--theme-ink) - see the cardStyleResolved/
+                             cardTextColorResolved computeds above. -->
                         <div>
-                          <h2 class="text-xl font-display mb-1.5 drop-shadow-md" :style="{ color: '#fff' }">{{ fillNameToken(form.rsvpThankYouTitle || 'Thank you, {name}!', previewState.name) }}</h2>
-                          <p class="text-white/80 text-xs font-light leading-relaxed">
+                          <h2 class="text-xl font-display mb-1.5 drop-shadow-md" :style="{ color: 'var(--card-text)' }">{{ fillNameToken(form.rsvpThankYouTitle || 'Thank you, {name}!', previewState.name) }}</h2>
+                          <p class="text-[color-mix(in_srgb,var(--card-text)_80%,transparent)] text-xs font-light leading-relaxed">
                             {{ form.rsvpThankYouIntro || 'Your RSVP has been securely received.' }} {{ previewState.attending === 'Yes' ? (form.rsvpSuccessYes || 'We are absolutely thrilled to celebrate with you.') : (form.rsvpSuccessNo || 'You will be dearly missed.') }}
                           </p>
                         </div>
                         <button type="button" class="preview-nav-btn mx-auto">{{ form.rsvpSubmitAnotherButton || 'Submit another response' }}</button>
                       </div>
 
-                      <div class="mt-6 pt-6 border-t border-white/10">
+                      <div class="mt-6 pt-6 border-t border-[color-mix(in_srgb,var(--card-text)_10%,transparent)]">
                         <WishesWall
                           v-if="wedding"
                           :wedding-id="wedding.id"
@@ -444,8 +504,17 @@ import type { RsvpPreset } from '~/composables/useThemes'
 // pass it, so useMyWedding() falls back to its normal own-wedding lookup.
 const props = defineProps<{ overrideWeddingId?: string | null }>()
 const { wedding, loading, saving, updateContent } = useMyWedding(toRef(props, 'overrideWeddingId'))
-const { themeStyleVars, allRsvpPresets } = useThemes()
+const { themeStyleVars, allRsvpPresets, resolveCardStyle } = useThemes()
 const toast = useToast()
+
+// Same cardStyle resolution as the real page (app/pages/w/[slug]/rsvp.vue) -
+// this preview edits the SAME wedding's content, so it needs to mirror
+// whichever look (dark card vs theme-tinted card) the real RSVP page will
+// actually render, not just always assume dark.
+const cardStyleResolved = computed(() => resolveCardStyle(wedding.value?.themeId, form.cardStyle))
+const cardTextColorResolved = computed(() =>
+  form.cardTextColor || (cardStyleResolved.value === 'dark' ? '#ffffff' : 'var(--theme-ink)')
+)
 
 const form = reactive<WeddingContent>(createDefaultContent())
 const savedAt = ref<number | null>(null)
@@ -648,24 +717,28 @@ useSeoMeta({ title: 'RSVP Editor — WeddingCard' })
   border: 1px solid color-mix(in srgb, var(--theme-ink, #fff) 12%, transparent);
 }
 
-/* Everything inside the RSVP card (labels, option cards, step dots) is
-   styled in white/light tones on purpose, matching the real rsvp.vue
-   page - that only stays readable if the card itself is reliably dark,
-   which a plain bg-ink-900/40 wasn't against a light theme's own light
-   background. See the matching, more detailed comment in
-   app/pages/w/[slug]/rsvp.vue for the full reasoning. */
+/* Two looks for this preview card, mirroring the real page's
+   .classic-rsvp-card/.classic-rsvp-card-theme in app/pages/w/[slug]/rsvp.vue
+   - see that file's detailed comment for the full reasoning. Every
+   descendant below (step dots, option cards, the summary box, nav buttons)
+   reads its color/border/background from --card-text via color-mix(), set
+   inline on whichever of these two classes is applied. */
 .classic-rsvp-card {
   background: linear-gradient(
     165deg,
     color-mix(in srgb, var(--theme-bg-via, #0b1c30) 30%, #0a1420) 0%,
     color-mix(in srgb, var(--theme-bg-to, #142a45) 25%, #050b14) 100%
   );
-  /* Fixed white, not inherited - see the detailed comment on
-     .classic-rsvp-card in app/pages/w/[slug]/rsvp.vue. Without this,
-     unstyled descendants (unselected option cards, form labels)
-     quietly inherit --theme-ink from the ancestor .theme-surface,
-     which is a dim brown for light themes like Matcha Strawberry. */
-  color: #fff;
+  color: var(--card-text, #fff);
+}
+
+.classic-rsvp-card-theme {
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--theme-bg-via, #0b1c30) 92%, var(--theme-ink, #000) 8%) 0%,
+    color-mix(in srgb, var(--theme-bg-to, #142a45) 88%, var(--theme-ink, #000) 12%) 100%
+  );
+  color: var(--card-text, var(--theme-ink, #fff));
 }
 
 .preview-step-dot {
@@ -677,17 +750,14 @@ useSeoMeta({ title: 'RSVP Editor — WeddingCard' })
   justify-content: center;
   font-size: 0.65rem;
   font-weight: 600;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: rgba(255, 255, 255, 0.5);
-  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid color-mix(in srgb, var(--card-text, #fff) 20%, transparent);
+  color: color-mix(in srgb, var(--card-text, #fff) 50%, transparent);
+  background: color-mix(in srgb, var(--card-text, #fff) 5%, transparent);
 }
 
-/* color is fixed white, not var(--theme-ink) - this sits inside the
-   always-dark .classic-rsvp-card below, so theme-ink (dark, for a light
-   theme) would be unreadable dark-on-dark text here. */
 .preview-step-dot-active {
   border-color: var(--theme-accent, #e3b04a);
-  color: #fff;
+  color: var(--card-text, #fff);
   background: var(--theme-accent-soft, rgba(212, 160, 23, 0.2));
 }
 
@@ -699,10 +769,10 @@ useSeoMeta({ title: 'RSVP Editor — WeddingCard' })
   text-align: center;
   padding: 0.85rem 0.5rem;
   border-radius: 0.75rem;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid color-mix(in srgb, var(--card-text, #fff) 15%, transparent);
+  background: color-mix(in srgb, var(--card-text, #fff) 3%, transparent);
   font-size: 0.7rem;
-  color: rgba(255, 255, 255, 0.85);
+  color: color-mix(in srgb, var(--card-text, #fff) 85%, transparent);
   transition: all 0.2s ease;
 }
 
@@ -712,10 +782,10 @@ useSeoMeta({ title: 'RSVP Editor — WeddingCard' })
   justify-content: center;
   padding: 0.55rem;
   border-radius: 0.6rem;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid color-mix(in srgb, var(--card-text, #fff) 15%, transparent);
+  background: color-mix(in srgb, var(--card-text, #fff) 3%, transparent);
   font-size: 0.7rem;
-  color: rgba(255, 255, 255, 0.85);
+  color: color-mix(in srgb, var(--card-text, #fff) 85%, transparent);
   font-weight: 500;
 }
 
@@ -723,7 +793,7 @@ useSeoMeta({ title: 'RSVP Editor — WeddingCard' })
 .preview-option-card-active {
   border-color: var(--theme-accent, #e3b04a) !important;
   background: var(--theme-accent-soft, rgba(212, 160, 23, 0.15)) !important;
-  color: #fff !important;
+  color: var(--card-text, #fff) !important;
 }
 
 .preview-nav-btn {
@@ -734,9 +804,9 @@ useSeoMeta({ title: 'RSVP Editor — WeddingCard' })
   border-radius: 999px;
   font-size: 0.7rem;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.75);
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: color-mix(in srgb, var(--card-text, #fff) 75%, transparent);
+  background: color-mix(in srgb, var(--card-text, #fff) 6%, transparent);
+  border: 1px solid color-mix(in srgb, var(--card-text, #fff) 10%, transparent);
 }
 
 .preview-nav-btn-primary {

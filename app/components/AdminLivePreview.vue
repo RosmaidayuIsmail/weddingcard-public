@@ -112,16 +112,20 @@
              app/pages/w/[slug]/rsvp.vue), theme-styled, with a sample guest
              filling it in - no real guest data. -->
         <div v-else-if="mode === 'rsvp'" class="real-rsvp-frame" :style="sampleStyleVars">
-          <div class="real-rsvp-card">
-            <!-- Fixed white, not var(--theme-ink) - .real-rsvp-card below
-                 is always dark regardless of theme, so theme-ink (dark,
-                 for a light theme) would be unreadable dark-on-dark. -->
+          <div
+            class="real-rsvp-card"
+            :class="{ 'real-rsvp-card-theme': sampleCardStyleResolved !== 'dark' }"
+            :style="{ '--card-text': sampleCardTextColorResolved }"
+          >
+            <!-- var(--card-text), not a literal white or var(--theme-ink) -
+                 see sampleCardStyleResolved/sampleCardTextColorResolved
+                 above, mirroring the real RSVP page's own resolution. -->
             <div class="text-center space-y-2 mb-6">
-              <h1 class="text-3xl font-bold tracking-wide" :style="{ color: '#fff', fontFamily: 'var(--theme-heading-font)' }">
+              <h1 class="text-3xl font-bold tracking-wide" :style="{ color: 'var(--card-text)', fontFamily: 'var(--theme-heading-font)' }">
                 {{ sampleContent.rsvpTitle }}
               </h1>
               <div class="h-px w-16 mx-auto" :style="{ background: 'var(--theme-accent)' }" />
-              <p class="text-xs text-white/70 font-light tracking-wide pt-1">
+              <p class="text-xs text-[color-mix(in_srgb,var(--card-text)_70%,transparent)] font-light tracking-wide pt-1">
                 {{ sampleContent.rsvpDeadlineText }} <span class="font-medium" :style="{ color: 'var(--theme-accent)' }">12 December 2026</span>
               </p>
             </div>
@@ -130,19 +134,19 @@
               <template v-for="(label, index) in ['About You', 'Details', 'Wishes']" :key="label">
                 <div class="flex items-center gap-2">
                   <div class="real-step-dot" :class="{ 'real-step-dot-active': index === 0 }">{{ index + 1 }}</div>
-                  <span class="hidden sm:inline text-[0.65rem] uppercase tracking-widest font-medium" :class="index === 0 ? '' : 'text-white/30'" :style="index === 0 ? { color: 'var(--theme-accent)' } : {}">{{ label }}</span>
+                  <span class="hidden sm:inline text-[0.65rem] uppercase tracking-widest font-medium" :class="index === 0 ? '' : 'text-[color-mix(in_srgb,var(--card-text)_30%,transparent)]'" :style="index === 0 ? { color: 'var(--theme-accent)' } : {}">{{ label }}</span>
                 </div>
-                <div v-if="index < 2" class="w-6 h-px bg-white/10" />
+                <div v-if="index < 2" class="w-6 h-px bg-[color-mix(in_srgb,var(--card-text)_10%,transparent)]" />
               </template>
             </div>
 
             <div class="space-y-5">
               <div>
-                <p class="text-xs text-white/50 mb-1.5">{{ sampleContent.rsvpNameLabel }}</p>
+                <p class="text-xs text-[color-mix(in_srgb,var(--card-text)_50%,transparent)] mb-1.5">{{ sampleContent.rsvpNameLabel }}</p>
                 <div class="real-rsvp-input">{{ sampleContent.rsvpNamePlaceholder }}</div>
               </div>
               <div>
-                <p class="text-sm text-white/80 mb-3 font-medium">{{ sampleContent.rsvpAttendQuestion }}</p>
+                <p class="text-sm text-[color-mix(in_srgb,var(--card-text)_80%,transparent)] mb-3 font-medium">{{ sampleContent.rsvpAttendQuestion }}</p>
                 <div class="grid grid-cols-2 gap-3">
                   <div class="real-option-card real-option-card-active">
                     <UIcon name="i-heroicons-check-circle" class="w-5 h-5 mb-1.5 opacity-80" />
@@ -155,8 +159,8 @@
                 </div>
               </div>
               <div>
-                <p class="text-xs text-white/50 mb-1.5">{{ sampleContent.rsvpWishesLabel }}</p>
-                <p class="text-[0.65rem] text-white/30 mb-1.5">{{ sampleContent.rsvpWishesSubtitle }}</p>
+                <p class="text-xs text-[color-mix(in_srgb,var(--card-text)_50%,transparent)] mb-1.5">{{ sampleContent.rsvpWishesLabel }}</p>
+                <p class="text-[0.65rem] text-[color-mix(in_srgb,var(--card-text)_30%,transparent)] mb-1.5">{{ sampleContent.rsvpWishesSubtitle }}</p>
                 <div class="real-rsvp-input">{{ sampleContent.rsvpWishesPlaceholder }}</div>
               </div>
               <button type="button" class="real-rsvp-button">{{ sampleContent.rsvpConfirmButton }}</button>
@@ -242,7 +246,7 @@ const {
   dashboardSettings, dayFlowSettings, guestListSettings,
   allThemes, allTextPresets, allDayFlowPresets,
   starterDefaults, enabledOpeningStyles, enabledOrnamentStyles, enabledPetalStyles, enabledTopIcons,
-  themeStyleVars
+  themeStyleVars, resolveCardStyle
 } = useThemes()
 
 const titles: Record<typeof props.mode, string> = {
@@ -324,6 +328,16 @@ const sampleContent = computed(() => {
 })
 
 const sampleStyleVars = computed(() => themeStyleVars(sampleThemeId.value))
+
+// Mirrors the real RSVP page's cardStyleResolved/cardTextColorResolved
+// (app/pages/w/[slug]/rsvp.vue) - this sample has no real wedding, so the
+// only "override" it can see is one passed in via props.overrides (e.g.
+// previewing a specific cardStyle choice), otherwise it falls back to
+// whatever the theme itself defaults to, same as any real wedding would.
+const sampleCardStyleResolved = computed(() => resolveCardStyle(sampleThemeId.value, sampleContent.value.cardStyle))
+const sampleCardTextColorResolved = computed(() =>
+  sampleContent.value.cardTextColor || (sampleCardStyleResolved.value === 'dark' ? '#ffffff' : 'var(--theme-ink)')
+)
 </script>
 
 <style scoped>
@@ -426,14 +440,12 @@ const sampleStyleVars = computed(() => themeStyleVars(sampleThemeId.value))
   background: linear-gradient(160deg, var(--theme-bg-from, #04101f), var(--theme-bg-via, #0b1c30), var(--theme-bg-to, #142a45));
 }
 
-/* Everything inside this card (white/light text, step dots, option
-   cards below) assumes a dark backdrop, same as the real rsvp.vue page.
-   A flat rgba(11, 28, 48, 0.4) only stayed dark enough for that on dark
-   themes - on a light theme (Ivory Minimalist, Sky Serenade) it washed
-   out to a barely-there grey, same bug fixed in rsvp.vue and
-   DashboardRsvpEditorPanel.vue's .classic-rsvp-card. Mixing in only a
-   capped share of the theme's own colours keeps a hint of the chosen
-   theme while guaranteeing the card itself always stays dark enough. */
+/* Two looks, mirroring the real RSVP page's .classic-rsvp-card/
+   .classic-rsvp-card-theme in app/pages/w/[slug]/rsvp.vue - see that
+   file's detailed comment for the full reasoning. Every descendant below
+   (step dots, option cards, the input placeholders) reads its color/
+   border/background from --card-text via color-mix(), set inline via
+   sampleCardTextColorResolved above. */
 .real-rsvp-card {
   border-radius: 1.5rem;
   border: 1px solid var(--theme-accent-soft, rgba(212, 160, 23, 0.2));
@@ -446,12 +458,16 @@ const sampleStyleVars = computed(() => themeStyleVars(sampleThemeId.value))
   padding: 1.75rem 1.5rem;
   max-width: 420px;
   margin: 0 auto;
-  /* Fixed white, not inherited - see the detailed comment on
-     .classic-rsvp-card in app/pages/w/[slug]/rsvp.vue. Without this,
-     unstyled descendants quietly inherit --theme-ink from the ancestor
-     .theme-surface, which is a dim brown for light themes like Matcha
-     Strawberry. */
-  color: #fff;
+  color: var(--card-text, #fff);
+}
+
+.real-rsvp-card-theme {
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--theme-bg-via, #0b1c30) 92%, var(--theme-ink, #000) 8%) 0%,
+    color-mix(in srgb, var(--theme-bg-to, #142a45) 88%, var(--theme-ink, #000) 12%) 100%
+  );
+  color: var(--card-text, var(--theme-ink, #fff));
 }
 
 .real-step-dot {
@@ -463,17 +479,14 @@ const sampleStyleVars = computed(() => themeStyleVars(sampleThemeId.value))
   justify-content: center;
   font-size: 0.8rem;
   font-weight: 600;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: rgba(255, 255, 255, 0.5);
-  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid color-mix(in srgb, var(--card-text, #fff) 20%, transparent);
+  color: color-mix(in srgb, var(--card-text, #fff) 50%, transparent);
+  background: color-mix(in srgb, var(--card-text, #fff) 5%, transparent);
 }
 
-/* color is fixed white, not var(--theme-ink) - inside the always-dark
-   .real-rsvp-card, so theme-ink would be unreadable dark-on-dark for a
-   light theme. */
 .real-step-dot-active {
   border-color: var(--theme-accent, #e3b04a);
-  color: #fff;
+  color: var(--card-text, #fff);
   background: var(--theme-accent-soft, rgba(212, 160, 23, 0.2));
 }
 
@@ -485,24 +498,23 @@ const sampleStyleVars = computed(() => themeStyleVars(sampleThemeId.value))
   text-align: center;
   padding: 1rem;
   border-radius: 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid color-mix(in srgb, var(--card-text, #fff) 15%, transparent);
+  background: color-mix(in srgb, var(--card-text, #fff) 3%, transparent);
 }
 
-/* Same reasoning as .real-step-dot-active above. */
 .real-option-card-active {
   border-color: var(--theme-accent, #e3b04a);
   background: var(--theme-accent-soft, rgba(212, 160, 23, 0.15));
-  color: #fff;
+  color: var(--card-text, #fff);
 }
 
 .real-rsvp-input {
   padding: 0.55rem 0.85rem;
   border-radius: 0.6rem;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: color-mix(in srgb, var(--card-text, #fff) 3%, transparent);
+  border: 1px solid color-mix(in srgb, var(--card-text, #fff) 10%, transparent);
   font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.4);
+  color: color-mix(in srgb, var(--card-text, #fff) 40%, transparent);
 }
 
 .real-rsvp-button {
