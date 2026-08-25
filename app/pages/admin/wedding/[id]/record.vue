@@ -71,7 +71,7 @@
 
               <div v-if="recordingState === 'idle'" class="space-y-3">
                 <p class="text-xs text-gray-400 leading-relaxed">
-                  Click Start and a small new window will pop up with just the live invite in it - nothing else. When your browser asks what to share, click the <strong class="text-gray-200">Chrome Tab</strong> tab at the top of that picker (not "Window" or "Entire Screen"), select the tab for that new page, and turn on <strong class="text-gray-200">Share tab audio</strong> if you want the invite's music in the recording - this has to be turned back on every single time you record, the browser never remembers it from a previous take. Interact with it exactly like a guest would - tap to open the envelope, scroll through it - then come back here and click Stop. If you're moving between multiple pages (Details, RSVP), try to stay on one page for the whole take where possible - some browsers can silently end sharing mid-recording when the shared tab navigates.
+                  Click Start and a small new window will pop up, briefly showing "Preparing recording..." - that's expected, it's reserving a blank tab to share before the invite loads, so nothing on the actual page plays before recording begins. When your browser asks what to share, click the <strong class="text-gray-200">Chrome Tab</strong> tab at the top of that picker (not "Window" or "Entire Screen"), select that new tab (it may still say "Preparing recording..." in the list), and turn on <strong class="text-gray-200">Share tab audio</strong> if you want the invite's music in the recording - this has to be turned back on every single time you record, the browser never remembers it from a previous take. The real invite then loads in and plays from the very start, including its opening animation. Interact with it exactly like a guest would - tap to open the envelope, scroll through it - then come back here and click Stop. If you're moving between multiple pages (Details, RSVP), try to stay on one page for the whole take where possible - some browsers can silently end sharing mid-recording when the shared tab navigates.
                 </p>
                 <UButton size="lg" color="primary" icon="i-heroicons-video-camera" class="w-full font-semibold" @click="startRecording">
                   Start Recording
@@ -275,8 +275,21 @@ async function startRecording() {
   // contains nothing but the live guest page - no dashboard, no sidebar,
   // no controls around it. Sharing THAT window is the mobile screen; there
   // is nothing else in it to crop out, so no crop math is needed at all.
+  //
+  // It deliberately does NOT open straight to previewUrl. The opening
+  // screen's cover animations (e.g. the guest-name "unroll") play once,
+  // automatically, the moment that page loads - and getDisplayMedia can't
+  // even be requested until she's picked what to share in the browser's
+  // own dialog, which takes a few seconds. Loading the real invite first
+  // and only then asking what to share meant those animations had already
+  // finished, off camera, before a single frame was ever captured. Instead,
+  // the popup opens on a blank placeholder (so there's still something
+  // for the share picker to show and pick), and the real invite is only
+  // loaded into it once the recorder is actually running below - so
+  // everything that happens on page load, including the cover animation,
+  // happens on camera from frame one.
   const popup = window.open(
-    previewUrl.value,
+    '',
     'wc_promo_recording',
     'width=440,height=956,menubar=no,toolbar=no,location=no,status=no,scrollbars=no,resizable=yes'
   )
@@ -286,29 +299,17 @@ async function startRecording() {
     return
   }
   recordingPopup = popup
+  try {
+    popup.document.title = 'Preparing recording...'
+    popup.document.body.style.cssText = 'margin:0;height:100vh;display:flex;align-items:center;justify-content:center;background:#04101f;color:rgba(255,255,255,0.5);font:14px system-ui,sans-serif;'
+    popup.document.body.textContent = 'Preparing recording...'
+  } catch {
+    // Not essential - if this fails for some reason, the picker just shows
+    // a blank window instead of this placeholder text.
+  }
 
-  // Let it actually finish loading the invite before asking what to share,
-  // so the share picker shows the real page (not a blank window) and the
-  // recording doesn't start on a placeholder background. Reading
-  // popup.closed can itself throw ("Cross-Origin-Opener-Policy policy
-  // would block the window.closed call.") on a deployment that sends COOP
-  // headers, so this is wrapped defensively and capped at 5s rather than
-  // ever looping forever on a blocked read.
-  await new Promise((resolve) => {
-    let waitedMs = 0
-    const check = () => {
-      let done = false
-      try {
-        done = popup.closed || popup.document?.readyState === 'complete'
-      } catch {
-        done = true
-      }
-      waitedMs += 100
-      if (done || waitedMs >= 5000) resolve(undefined)
-      else setTimeout(check, 100)
-    }
-    check()
-  })
+  // Give the popup a moment to actually paint and register as a real,
+  // shareable window before the share picker opens.
   await new Promise((resolve) => setTimeout(resolve, 300))
 
   try {
@@ -438,6 +439,22 @@ async function startRecording() {
   recorder = new MediaRecorder(recordingStream, { mimeType, videoBitsPerSecond: 22_000_000 })
   recorder.ondataavailable = (e) => { if (e.data.size) recordedChunks.push(e.data) }
   recorder.onstop = handleRecordingStopped
+
+  // Load the real invite into the popup right as the recorder starts, not
+  // before - navigating first and starting the recorder second would just
+  // move the same "already played the animation" problem a few hundred
+  // milliseconds later once the page finishes loading. Starting the
+  // recorder first (it's already drawing/capturing the blank placeholder
+  // above) and triggering the navigation in the same breath means the very
+  // first real frames captured are the invite loading in, so the cover
+  // animation plays entirely on camera.
+  try {
+    if (!popup.closed) popup.location.href = previewUrl.value
+  } catch {
+    // If this fails for some reason, the popup just stays on the blank
+    // placeholder - worth surfacing rather than silently recording nothing.
+    errorMessage.value = "Couldn't load the invite into the recording window - close this take and try Start Recording again."
+  }
   recorder.start()
 
   // Calling .stop() ourselves (the Stop button, below) does NOT fire
