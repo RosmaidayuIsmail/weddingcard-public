@@ -234,8 +234,13 @@ export const themes: Theme[] = [
       accentSoft: 'rgba(124, 154, 111, 0.16)',
       ink: '#4a3b3a',
       onAccent: '#fefaf6'
-    },
-    defaultCardStyle: 'dark'
+    }
+    // Used to force a fixed dark navy card here (defaultCardStyle: 'dark'),
+    // but that clashed badly against this theme's own soft strawberry-pink
+    // palette and floral cover photos - removed so Matcha Strawberry now
+    // follows its own colors like every other theme (see resolveCardStyle
+    // below). A couple can still opt back into a dark card manually via
+    // WeddingContent.cardStyle in Card Appearance.
   }
 ]
 

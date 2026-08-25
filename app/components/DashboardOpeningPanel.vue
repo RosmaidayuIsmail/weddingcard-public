@@ -187,6 +187,52 @@
               </div>
             </Transition>
 
+            <!-- Cover Text Overlay - lets a couple with a fully custom-
+                 designed background image (typography already baked in,
+                 e.g. from Canva) hide the site's own title/guest-name/tap
+                 text so their image shows in full instead of being cropped
+                 and dimmed underneath it, or just shift that text left/right
+                 out of the way of their design if they still want it shown. -->
+            <Transition name="fade-down">
+              <div v-if="showOpeningBgUpload" class="p-5 rounded-xl bg-gold-400/5 border border-gold-400/30 space-y-4">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <h3 class="text-sm font-semibold text-gold-300 mb-1">Use Image As-Is</h3>
+                    <p class="text-xs text-gray-400 max-w-[320px]">Turn this on to completely hide our title/guest-name/tap text on this screen and show your uploaded image in full, uncropped and undimmed. Perfect if you designed everything (including the text) directly in Canva.</p>
+                  </div>
+                  <button
+                    type="button"
+                    @click="form.openingHideText = !form.openingHideText"
+                    class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#e3b04a] focus:ring-offset-2 focus:ring-offset-[#111827]"
+                    :class="form.openingHideText ? 'bg-[#e3b04a]' : 'bg-gray-700'"
+                  >
+                    <span
+                      aria-hidden="true"
+                      class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                      :class="form.openingHideText ? 'translate-x-5' : 'translate-x-0'"
+                    />
+                  </button>
+                </div>
+
+                <div v-if="!form.openingHideText">
+                  <p class="text-xs text-gray-400 mb-2">Text Position</p>
+                  <div class="grid grid-cols-3 gap-2">
+                    <button
+                      v-for="opt in [{ value: 'left', label: 'Left' }, { value: 'center', label: 'Center' }, { value: 'right', label: 'Right' }]"
+                      :key="opt.value"
+                      type="button"
+                      class="p-2 rounded-lg border text-xs font-medium transition-colors"
+                      :class="(form.openingTextAlign || 'center') === opt.value ? 'border-gold-400 bg-gold-400/10 text-gold-200' : 'border-gray-700 text-gray-400 hover:border-gray-600'"
+                      @click="form.openingTextAlign = opt.value"
+                    >
+                      {{ opt.label }}
+                    </button>
+                  </div>
+                  <p class="text-[11px] text-gray-500 mt-1.5">Shifts the title, guest name and tap-to-open text so they sit clear of your image's own focal point, instead of always dead-center.</p>
+                </div>
+              </div>
+            </Transition>
+
             <!-- Background Music - plays once a guest taps the envelope open,
                  same moment MusicToggle appears on the real page. -->
             <div class="pt-6 border-t border-gray-800">
@@ -526,6 +572,7 @@ watch(
     if (!form.openingGreeting) form.openingGreeting = 'Dear'
     if (!form.openingActionText) form.openingActionText = 'Tap to open'
     if (!form.openingGuestNameBox) form.openingGuestNameBox = 'none'
+    if (!form.openingTextAlign) form.openingTextAlign = 'center'
   },
   { immediate: true }
 )

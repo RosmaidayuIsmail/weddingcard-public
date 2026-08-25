@@ -25,10 +25,23 @@
         </div>
       </div>
 
-      <!-- Custom Canva Background Image (Standard Fade) -->
-      <div v-else-if="content.openingStyle === 'custom' && content.openingBgUrl" class="absolute inset-0 z-0">
-        <img :src="optimizedImageUrl(content.openingBgUrl, 1400)" alt="Cover Background" loading="eager" fetchpriority="high" class="w-full h-full object-cover" />
-        <div class="absolute inset-0 bg-black/40"></div>
+      <!-- Custom Canva Background Image (Standard Fade). When openingHideText
+           is on, the image is shown in full (object-contain, no crop) with
+           no dark tint over it, since the couple's own design already
+           carries its own typography and shouldn't be cropped or dimmed. -->
+      <div
+        v-else-if="content.openingStyle === 'custom' && content.openingBgUrl"
+        class="absolute inset-0 z-0"
+        :style="content.openingHideText ? { background: `linear-gradient(135deg, var(--theme-bg-from, #0d2a4a) 0%, var(--theme-bg-to, #04101f) 100%)` } : {}"
+      >
+        <img
+          :src="optimizedImageUrl(content.openingBgUrl, 1400)"
+          alt="Cover Background"
+          loading="eager"
+          fetchpriority="high"
+          :class="content.openingHideText ? 'w-full h-full object-contain' : 'w-full h-full object-cover'"
+        />
+        <div v-if="!content.openingHideText" class="absolute inset-0 bg-black/40"></div>
       </div>
 
       <!-- Modern Dark: layered, slowly-drifting color palette (couple-
@@ -85,9 +98,19 @@
            (optional) - the slide transition moves the whole overlay as one
            block, so the picture just travels off-screen along with it,
            same as Canva (Fade). Falls back to the default gradient. -->
-      <div v-else-if="isSlideStyle && content.openingBgUrl" class="absolute inset-0 z-0">
-        <img :src="optimizedImageUrl(content.openingBgUrl, 1400)" alt="Cover Background" loading="eager" fetchpriority="high" class="w-full h-full object-cover" />
-        <div class="absolute inset-0 bg-black/40"></div>
+      <div
+        v-else-if="isSlideStyle && content.openingBgUrl"
+        class="absolute inset-0 z-0"
+        :style="content.openingHideText ? { background: `linear-gradient(135deg, var(--theme-bg-from, #0d2a4a) 0%, var(--theme-bg-to, #04101f) 100%)` } : {}"
+      >
+        <img
+          :src="optimizedImageUrl(content.openingBgUrl, 1400)"
+          alt="Cover Background"
+          loading="eager"
+          fetchpriority="high"
+          :class="content.openingHideText ? 'w-full h-full object-contain' : 'w-full h-full object-cover'"
+        />
+        <div v-if="!content.openingHideText" class="absolute inset-0 bg-black/40"></div>
       </div>
 
       <!-- Confetti Burst Background -->
@@ -137,7 +160,10 @@
       <div v-else class="absolute inset-0 z-0 bg-gradient-to-br" :style="{ background: `linear-gradient(135deg, var(--theme-bg-from, #0d2a4a) 0%, var(--theme-bg-to, #04101f) 100%)` }"></div>
 
       <!-- Content Container (Fades out smoothly during door split) -->
-      <div class="content-container relative z-20 w-full max-w-md mx-auto flex flex-col items-center justify-center p-6 text-center animate-fade-up">
+      <div
+        class="content-container relative z-20 w-full max-w-md mx-auto flex flex-col justify-center p-6 animate-fade-up"
+        :class="contentAlignClass"
+      >
         
         <!-- Classic Envelope: flap hinges open and a paper letter genuinely
              slides up and out of it, rather than just fading in place - see
@@ -192,8 +218,10 @@
           <div class="wax-crumb" style="--cx:-10px; --cy:28px; --delay:0.17s;"></div>
         </div>
 
-        <!-- Typography -->
-        <p class="font-heading text-5xl sm:text-6xl leading-tight mb-4" :style="[textStyleAccent, titleShadow, titleStyle]">
+        <!-- Typography (hidden entirely when openingHideText is on - see the
+             custom/slide background blocks above for the matching
+             object-contain + no-tint image treatment) -->
+        <p v-if="!content.openingHideText" class="font-heading text-5xl sm:text-6xl leading-tight mb-4" :style="[textStyleAccent, titleShadow, titleStyle]">
           {{ content.openingTitle || "You're Invited" }}
         </p>
 
@@ -205,7 +233,7 @@
              'custom' uses the couple's own uploaded image as the backdrop
              instead of any built-in shape. -->
         <div
-          v-if="guestName"
+          v-if="guestName && !content.openingHideText"
           class="guest-name-box relative mt-4 mb-6 min-w-[200px] max-w-[300px] flex flex-col items-center gap-1.5"
           :class="[guestBoxClass, { 'guest-name-box-animated': content.openingGuestNameAnimate }]"
           :style="guestBoxStyle"
@@ -219,13 +247,23 @@
           <p v-if="greetingParts.after" class="relative text-sm sm:text-base uppercase tracking-[0.15em] opacity-90" :style="[textStyleBase, titleShadow, greetingAfterStyle]">{{ greetingParts.after }}</p>
         </div>
 
-        <button class="mt-8 flex flex-col items-center gap-2 group focus:outline-none">
+        <button v-if="!content.openingHideText" class="mt-8 flex flex-col items-center gap-2 group focus:outline-none">
           <span class="text-sm tracking-[0.25em] uppercase font-bold transition-all group-hover:scale-105" :style="[textStyleBase, titleShadow, actionStyle]">
             {{ content.openingActionText || "Tap to open" }}
           </span>
           <UIcon name="i-heroicons-chevron-double-down" class="w-5 h-5 animate-bounce mt-1" :style="textStyleAccent" />
         </button>
 
+      </div>
+
+      <!-- Custom image + hidden text still needs SOME visible tap
+           affordance, or a first-time guest may not realize the whole
+           screen is tappable - a small pulsing dot pinned to the bottom of
+           the whole screen (not the content container, which collapses to
+           nothing when the text above it is hidden), subtle enough not to
+           compete with the couple's own design. -->
+      <div v-if="content.openingHideText" class="absolute inset-x-0 bottom-6 z-20 flex justify-center pointer-events-none">
+        <span class="w-2 h-2 rounded-full bg-white/90 shadow-[0_0_10px_rgba(255,255,255,0.6)] animate-pulse"></span>
       </div>
     </div>
   </Transition>
@@ -273,6 +311,15 @@ const overlayClass = computed(() => {
 const isSlideStyle = computed(() =>
   ['slide-up', 'slide-down', 'slide-left', 'slide-right'].includes(props.content.openingStyle)
 )
+
+// Horizontal placement of the Main Title / guest-name box / action text -
+// lets a couple with a custom background image shift the overlay text out
+// of the way of their design's own focal point instead of always centering.
+const contentAlignClass = computed(() => {
+  if (props.content.openingTextAlign === 'left') return 'items-start text-left'
+  if (props.content.openingTextAlign === 'right') return 'items-end text-right'
+  return 'items-center text-center'
+})
 
 const textStyleAccent = computed(() => {
   if (props.content.openingStyle === 'minimal-light') return { color: props.content.customAccent || 'var(--theme-accent, #8a6d3b)' }

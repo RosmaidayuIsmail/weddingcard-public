@@ -108,6 +108,20 @@ export interface WeddingContent {
   layoutStyle: 'classic' | 'story'
   openingStyle: string
   openingBgUrl: string
+  /** Hides the site's own Main Title / guest-name box / "tap to open" text
+   *  on the closed envelope screen entirely, and switches the uploaded
+   *  cover image from cropped+tinted to fully shown (object-contain, no
+   *  dark overlay) - for a couple whose own custom-designed image (e.g. a
+   *  Canva poster with its own baked-in typography) already has everything
+   *  it needs and was getting cropped/duplicated by the site's overlay.
+   *  Guests can still tap anywhere on the image to open it. Independent of
+   *  hideSystemText, which only affects the opened/Hero page. */
+  openingHideText: boolean
+  /** Horizontal alignment of the Main Title / guest-name box / action text
+   *  on the closed envelope screen, for when openingHideText is off but the
+   *  couple's background image needs the text shifted out of the way
+   *  instead of centered. */
+  openingTextAlign: 'left' | 'center' | 'right'
   openingTitle: string
   openingGreeting: string
   openingActionText: string
@@ -409,6 +423,8 @@ export function createDefaultContent(brideName = '', groomName = ''): WeddingCon
     layoutStyle: 'classic',
     openingStyle: 'classic',
     openingBgUrl: '',
+    openingHideText: false,
+    openingTextAlign: 'center',
     openingTitle: "You're Invited",
     openingGreeting: 'Dear',
     openingActionText: 'Tap to open',
