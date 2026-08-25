@@ -284,6 +284,26 @@ export function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`
 }
 
+// Used to pick which flavor of text-shadow keeps hero-overlay text (see
+// index.vue's .overlay-text-shadow) legible against a photo: themes whose
+// ink is a light color (near-white - the ink sits on a dark background/
+// dark card, like most themes) need a dark shadow behind the light text;
+// themes whose ink is a dark color (Matcha Strawberry, and other light
+// pastel themes) sit their dark ink text on a light background/photo, so a
+// heavy dark shadow there just reads as an unwanted bold/muddy outline -
+// they need a soft light glow instead, same idea as EnvelopeIntro's
+// titleShadow switching between its 'minimal-light' and default variants.
+function inkIsDark(hex: string): boolean {
+  const clean = hex.replace('#', '')
+  if (clean.length !== 6) return false
+  const r = parseInt(clean.slice(0, 2), 16)
+  const g = parseInt(clean.slice(2, 4), 16)
+  const b = parseInt(clean.slice(4, 6), 16)
+  // Relative luminance (simple sRGB approximation is plenty here).
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+  return luminance < 0.6
+}
+
 export interface TextPreset {
   id: string
   label: string
@@ -860,7 +880,10 @@ export function useThemes() {
       '--theme-on-accent': theme.palette.onAccent,
       '--theme-heading-font': finalFont,
       '--theme-text-weight': textWeight || '300',
-      '--overlay-tint': String(theme.overlayTintOpacity ?? 0.4)
+      '--overlay-tint': String(theme.overlayTintOpacity ?? 0.4),
+      '--overlay-shadow': inkIsDark(theme.palette.ink)
+        ? '0 2px 16px rgba(255, 255, 255, 0.75), 0 2px 6px rgba(255, 255, 255, 0.85)'
+        : '0 2px 12px rgba(0, 0, 0, 0.6), 0 2px 5px rgba(0, 0, 0, 0.75), 0 1px 2px rgba(0, 0, 0, 0.9)'
     }
   }
 

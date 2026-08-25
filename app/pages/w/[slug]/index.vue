@@ -316,12 +316,14 @@ watch(
    washed-out near-invisible haze on light themes (their light background/
    photo tints have nothing for white text to contrast against) - now
    ink-aware via --theme-ink like every other adaptive element on this
-   page, so it's dark text on light themes and white text on dark ones. */
+   page, so it's dark text on light themes and white text on dark ones.
+   The shadow itself now follows --overlay-shadow (useThemes.ts) instead
+   of a fixed dark stack - a heavy black shadow behind now-dark ink text
+   (Matcha Strawberry etc.) just read as a thick, muddy bold outline
+   instead of helping legibility, so those themes get a soft light glow
+   instead, same idea as white text getting a dark shadow. */
 .overlay-text-shadow {
-  text-shadow:
-    0 2px 12px rgba(0, 0, 0, 0.6),
-    0 2px 5px rgba(0, 0, 0, 0.75),
-    0 1px 2px rgba(0, 0, 0, 0.9);
+  text-shadow: var(--overlay-shadow, 0 2px 12px rgba(0, 0, 0, 0.6), 0 2px 5px rgba(0, 0, 0, 0.75), 0 1px 2px rgba(0, 0, 0, 0.9));
 }
 
 /* Same fix as rsvp.vue's .accent-btn: UButton's color="primary" is a fixed
