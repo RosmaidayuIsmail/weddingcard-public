@@ -48,7 +48,7 @@
 
       <div
         ref="cardRef"
-        class="relative bg-ink-900/40 backdrop-blur-xl border rounded-[2rem] shadow-2xl p-8 sm:p-10 min-h-[600px] sm:min-h-[640px] flex flex-col justify-center touch-pan-y transition-all duration-500 hover:shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
+        class="relative classic-inner-card backdrop-blur-xl border rounded-[2rem] shadow-2xl p-8 sm:p-10 min-h-[600px] sm:min-h-[640px] flex flex-col justify-center touch-pan-y transition-all duration-500 hover:shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
         :style="{ borderColor: 'var(--theme-accent-soft)' }"
         @mouseenter="paused = true"
         @mouseleave="paused = false"
@@ -345,6 +345,24 @@ watch(
 </script>
 
 <style scoped>
+/* The couple's names (and everything else in this card) are styled in
+   white/light tones and coloured with var(--theme-ink), which assumes
+   a dark card to sit on - a plain bg-ink-900/40 only stayed dark enough
+   for that on dark themes. On a light theme (Ivory Minimalist, Sky
+   Serenade) it washed out to a near-transparent grey, making the names
+   almost invisible - same bug already fixed on the RSVP card
+   (app/pages/w/[slug]/rsvp.vue's .classic-rsvp-card) and the Inner Card
+   admin preview (WeddingDetailsPreview.vue). Mixing in only a capped
+   share of the theme's own colours keeps a hint of the chosen theme
+   while guaranteeing the card itself always stays dark enough. */
+.classic-inner-card {
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--theme-bg-via, #0b1c30) 30%, #0a1420) 0%,
+    color-mix(in srgb, var(--theme-bg-to, #142a45) 25%, #050b14) 100%
+  );
+}
+
 .progress-bar {
   animation: progress 7s linear forwards;
   width: 0%;

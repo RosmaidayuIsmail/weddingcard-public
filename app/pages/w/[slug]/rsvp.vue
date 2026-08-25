@@ -57,7 +57,13 @@
 
     <UContainer class="max-w-xl w-full relative z-10 animate-fade-up">
       <div class="flex justify-center mb-6">
-        <UButton :to="backHref" variant="ghost" color="neutral" size="sm" icon="i-heroicons-arrow-left" aria-label="Back to Cover" class="text-white/70 hover:text-white rounded-full bg-white/5 border border-white/10 backdrop-blur-sm px-4">
+        <!-- This pill sits directly on the page's own theme background
+             (not the always-dark form card below), which can be a light
+             palette (Ivory Minimalist, Sky Serenade) - hardcoded white
+             text/background here made it wash out to near-invisible on
+             those. Theme-ink-based coloring keeps it legible on every
+             theme, same as the title just below. -->
+        <UButton :to="backHref" variant="ghost" color="neutral" size="sm" icon="i-heroicons-arrow-left" aria-label="Back to Cover" class="rounded-full backdrop-blur-sm px-4 border transition-colors text-[color-mix(in_srgb,var(--theme-ink)_70%,transparent)] hover:text-[var(--theme-ink)] bg-[color-mix(in_srgb,var(--theme-ink)_6%,transparent)] border-[color-mix(in_srgb,var(--theme-ink)_12%,transparent)]">
           {{ wedding.content.rsvpReturnButton || 'Return to Invitation' }}
         </UButton>
       </div>
@@ -89,7 +95,7 @@
 
       <div
         class="rounded-3xl border backdrop-blur-xl shadow-2xl px-6 py-10 sm:px-10"
-        :class="isVip ? 'vip-rsvp-card' : 'bg-ink-900/40'"
+        :class="isVip ? 'vip-rsvp-card' : 'classic-rsvp-card'"
         :style="isVip ? {} : { borderColor: 'var(--theme-accent-soft)' }"
       >
         <template v-if="!submitted">
@@ -573,5 +579,25 @@ watch(
     0 0 0 7px var(--theme-bg-to, #150a20),
     0 0 0 8px color-mix(in srgb, var(--theme-accent) 45%, transparent),
     0 25px 55px -20px rgba(0, 0, 0, .7);
+}
+
+/* Everything inside this card (labels, option cards, step dots, the
+   summary box) is styled in white/light tones on purpose - it was built
+   assuming a dark backdrop, same as the rest of the app. That held up
+   fine as long as every theme's own background was dark too, but a light
+   theme (Ivory Minimalist, Sky Serenade) made the old bg-ink-900/40 card
+   render as a washed-out, near-transparent grey - not dark enough to
+   keep that light text readable. Mixing in only a small, capped share of
+   the theme's own bg-via/bg-to (instead of using them directly) keeps a
+   hint of the chosen theme's color while guaranteeing the card itself
+   always stays dark enough for its own white-based content to read
+   clearly, on every theme - the same fix already applied to the VIP
+   card above, just without its double-ring frame. */
+.classic-rsvp-card {
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--theme-bg-via, #0b1c30) 30%, #0a1420) 0%,
+    color-mix(in srgb, var(--theme-bg-to, #142a45) 25%, #050b14) 100%
+  );
 }
 </style>

@@ -423,10 +423,22 @@ const sampleStyleVars = computed(() => themeStyleVars(sampleThemeId.value))
   background: linear-gradient(160deg, var(--theme-bg-from, #04101f), var(--theme-bg-via, #0b1c30), var(--theme-bg-to, #142a45));
 }
 
+/* Everything inside this card (white/light text, step dots, option
+   cards below) assumes a dark backdrop, same as the real rsvp.vue page.
+   A flat rgba(11, 28, 48, 0.4) only stayed dark enough for that on dark
+   themes - on a light theme (Ivory Minimalist, Sky Serenade) it washed
+   out to a barely-there grey, same bug fixed in rsvp.vue and
+   DashboardRsvpEditorPanel.vue's .classic-rsvp-card. Mixing in only a
+   capped share of the theme's own colours keeps a hint of the chosen
+   theme while guaranteeing the card itself always stays dark enough. */
 .real-rsvp-card {
   border-radius: 1.5rem;
   border: 1px solid var(--theme-accent-soft, rgba(212, 160, 23, 0.2));
-  background: rgba(11, 28, 48, 0.4);
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--theme-bg-via, #0b1c30) 30%, #0a1420) 0%,
+    color-mix(in srgb, var(--theme-bg-to, #142a45) 25%, #050b14) 100%
+  );
   backdrop-filter: blur(20px);
   padding: 1.75rem 1.5rem;
   max-width: 420px;

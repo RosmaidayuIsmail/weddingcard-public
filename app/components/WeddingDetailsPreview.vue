@@ -17,7 +17,7 @@
         </div>
       </div>
 
-      <div class="relative flex-1 bg-ink-900/40 backdrop-blur-xl border rounded-[1.5rem] shadow-xl p-5 flex flex-col justify-center transition-all duration-300 overflow-y-auto hide-scrollbar" :style="{ borderColor: 'var(--theme-accent-soft)' }">
+      <div class="relative flex-1 classic-inner-card backdrop-blur-xl border rounded-[1.5rem] shadow-xl p-5 flex flex-col justify-center transition-all duration-300 overflow-y-auto hide-scrollbar" :style="{ borderColor: 'var(--theme-accent-soft)' }">
          <Transition :name="direction" mode="out-in">
            <div :key="currentSlide" class="space-y-3 text-center w-full px-1 py-2">
               
@@ -188,6 +188,24 @@ function prev() {
 </script>
 
 <style scoped>
+/* The couple's names (and everything else in this card) are styled in
+   white/light tones and coloured with var(--theme-ink), which assumes a
+   dark card to sit on - a plain bg-ink-900/40 only stayed dark enough
+   for that on dark themes. On a light theme (Ivory Minimalist, Sky
+   Serenade) it washed out to a near-transparent grey, making the names
+   almost invisible - same bug already fixed on the RSVP card
+   (app/pages/w/[slug]/rsvp.vue's .classic-rsvp-card) and the real
+   Details page (app/pages/w/[slug]/details.vue). Mixing in only a
+   capped share of the theme's own colours keeps a hint of the chosen
+   theme while guaranteeing the card itself always stays dark enough. */
+.classic-inner-card {
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--theme-bg-via, #0b1c30) 30%, #0a1420) 0%,
+    color-mix(in srgb, var(--theme-bg-to, #142a45) 25%, #050b14) 100%
+  );
+}
+
 .slide-next-enter-active,
 .slide-next-leave-active,
 .slide-prev-enter-active,

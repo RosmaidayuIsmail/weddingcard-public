@@ -304,7 +304,7 @@
                     </p>
                   </div>
 
-                  <div class="rounded-[1.5rem] border bg-ink-900/40 backdrop-blur-xl shadow-xl px-4 py-6 flex-1" :style="{ borderColor: 'var(--theme-accent-soft)' }">
+                  <div class="rounded-[1.5rem] border classic-rsvp-card backdrop-blur-xl shadow-xl px-4 py-6 flex-1" :style="{ borderColor: 'var(--theme-accent-soft)' }">
 
                     <template v-if="previewStep < 3">
                       <div class="flex items-center justify-center gap-2 mb-6">
@@ -628,6 +628,10 @@ useSeoMeta({ title: 'RSVP Editor — WeddingCard' })
   border-color: rgba(212, 160, 23, 0.3);
 }
 
+/* Sits directly on the theme-surface preview background (not the always-
+   dark card below), so on a light theme (Ivory Minimalist, Sky Serenade)
+   hardcoded white here washed out to near-invisible - same bug and same
+   fix as the real page's .preview-back-btn equivalent in rsvp.vue. */
 .preview-back-btn {
   display: inline-flex;
   align-items: center;
@@ -635,9 +639,23 @@ useSeoMeta({ title: 'RSVP Editor — WeddingCard' })
   font-size: 0.65rem;
   padding: 0.35rem 0.75rem;
   border-radius: 999px;
-  color: rgba(255, 255, 255, 0.7);
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: color-mix(in srgb, var(--theme-ink, #fff) 70%, transparent);
+  background: color-mix(in srgb, var(--theme-ink, #fff) 6%, transparent);
+  border: 1px solid color-mix(in srgb, var(--theme-ink, #fff) 12%, transparent);
+}
+
+/* Everything inside the RSVP card (labels, option cards, step dots) is
+   styled in white/light tones on purpose, matching the real rsvp.vue
+   page - that only stays readable if the card itself is reliably dark,
+   which a plain bg-ink-900/40 wasn't against a light theme's own light
+   background. See the matching, more detailed comment in
+   app/pages/w/[slug]/rsvp.vue for the full reasoning. */
+.classic-rsvp-card {
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--theme-bg-via, #0b1c30) 30%, #0a1420) 0%,
+    color-mix(in srgb, var(--theme-bg-to, #142a45) 25%, #050b14) 100%
+  );
 }
 
 .preview-step-dot {
