@@ -47,7 +47,10 @@
           aria-label="Back to Cover"
           class="rounded-full backdrop-blur-sm text-[color-mix(in_srgb,var(--theme-ink)_75%,transparent)] hover:text-[var(--theme-ink)] bg-[color-mix(in_srgb,var(--theme-ink)_8%,transparent)] border border-[color-mix(in_srgb,var(--theme-ink)_15%,transparent)]"
         />
-        <UButton v-if="wedding.content.rsvpEnabled !== false" :to="rsvpLink" color="primary" size="sm" class="rounded-full shadow-lg font-semibold px-5">RSVP</UButton>
+        <!-- accent-btn: was color="primary" (fixed brand gold) - now follows
+             the couple's own theme accent, same fix as rsvp.vue's
+             Continue/Confirm buttons. -->
+        <UButton v-if="wedding.content.rsvpEnabled !== false" :to="rsvpLink" color="neutral" size="sm" class="accent-btn rounded-full shadow-lg font-semibold px-5">RSVP</UButton>
         <div v-else class="w-10" aria-hidden="true" />
       </div>
 
@@ -172,7 +175,7 @@
                 <div class="p-3 bg-white rounded-2xl shadow-xl">
                   <img :src="qrCodeUrl" :alt="`QR code linking to the venue on ${wedding.content.locationMapsButtonLabel || 'Google Maps'}`" class="w-36 h-36" loading="lazy">
                 </div>
-                <UButton :to="wedding.content.mapUrl" target="_blank" external icon="i-heroicons-map-pin" color="primary" class="font-semibold rounded-full px-6 shadow-md">
+                <UButton :to="wedding.content.mapUrl" target="_blank" external icon="i-heroicons-map-pin" color="neutral" class="accent-btn font-semibold rounded-full px-6 shadow-md">
                   {{ wedding.content.locationMapsButtonLabel || 'Google Maps' }}
                 </UButton>
               </div>
@@ -374,6 +377,17 @@ watch(
 </script>
 
 <style scoped>
+/* Same fix as rsvp.vue's .accent-btn: UButton's color="primary" is a fixed
+   brand gold (app.config.ts), not the couple's own theme. !important beats
+   Nuxt UI's own color classes. */
+.accent-btn {
+  background-color: var(--theme-accent, #d4a017) !important;
+  color: var(--theme-on-accent, #1f1400) !important;
+}
+.accent-btn:hover {
+  filter: brightness(1.08);
+}
+
 /* Two looks, chosen per-wedding by cardStyleResolved (see the script setup
    computed above, backed by useThemes.ts's resolveCardStyle) - same
    pattern as app/pages/w/[slug]/rsvp.vue's .classic-rsvp-card/

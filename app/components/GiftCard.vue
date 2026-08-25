@@ -1,11 +1,18 @@
 <template>
+  <!-- Rendered inside the Details page's card (classic-inner-card/
+       classic-inner-card-theme), so text follows --card-text (like every
+       other slide in that card) rather than a fixed white - previously
+       hardcoded white/gold regardless of card style, so it went muddy on a
+       light theme-tinted card. The account-number pill stays theme-accent
+       (it's a button, matches every other accent-colored control on these
+       pages) rather than --card-text. -->
   <div class="gift-card">
-    <UIcon name="i-heroicons-gift" class="w-8 h-8 text-gold-300 mx-auto" />
-    <p class="mt-2 text-sm text-white/80">
+    <UIcon name="i-heroicons-gift" class="w-8 h-8 mx-auto" :style="{ color: 'var(--theme-accent)' }" />
+    <p class="mt-2 text-sm text-[color-mix(in_srgb,var(--card-text)_80%,transparent)]">
       Your presence is the greatest gift. For those who’d still like to send a token of love:
     </p>
 
-    <div v-for="(account, index) in banks" :key="index" :class="index > 0 ? 'mt-6 pt-6 border-t border-white/10' : ''">
+    <div v-for="(account, index) in banks" :key="index" :class="index > 0 ? 'mt-6 pt-6 border-t border-[color-mix(in_srgb,var(--card-text)_10%,transparent)]' : ''">
       <!-- QR Code Display -->
       <div v-if="account.qrCodeUrl" class="mt-6 mb-4 flex justify-center">
         <div class="p-2 bg-white rounded-xl shadow-lg border border-white/20">
@@ -15,8 +22,8 @@
 
       <!-- Bank Details -->
       <div class="mt-4 space-y-1 text-sm">
-        <p v-if="account.name" class="text-gold-200 font-semibold">{{ account.name }}</p>
-        <p v-if="account.accountName" class="text-white/90">{{ account.accountName }}</p>
+        <p v-if="account.name" class="font-semibold" :style="{ color: 'var(--theme-accent)' }">{{ account.name }}</p>
+        <p v-if="account.accountName" class="text-[color-mix(in_srgb,var(--card-text)_90%,transparent)]">{{ account.accountName }}</p>
         <button
           v-if="account.accountNumber"
           type="button"
@@ -67,8 +74,8 @@ async function copyAccount(accountNumber: string) {
   border-radius: 1.25rem;
   padding: 1.75rem 1.5rem;
   text-align: center;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(212, 160, 23, 0.3);
+  background: color-mix(in srgb, var(--card-text, #fff) 5%, transparent);
+  border: 1px solid color-mix(in srgb, var(--theme-accent, #d4a017) 30%, transparent);
   backdrop-filter: blur(8px);
 }
 
@@ -80,15 +87,15 @@ async function copyAccount(accountNumber: string) {
   letter-spacing: 0.05em;
   padding: 0.5rem 1rem;
   border-radius: 999px;
-  background: rgba(212, 160, 23, 0.15);
-  border: 1px solid rgba(212, 160, 23, 0.4);
-  color: #f3ddaa;
+  background: color-mix(in srgb, var(--theme-accent, #d4a017) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--theme-accent, #d4a017) 40%, transparent);
+  color: var(--theme-accent, #d4a017);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .account-number:hover {
-  background: rgba(212, 160, 23, 0.25);
+  background: color-mix(in srgb, var(--theme-accent, #d4a017) 25%, transparent);
   transform: translateY(-1px);
 }
 </style>

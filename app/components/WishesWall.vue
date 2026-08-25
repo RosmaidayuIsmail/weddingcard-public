@@ -1,21 +1,24 @@
 <template>
+  <!-- Rendered on the RSVP thank-you screen, inside .classic-rsvp-card/
+       .classic-rsvp-card-theme, so text follows --card-text (previously a
+       fixed white regardless of card style). -->
   <div>
-    <h3 class="text-center font-display text-xl text-gold-100 mb-4">
+    <h3 class="text-center font-display text-xl mb-4" :style="{ color: 'var(--theme-accent)' }">
       {{ title }}
     </h3>
 
     <div v-if="wishes.length" class="grid gap-3 sm:grid-cols-2">
       <TransitionGroup name="wish" tag="div" class="contents">
         <div v-for="wish in wishes" :key="wish.id" class="wish-card">
-          <p class="text-sm text-white/90 leading-relaxed">&ldquo;{{ wish.doa }}&rdquo;</p>
-          <p class="mt-2 text-xs uppercase tracking-wide text-gold-300/80">
+          <p class="text-sm text-[color-mix(in_srgb,var(--card-text)_90%,transparent)] leading-relaxed">&ldquo;{{ wish.doa }}&rdquo;</p>
+          <p class="mt-2 text-xs uppercase tracking-wide" :style="{ color: 'var(--theme-accent)', opacity: 0.8 }">
             &mdash; {{ wish.name || 'Anonymous' }}
           </p>
         </div>
       </TransitionGroup>
     </div>
 
-    <p v-else class="text-center text-sm text-white/60 italic">
+    <p v-else class="text-center text-sm text-[color-mix(in_srgb,var(--card-text)_60%,transparent)] italic">
       {{ emptyText }}
     </p>
   </div>
@@ -34,8 +37,8 @@ const { wishes } = useWishes(props.weddingId, props.maxCount)
 .wish-card {
   border-radius: 0.75rem;
   padding: 1rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(212, 160, 23, 0.25);
+  background: color-mix(in srgb, var(--card-text, #fff) 5%, transparent);
+  border: 1px solid color-mix(in srgb, var(--theme-accent, #d4a017) 25%, transparent);
 }
 
 .wish-enter-active {

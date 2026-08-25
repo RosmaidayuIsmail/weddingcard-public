@@ -193,16 +193,20 @@
         <UButton
           :to="detailsLink"
           size="xl"
-          :color="wedding.content.rsvpEnabled === false ? 'primary' : 'neutral'"
+          color="neutral"
           :variant="wedding.content.rsvpEnabled === false ? 'solid' : 'soft'"
           class="w-full sm:w-auto font-medium rounded-full px-8 transition-colors"
           :class="wedding.content.rsvpEnabled === false
-            ? 'shadow-[0_0_30px_-5px_var(--theme-accent)] animate-glow'
+            ? 'accent-btn shadow-[0_0_30px_-5px_var(--theme-accent)] animate-glow'
             : 'text-[color-mix(in_srgb,var(--theme-ink)_90%,transparent)] bg-[color-mix(in_srgb,var(--theme-ink)_5%,transparent)] hover:bg-[color-mix(in_srgb,var(--theme-ink)_10%,transparent)] border border-[color-mix(in_srgb,var(--theme-ink)_12%,transparent)]'"
         >
           {{ wedding.content.btnDetails || 'View Details' }}
         </UButton>
-        <UButton v-if="wedding.content.rsvpEnabled !== false" :to="rsvpLink" size="xl" color="primary" class="w-full sm:w-auto font-semibold rounded-full px-10 shadow-[0_0_30px_-5px_var(--theme-accent)] hover:scale-105 transition-transform animate-glow">
+        <!-- accent-btn: previously color="primary", a fixed brand gold from
+             app.config.ts - forces the couple's own theme accent instead,
+             same fix already applied to the RSVP page's Continue/Confirm
+             buttons (see rsvp.vue's .accent-btn). -->
+        <UButton v-if="wedding.content.rsvpEnabled !== false" :to="rsvpLink" size="xl" color="neutral" class="accent-btn w-full sm:w-auto font-semibold rounded-full px-10 shadow-[0_0_30px_-5px_var(--theme-accent)] hover:scale-105 transition-transform animate-glow">
           {{ wedding.content.btnRsvp || 'RSVP Now' }}
         </UButton>
       </div>
@@ -313,5 +317,17 @@ watch(
     0 2px 12px rgba(0, 0, 0, 0.6),
     0 2px 5px rgba(0, 0, 0, 0.75),
     0 1px 2px rgba(0, 0, 0, 0.9);
+}
+
+/* Same fix as rsvp.vue's .accent-btn: UButton's color="primary" is a fixed
+   brand gold (app.config.ts), so RSVP Now/View Details used to show gold
+   regardless of the couple's own theme. !important beats Nuxt UI's own
+   color classes. */
+.accent-btn {
+  background-color: var(--theme-accent, #d4a017) !important;
+  color: var(--theme-on-accent, #1f1400) !important;
+}
+.accent-btn:hover {
+  filter: brightness(1.08);
 }
 </style>

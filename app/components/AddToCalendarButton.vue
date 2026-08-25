@@ -1,8 +1,12 @@
 <template>
+  <!-- accent-soft-btn: was color="primary" (fixed brand gold) - now tints
+       with the couple's own theme accent instead, same fix already applied
+       to the RSVP/Google Maps buttons elsewhere on these pages. -->
   <UButton
     icon="i-heroicons-calendar-days"
-    color="primary"
+    color="neutral"
     variant="soft"
+    class="accent-soft-btn"
     @click="downloadIcs"
   >
     {{ label || 'Add to Calendar' }}
@@ -57,3 +61,13 @@ function downloadIcs() {
   URL.revokeObjectURL(url)
 }
 </script>
+
+<style scoped>
+.accent-soft-btn {
+  background-color: color-mix(in srgb, var(--theme-accent, #d4a017) 15%, transparent) !important;
+  color: var(--theme-accent, #d4a017) !important;
+}
+.accent-soft-btn:hover {
+  background-color: color-mix(in srgb, var(--theme-accent, #d4a017) 25%, transparent) !important;
+}
+</style>

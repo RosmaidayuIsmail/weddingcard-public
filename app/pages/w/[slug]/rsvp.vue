@@ -96,7 +96,9 @@
       <div
         class="rounded-3xl border backdrop-blur-xl shadow-2xl px-6 py-10 sm:px-10"
         :class="isVip ? 'vip-rsvp-card' : (cardStyleResolved === 'dark' ? 'classic-rsvp-card' : 'classic-rsvp-card-theme')"
-        :style="isVip ? { '--card-text': '#ffffff' } : { borderColor: 'var(--theme-accent-soft)', '--card-text': cardTextColorResolved }"
+        :style="isVip
+          ? { '--card-text': '#ffffff', ...cardUiVars }
+          : { borderColor: 'var(--theme-accent-soft)', '--card-text': cardTextColorResolved, ...cardUiVars }"
       >
         <template v-if="!submitted">
           <div class="flex items-center justify-center gap-3 mb-10">
@@ -281,6 +283,29 @@ const cardStyleResolved = computed(() => resolveCardStyle(wedding.value?.themeId
 const cardTextColorResolved = computed(() =>
   wedding.value?.content.cardTextColor || (cardStyleResolved.value === 'dark' ? '#ffffff' : 'var(--theme-ink)')
 )
+
+// Nuxt UI's own form fields (UInput/UInputNumber/UTextarea below) don't
+// read --card-text at all - they read Nuxt UI's own semantic tokens
+// (--ui-bg, --ui-border*, --ui-text-highlighted/dimmed, --ui-primary),
+// which are fixed globally in app.config.ts (a dark "ink" background,
+// gold primary) so every field rendered the exact same fixed dark pill
+// regardless of the wedding's theme - visible as a mismatched dark box on
+// any light theme like Matcha Strawberry. Since those are plain CSS custom
+// properties, redefining them here on the card cascades to every Nuxt UI
+// component nested inside it, with no need to touch each input
+// individually or the app's global (admin-wide) color config.
+const cardUiVars = computed(() => ({
+  '--ui-bg': 'color-mix(in srgb, var(--card-text) 6%, transparent)',
+  '--ui-bg-elevated': 'color-mix(in srgb, var(--card-text) 10%, transparent)',
+  '--ui-bg-accented': 'color-mix(in srgb, var(--card-text) 14%, transparent)',
+  '--ui-border': 'color-mix(in srgb, var(--card-text) 20%, transparent)',
+  '--ui-border-accented': 'color-mix(in srgb, var(--card-text) 35%, transparent)',
+  '--ui-border-muted': 'color-mix(in srgb, var(--card-text) 12%, transparent)',
+  '--ui-text-highlighted': 'var(--card-text)',
+  '--ui-text-dimmed': 'color-mix(in srgb, var(--card-text) 45%, transparent)',
+  '--ui-text': 'color-mix(in srgb, var(--card-text) 80%, transparent)',
+  '--ui-primary': 'var(--theme-accent)'
+}))
 
 // Whether this wedding is on the VIP Cinematic tier - drives both the
 // visual skin below (.vip-rsvp-surface/.vip-rsvp-card) and where "Return to
