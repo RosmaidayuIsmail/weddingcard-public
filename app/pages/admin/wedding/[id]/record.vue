@@ -368,22 +368,46 @@ async function startRecording() {
     // back to recording the frame whole rather than failing the take.
   }
 
-  // Output canvas fills edge-to-edge with the phone screen itself - fixed
-  // width, height derived from the phone's own aspect ratio, no black bars
-  // added around it.
+  // The real phone screen's own aspect ratio (~390:844) is narrower than
+  // the standard 9:16 vertical video frame (1080x1920) that Canva/
+  // Instagram/TikTok templates are built around - exporting at the
+  // phone's native ratio previously meant the file itself didn't match
+  // those placeholders, forcing a differently-shaped one to be found for
+  // it. Exporting at the real 1080x1920 standard fixes that - but a flat
+  // black bar down each side (tried once before) read as broken rather
+  // than intentional. Instead, fill that space with a softly blurred,
+  // darkened, scaled-up copy of the same footage behind the sharp phone
+  // content - the same "blurred backdrop" look Instagram/TikTok themselves
+  // use when portrait content doesn't natively fill their frame.
   const OUTPUT_WIDTH = 1080
-  const outputWidth = OUTPUT_WIDTH
-  const outputHeight = Math.round(OUTPUT_WIDTH * (crop.h / crop.w))
+  const OUTPUT_HEIGHT = 1920
+
+  const fitScale = Math.min(OUTPUT_WIDTH / crop.w, OUTPUT_HEIGHT / crop.h)
+  const fgWidth = Math.round(crop.w * fitScale)
+  const fgHeight = Math.round(crop.h * fitScale)
+  const fgX = Math.round((OUTPUT_WIDTH - fgWidth) / 2)
+  const fgY = Math.round((OUTPUT_HEIGHT - fgHeight) / 2)
+
+  const coverScale = Math.max(OUTPUT_WIDTH / crop.w, OUTPUT_HEIGHT / crop.h)
+  const bgWidth = Math.round(crop.w * coverScale)
+  const bgHeight = Math.round(crop.h * coverScale)
+  const bgX = Math.round((OUTPUT_WIDTH - bgWidth) / 2)
+  const bgY = Math.round((OUTPUT_HEIGHT - bgHeight) / 2)
 
   outputCanvas = document.createElement('canvas')
-  outputCanvas.width = outputWidth
-  outputCanvas.height = outputHeight
+  outputCanvas.width = OUTPUT_WIDTH
+  outputCanvas.height = OUTPUT_HEIGHT
   const ctx = outputCanvas.getContext('2d')!
   ctx.imageSmoothingEnabled = true
   ctx.imageSmoothingQuality = 'high'
 
   const drawFrame = () => {
-    if (sourceVideo) ctx.drawImage(sourceVideo, crop.x, crop.y, crop.w, crop.h, 0, 0, outputCanvas!.width, outputCanvas!.height)
+    if (sourceVideo) {
+      ctx.filter = 'blur(60px) brightness(0.45) saturate(1.15)'
+      ctx.drawImage(sourceVideo, crop.x, crop.y, crop.w, crop.h, bgX, bgY, bgWidth, bgHeight)
+      ctx.filter = 'none'
+      ctx.drawImage(sourceVideo, crop.x, crop.y, crop.w, crop.h, fgX, fgY, fgWidth, fgHeight)
+    }
     rafId = requestAnimationFrame(drawFrame)
   }
   drawFrame()
