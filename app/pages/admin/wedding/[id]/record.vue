@@ -371,35 +371,19 @@ async function startRecording() {
     // back to recording the frame whole rather than failing the take.
   }
 
-  // The real phone screen's own aspect ratio (~390:844) is narrower than
-  // the standard 9:16 vertical video frame (1080x1920) that Canva/
-  // Instagram/TikTok templates are built around - exporting at the
-  // phone's native ratio previously meant the file itself didn't match
-  // those placeholders, forcing a differently-shaped one to be found for
-  // it. Exporting at the real 1080x1920 standard fixes that - but a flat
-  // black bar down each side (tried once before) read as broken rather
-  // than intentional. Instead, fill that space with a softly blurred,
-  // darkened, scaled-up copy of the same footage behind the sharp phone
-  // content - the same "blurred backdrop" look Instagram/TikTok themselves
-  // use when portrait content doesn't natively fill their frame.
+  // Export at the phone's own native aspect ratio, edge-to-edge - no
+  // padding, no bars, no blurred backdrop. (A fixed 1080-wide export with
+  // blurred fill was tried to match standard 9:16 Canva/Instagram/TikTok
+  // placeholders, but on non-9:16 pages like the VIP/story layout it showed
+  // up as visible blurred bands above and below the real content instead of
+  // looking intentional - so this always renders exactly what's on screen,
+  // full-bleed, at whatever shape the recorded page actually is.)
   const OUTPUT_WIDTH = 1080
-  const OUTPUT_HEIGHT = 1920
-
-  const fitScale = Math.min(OUTPUT_WIDTH / crop.w, OUTPUT_HEIGHT / crop.h)
-  const fgWidth = Math.round(crop.w * fitScale)
-  const fgHeight = Math.round(crop.h * fitScale)
-  const fgX = Math.round((OUTPUT_WIDTH - fgWidth) / 2)
-  const fgY = Math.round((OUTPUT_HEIGHT - fgHeight) / 2)
-
-  const coverScale = Math.max(OUTPUT_WIDTH / crop.w, OUTPUT_HEIGHT / crop.h)
-  const bgWidth = Math.round(crop.w * coverScale)
-  const bgHeight = Math.round(crop.h * coverScale)
-  const bgX = Math.round((OUTPUT_WIDTH - bgWidth) / 2)
-  const bgY = Math.round((OUTPUT_HEIGHT - bgHeight) / 2)
+  const outputHeight = Math.max(2, Math.round(OUTPUT_WIDTH * (crop.h / crop.w)))
 
   outputCanvas = document.createElement('canvas')
   outputCanvas.width = OUTPUT_WIDTH
-  outputCanvas.height = OUTPUT_HEIGHT
+  outputCanvas.height = outputHeight
   const ctx = outputCanvas.getContext('2d')!
   ctx.imageSmoothingEnabled = true
   ctx.imageSmoothingQuality = 'high'
@@ -417,10 +401,7 @@ async function startRecording() {
   const supportsVfc = typeof (sourceVideo as any).requestVideoFrameCallback === 'function'
   const drawFrame = () => {
     if (sourceVideo) {
-      ctx.filter = 'blur(60px) brightness(0.45) saturate(1.15)'
-      ctx.drawImage(sourceVideo, crop.x, crop.y, crop.w, crop.h, bgX, bgY, bgWidth, bgHeight)
-      ctx.filter = 'none'
-      ctx.drawImage(sourceVideo, crop.x, crop.y, crop.w, crop.h, fgX, fgY, fgWidth, fgHeight)
+      ctx.drawImage(sourceVideo, crop.x, crop.y, crop.w, crop.h, 0, 0, OUTPUT_WIDTH, outputHeight)
     }
     if (supportsVfc) {
       rvfcId = (sourceVideo as any).requestVideoFrameCallback(drawFrame)
