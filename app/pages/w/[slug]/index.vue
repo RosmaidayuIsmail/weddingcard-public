@@ -50,7 +50,13 @@
         @load="coverPhotoLoaded = true"
       >
       <div v-if="!wedding.content.hideSystemText" class="absolute inset-0 bg-black/40"></div>
-      <div class="absolute inset-0" :style="{ background: `linear-gradient(to bottom, transparent 0%, var(--theme-bg-to) 90%)` }" />
+      <!-- This bottom fade used to always render, even with hideSystemText
+           on - so a couple's fully custom, edge-to-edge design (baked-in
+           typography, no room for a dimmed band) still got its bottom third
+           muddied into the theme's background color regardless. Gated the
+           same way as the black tint above now, so "use my image as-is"
+           actually means as-is. -->
+      <div v-if="!wedding.content.hideSystemText" class="absolute inset-0" :style="{ background: `linear-gradient(to bottom, transparent 0%, var(--theme-bg-to) 90%)` }" />
     </div>
     <PetalsBackground v-if="wedding.content.enablePetals !== false" :style-name="wedding.content.petalStyle" />
     <CardOrnament v-if="opened" :style="wedding.content.ornamentStyle" color="var(--theme-accent)" />
@@ -174,19 +180,13 @@
         <CountdownTimer :target="wedding.content.dateISO" />
       </div>
       <div class="flex flex-col sm:flex-row items-center justify-center gap-4 w-full max-w-lg mx-auto">
-        <!-- This button sits directly on the page's own theme background,
-             which can be a light palette (Ivory Minimalist, Sky Serenade,
-             Matcha Strawberry) - hardcoded white here washed out to
-             near-invisible on those, same bug already fixed on the RSVP
-             page's "Return to Invitation" pill. Theme-ink-based coloring
-             keeps it legible on every theme. -->
         <UButton
           :to="detailsLink"
           size="xl"
           :color="wedding.content.rsvpEnabled === false ? 'primary' : 'neutral'"
           :variant="wedding.content.rsvpEnabled === false ? 'solid' : 'soft'"
           class="w-full sm:w-auto font-medium rounded-full px-8 transition-colors"
-          :class="wedding.content.rsvpEnabled === false ? 'shadow-[0_0_30px_-5px_var(--theme-accent)] animate-glow' : 'border text-[color-mix(in_srgb,var(--theme-ink)_90%,transparent)] bg-[color-mix(in_srgb,var(--theme-ink)_5%,transparent)] hover:bg-[color-mix(in_srgb,var(--theme-ink)_10%,transparent)] border-[color-mix(in_srgb,var(--theme-ink)_12%,transparent)]'"
+          :class="wedding.content.rsvpEnabled === false ? 'shadow-[0_0_30px_-5px_var(--theme-accent)] animate-glow' : 'bg-white/5 hover:bg-white/10 border border-white/10'"
         >
           {{ wedding.content.btnDetails || 'View Details' }}
         </UButton>

@@ -80,7 +80,7 @@ function bindResumeListeners() {
   resumeListenersBound = true
 
   const tryResume = () => {
-    if (!shouldPlay) return
+    if (!shouldPlay || playing.value) return
     if (document.visibilityState !== 'visible') return
     startPlayback()
   }
@@ -88,6 +88,24 @@ function bindResumeListeners() {
   document.addEventListener('visibilitychange', tryResume)
   window.addEventListener('pageshow', tryResume)
   window.addEventListener('focus', tryResume)
+
+  // Extra safety net for the very first autoplay attempt, specifically the
+  // YouTube-link case: playVideo() there is a postMessage call into a
+  // cross-origin iframe, not a direct HTMLMediaElement.play(), and it only
+  // actually plays if the YouTube IFrame API finished loading in time -
+  // which happens INSIDE the tap's user-activation window on a warm/cached
+  // load, but can land after that window has expired on a cold one (slow
+  // network on the very first visit). When that happens the deferred
+  // playVideo() call is silently ignored and nothing ever retries it, which
+  // is exactly the "doesn't autoplay the first time, works after a refresh"
+  // report - a refresh just means the IFrame API script is now cached and
+  // loads fast enough to land inside the window. Any further tap/scroll
+  // anywhere on the page after that IS a fresh, genuine user gesture, so
+  // retrying playback on it picks the music back up without needing a
+  // reload. Capture phase so it fires even if the tapped element stops
+  // propagation.
+  document.addEventListener('click', tryResume, { capture: true })
+  document.addEventListener('touchend', tryResume, { capture: true })
 }
 
 function teardownPlayer() {
