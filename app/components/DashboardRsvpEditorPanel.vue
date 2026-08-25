@@ -399,8 +399,12 @@
                         <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-white/5 border-2 mb-1" :style="{ borderColor: 'var(--theme-accent)' }">
                           <UIcon name="i-heroicons-check" class="w-7 h-7" :style="{ color: 'var(--theme-accent)' }" />
                         </div>
+                        <!-- Fixed white, not var(--theme-ink) - inside the
+                             always-dark .classic-rsvp-card (see its
+                             comment below), so theme-ink would be
+                             unreadable dark-on-dark for a light theme. -->
                         <div>
-                          <h2 class="text-xl font-display mb-1.5 drop-shadow-md" :style="{ color: 'var(--theme-ink)' }">{{ fillNameToken(form.rsvpThankYouTitle || 'Thank you, {name}!', previewState.name) }}</h2>
+                          <h2 class="text-xl font-display mb-1.5 drop-shadow-md" :style="{ color: '#fff' }">{{ fillNameToken(form.rsvpThankYouTitle || 'Thank you, {name}!', previewState.name) }}</h2>
                           <p class="text-white/80 text-xs font-light leading-relaxed">
                             {{ form.rsvpThankYouIntro || 'Your RSVP has been securely received.' }} {{ previewState.attending === 'Yes' ? (form.rsvpSuccessYes || 'We are absolutely thrilled to celebrate with you.') : (form.rsvpSuccessNo || 'You will be dearly missed.') }}
                           </p>
@@ -672,9 +676,12 @@ useSeoMeta({ title: 'RSVP Editor — WeddingCard' })
   background: rgba(255, 255, 255, 0.05);
 }
 
+/* color is fixed white, not var(--theme-ink) - this sits inside the
+   always-dark .classic-rsvp-card below, so theme-ink (dark, for a light
+   theme) would be unreadable dark-on-dark text here. */
 .preview-step-dot-active {
   border-color: var(--theme-accent, #e3b04a);
-  color: var(--theme-ink, #f3ddaa);
+  color: #fff;
   background: var(--theme-accent-soft, rgba(212, 160, 23, 0.2));
 }
 
@@ -706,10 +713,11 @@ useSeoMeta({ title: 'RSVP Editor — WeddingCard' })
   font-weight: 500;
 }
 
+/* Same reasoning as .preview-step-dot-active above. */
 .preview-option-card-active {
   border-color: var(--theme-accent, #e3b04a) !important;
   background: var(--theme-accent-soft, rgba(212, 160, 23, 0.15)) !important;
-  color: var(--theme-ink, #f3ddaa) !important;
+  color: #fff !important;
 }
 
 .preview-nav-btn {

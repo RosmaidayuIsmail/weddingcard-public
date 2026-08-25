@@ -44,7 +44,15 @@
               <!-- Couple -->
               <template v-else-if="currentKey === 'couple'">
                 <div v-if="!content.hideSystemText">
-                  <h2 class="text-4xl leading-tight drop-shadow-md" :style="{ color: 'var(--theme-ink)', fontFamily: 'var(--theme-heading-font)' }">
+                  <!-- Fixed white default, not var(--theme-ink) - this
+                       sits inside .classic-inner-card, which is always
+                       dark regardless of theme, so theme-ink (dark, for
+                       a light theme like Matcha Strawberry) rendered as
+                       unreadable dark-on-dark text. content.nameColor
+                       (the "Name Color" picker on the Theme tab, also
+                       used for the cover page's names) still overrides
+                       it when a couple sets one explicitly. -->
+                  <h2 class="text-4xl leading-tight drop-shadow-md" :style="{ color: content.nameColor || '#ffffff', fontFamily: 'var(--theme-heading-font)' }">
                     {{ content.brideName || 'Bride' }} <br/>
                     <span class="text-[0.5em] opacity-80" :style="{ color: 'var(--theme-accent)' }">&amp;</span> <br/>
                     {{ content.groomName || 'Groom' }}

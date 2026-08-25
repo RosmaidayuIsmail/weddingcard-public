@@ -113,8 +113,11 @@
              filling it in - no real guest data. -->
         <div v-else-if="mode === 'rsvp'" class="real-rsvp-frame" :style="sampleStyleVars">
           <div class="real-rsvp-card">
+            <!-- Fixed white, not var(--theme-ink) - .real-rsvp-card below
+                 is always dark regardless of theme, so theme-ink (dark,
+                 for a light theme) would be unreadable dark-on-dark. -->
             <div class="text-center space-y-2 mb-6">
-              <h1 class="text-3xl font-bold tracking-wide" :style="{ color: 'var(--theme-ink)', fontFamily: 'var(--theme-heading-font)' }">
+              <h1 class="text-3xl font-bold tracking-wide" :style="{ color: '#fff', fontFamily: 'var(--theme-heading-font)' }">
                 {{ sampleContent.rsvpTitle }}
               </h1>
               <div class="h-px w-16 mx-auto" :style="{ background: 'var(--theme-accent)' }" />
@@ -459,9 +462,12 @@ const sampleStyleVars = computed(() => themeStyleVars(sampleThemeId.value))
   background: rgba(255, 255, 255, 0.05);
 }
 
+/* color is fixed white, not var(--theme-ink) - inside the always-dark
+   .real-rsvp-card, so theme-ink would be unreadable dark-on-dark for a
+   light theme. */
 .real-step-dot-active {
   border-color: var(--theme-accent, #e3b04a);
-  color: var(--theme-ink, #f3ddaa);
+  color: #fff;
   background: var(--theme-accent-soft, rgba(212, 160, 23, 0.2));
 }
 
@@ -477,10 +483,11 @@ const sampleStyleVars = computed(() => themeStyleVars(sampleThemeId.value))
   background: rgba(255, 255, 255, 0.03);
 }
 
+/* Same reasoning as .real-step-dot-active above. */
 .real-option-card-active {
   border-color: var(--theme-accent, #e3b04a);
   background: var(--theme-accent-soft, rgba(212, 160, 23, 0.15));
-  color: var(--theme-ink, #f3ddaa);
+  color: #fff;
 }
 
 .real-rsvp-input {

@@ -223,8 +223,12 @@
               <UIcon name="i-heroicons-check" class="w-12 h-12" :style="{ color: 'var(--theme-accent)' }" />
             </div>
             
+            <!-- Fixed white, not var(--theme-ink) - this sits inside
+                 .classic-rsvp-card, which is always dark regardless of
+                 theme, so theme-ink (dark, for a light theme) would be
+                 unreadable dark-on-dark here. -->
             <div>
-              <h2 class="text-4xl font-display mb-2 drop-shadow-md" :style="{ color: 'var(--theme-ink)' }">{{ fillNameToken(wedding.content.rsvpThankYouTitle || 'Thank you, {name}!', lastSubmittedName) }}</h2>
+              <h2 class="text-4xl font-display mb-2 drop-shadow-md" :style="{ color: '#fff' }">{{ fillNameToken(wedding.content.rsvpThankYouTitle || 'Thank you, {name}!', lastSubmittedName) }}</h2>
               <p class="text-white/80 text-lg font-light max-w-md mx-auto leading-relaxed">
                 {{ wedding.content.rsvpThankYouIntro || 'Your RSVP has been securely received.' }} {{ lastAttending === 'Yes' ? (wedding.content.rsvpSuccessYes || 'We are absolutely thrilled to celebrate with you.') : (wedding.content.rsvpSuccessNo || 'You will be dearly missed.') }}
               </p>
@@ -474,9 +478,13 @@ watch(
   background: rgba(255, 255, 255, 0.05);
 }
 
+/* color is a fixed light value, not var(--theme-ink) - this sits inside
+   .classic-rsvp-card, which is always dark regardless of theme (see that
+   class's comment above), so theme-ink (dark, for a light theme) would
+   render as unreadable dark-on-dark text here. */
 .step-dot-active {
   border-color: var(--theme-accent, #e3b04a);
-  color: var(--theme-ink, #f3ddaa);
+  color: #fff;
   background: var(--theme-accent-soft, rgba(212, 160, 23, 0.2));
 }
 
@@ -516,10 +524,13 @@ watch(
   background: rgba(255, 255, 255, 0.06);
 }
 
+/* Same reasoning as .step-dot-active above - always a fixed light color,
+   never var(--theme-ink), since this also sits inside the always-dark
+   .classic-rsvp-card. */
 .option-card-active, .option-card-small.option-card-active {
   border-color: var(--theme-accent, #e3b04a);
   background: var(--theme-accent-soft, rgba(212, 160, 23, 0.15));
-  color: var(--theme-ink, #f3ddaa);
+  color: #fff;
   box-shadow: 0 4px 12px -2px rgba(212, 160, 23, 0.2);
 }
 
