@@ -16,12 +16,16 @@
         <!-- Left Door -->
         <div class="relative w-1/2 h-full overflow-hidden door-left z-10">
           <img :src="optimizedImageUrl(content.openingBgUrl, 1400)" loading="eager" fetchpriority="high" class="absolute top-0 left-0 w-[200%] h-full max-w-none object-cover" />
-          <div class="absolute inset-0 bg-black/40 border-r border-white/20 shadow-[5px_0_15px_rgba(0,0,0,0.4)]"></div>
+          <!-- var(--overlay-tint), not a flat 40% - see useThemes.ts's
+               Theme.overlayTintOpacity (Matcha Strawberry uses a much
+               lighter value so its own light, pastel photos don't wash out
+               into grey). -->
+          <div class="absolute inset-0 border-r border-white/20 shadow-[5px_0_15px_rgba(0,0,0,0.4)]" :style="{ backgroundColor: `rgba(0, 0, 0, var(--overlay-tint, 0.4))` }"></div>
         </div>
         <!-- Right Door -->
         <div class="relative w-1/2 h-full overflow-hidden door-right z-10">
           <img :src="optimizedImageUrl(content.openingBgUrl, 1400)" loading="eager" fetchpriority="high" class="absolute top-0 right-0 w-[200%] h-full max-w-none object-cover" />
-          <div class="absolute inset-0 bg-black/40 border-l border-white/20 shadow-[-5px_0_15px_rgba(0,0,0,0.4)]"></div>
+          <div class="absolute inset-0 border-l border-white/20 shadow-[-5px_0_15px_rgba(0,0,0,0.4)]" :style="{ backgroundColor: `rgba(0, 0, 0, var(--overlay-tint, 0.4))` }"></div>
         </div>
       </div>
 
@@ -41,7 +45,7 @@
           fetchpriority="high"
           :class="content.openingHideText ? 'w-full h-full object-contain' : 'w-full h-full object-cover'"
         />
-        <div v-if="!content.openingHideText" class="absolute inset-0 bg-black/40"></div>
+        <div v-if="!content.openingHideText" class="absolute inset-0" :style="{ backgroundColor: `rgba(0, 0, 0, var(--overlay-tint, 0.4))` }"></div>
       </div>
 
       <!-- Modern Dark: layered, slowly-drifting color palette (couple-
@@ -110,7 +114,7 @@
           fetchpriority="high"
           :class="content.openingHideText ? 'w-full h-full object-contain' : 'w-full h-full object-cover'"
         />
-        <div v-if="!content.openingHideText" class="absolute inset-0 bg-black/40"></div>
+        <div v-if="!content.openingHideText" class="absolute inset-0" :style="{ backgroundColor: `rgba(0, 0, 0, var(--overlay-tint, 0.4))` }"></div>
       </div>
 
       <!-- Confetti Burst Background -->
@@ -251,7 +255,13 @@
           <span class="text-sm tracking-[0.25em] uppercase font-bold transition-all group-hover:scale-105" :style="[textStyleBase, titleShadow, actionStyle]">
             {{ content.openingActionText || "Tap to open" }}
           </span>
-          <UIcon name="i-heroicons-chevron-double-down" class="w-5 h-5 animate-bounce mt-1" :style="textStyleAccent" />
+          <!-- Icons are painted via mask/background, not text glyphs, so
+               text-shadow (used on the label above) has no effect here -
+               filter: drop-shadow does the equivalent job. Previously
+               unshadowed, so the accent color alone (e.g. Matcha
+               Strawberry's soft green) could read as nearly invisible
+               against a busy or similarly-toned part of the photo. -->
+          <UIcon name="i-heroicons-chevron-double-down" class="w-5 h-5 animate-bounce mt-1" :style="{ ...textStyleAccent, filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.65))' }" />
         </button>
 
       </div>

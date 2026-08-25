@@ -34,13 +34,25 @@
 
     <div class="max-w-lg w-full relative z-10 animate-fade-up">
       <div class="flex items-center justify-between mb-6 px-2">
-        <UButton :to="coverLink" variant="ghost" color="neutral" size="md" icon="i-heroicons-arrow-left" aria-label="Back to Cover" class="text-white/70 hover:text-white rounded-full bg-white/5 border border-white/10 backdrop-blur-sm" />
+        <!-- Page-level chrome, not inside the card - so it reads off
+             --theme-ink (dark on light themes like Matcha Strawberry, white
+             on the dark themes) rather than a hardcoded white, which used to
+             go invisible on any light-background theme. -->
+        <UButton
+          :to="coverLink"
+          variant="ghost"
+          color="neutral"
+          size="md"
+          icon="i-heroicons-arrow-left"
+          aria-label="Back to Cover"
+          class="rounded-full backdrop-blur-sm text-[color-mix(in_srgb,var(--theme-ink)_75%,transparent)] hover:text-[var(--theme-ink)] bg-[color-mix(in_srgb,var(--theme-ink)_8%,transparent)] border border-[color-mix(in_srgb,var(--theme-ink)_15%,transparent)]"
+        />
         <UButton v-if="wedding.content.rsvpEnabled !== false" :to="rsvpLink" color="primary" size="sm" class="rounded-full shadow-lg font-semibold px-5">RSVP</UButton>
         <div v-else class="w-10" aria-hidden="true" />
       </div>
 
       <div class="flex gap-1.5 w-full mb-4 px-2">
-        <div v-for="(_, index) in slideKeys.length" :key="index" class="h-1.5 flex-1 rounded-full bg-white/20 overflow-hidden cursor-pointer" @click="goTo(index)">
+        <div v-for="(_, index) in slideKeys.length" :key="index" class="h-1.5 flex-1 rounded-full bg-[color-mix(in_srgb,var(--theme-ink)_18%,transparent)] overflow-hidden cursor-pointer" @click="goTo(index)">
           <div 
             class="h-full transition-all duration-300"
             :class="{ 'progress-bar': currentSlide === index, 'progress-paused': paused, 'w-full': index < currentSlide, 'w-0': index > currentSlide }" 
@@ -182,11 +194,11 @@
         <div class="absolute inset-y-0 right-0 w-1/4 z-10 cursor-pointer" @click="manualNext"></div>
       </div>
 
-      <div class="flex justify-center gap-12 mt-6 text-white/40">
-        <button type="button" aria-label="Previous slide" class="hover:text-white transition-colors p-2 rounded-full hover:bg-white/10" @click="manualPrev">
+      <div class="flex justify-center gap-12 mt-6 text-[color-mix(in_srgb,var(--theme-ink)_45%,transparent)]">
+        <button type="button" aria-label="Previous slide" class="hover:text-[var(--theme-ink)] transition-colors p-2 rounded-full hover:bg-[color-mix(in_srgb,var(--theme-ink)_10%,transparent)]" @click="manualPrev">
           <UIcon name="i-heroicons-chevron-left" class="w-8 h-8" />
         </button>
-        <button type="button" aria-label="Next slide" class="hover:text-white transition-colors p-2 rounded-full hover:bg-white/10" @click="manualNext">
+        <button type="button" aria-label="Next slide" class="hover:text-[var(--theme-ink)] transition-colors p-2 rounded-full hover:bg-[color-mix(in_srgb,var(--theme-ink)_10%,transparent)]" @click="manualNext">
           <UIcon name="i-heroicons-chevron-right" class="w-8 h-8" />
         </button>
       </div>

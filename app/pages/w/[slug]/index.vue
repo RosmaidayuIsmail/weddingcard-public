@@ -49,7 +49,12 @@
         :class="wedding.content.hideSystemText ? 'object-contain' : 'object-cover scale-105'"
         @load="coverPhotoLoaded = true"
       >
-      <div v-if="!wedding.content.hideSystemText" class="absolute inset-0 bg-black/40"></div>
+      <!-- --overlay-tint (see useThemes.ts's Theme.overlayTintOpacity) defaults
+           to 0.4 for every theme except Matcha Strawberry, which sets a much
+           lighter value - its own palette (and its couples' photos) is
+           already pastel/light, so the old fixed 0.4 was mixing into a flat
+           grey wash instead of protecting text over real photo colors. -->
+      <div v-if="!wedding.content.hideSystemText" class="absolute inset-0" :style="{ backgroundColor: `rgba(0, 0, 0, var(--overlay-tint, 0.4))` }"></div>
       <!-- This bottom fade used to always render, even with hideSystemText
            on - so a couple's fully custom, edge-to-edge design (baked-in
            typography, no room for a dimmed band) still got its bottom third
@@ -105,7 +110,7 @@
           class="absolute w-full max-w-3xl text-center px-4 flex flex-col items-center transition-all duration-700 animate-in fade-in zoom-in delay-150"
           :style="{ left: `${wedding.content.greetingX ?? 50}%`, top: `${wedding.content.greetingY ?? 25}%`, transform: 'translate(-50%, -50%)' }"
         >
-          <h1 class="text-sm sm:text-base tracking-[0.35em] uppercase drop-shadow-md" :style="{ color: 'var(--theme-accent)', fontWeight: 'var(--theme-text-weight)' }">
+          <h1 class="text-sm sm:text-base tracking-[0.35em] uppercase overlay-text-shadow" :style="{ color: 'var(--theme-accent)', fontWeight: 'var(--theme-text-weight)' }">
             {{ wedding.content.innerGreeting || "You're Invited" }}
           </h1>
         </div>
@@ -115,7 +120,7 @@
           class="absolute w-full max-w-3xl text-center px-4 flex flex-col items-center transition-all duration-700 animate-in fade-in zoom-in delay-300"
           :style="{ left: `${wedding.content.introX ?? 50}%`, top: `${wedding.content.introY ?? 32}%`, transform: 'translate(-50%, -50%)' }"
         >
-          <p class="text-base sm:text-lg text-white/80 italic drop-shadow-md" :style="{ fontWeight: 'var(--theme-text-weight)' }">
+          <p class="text-base sm:text-lg text-white/80 italic overlay-text-shadow" :style="{ fontWeight: 'var(--theme-text-weight)' }">
             {{ wedding.content.innerIntro || "To the wedding celebration of" }}
           </p>
         </div>
@@ -150,7 +155,7 @@
           class="absolute w-full max-w-3xl text-center px-4 flex flex-col items-center transition-all duration-700 animate-in fade-in zoom-in delay-500"
           :style="{ left: `${wedding.content.dateX ?? 50}%`, top: `${wedding.content.dateY ?? 70}%`, transform: 'translate(-50%, -50%)' }"
         >
-          <p class="text-sm sm:text-base font-medium text-white/90 drop-shadow-md">
+          <p class="text-sm sm:text-base font-medium text-white/90 overlay-text-shadow">
             {{ wedding.content.dateLabel }}
           </p>
         </div>
@@ -160,7 +165,7 @@
           class="absolute w-full max-w-md text-center px-4 flex flex-col items-center transition-all duration-700 animate-in fade-in zoom-in delay-500"
           :style="{ left: `${wedding.content.venueX ?? 50}%`, top: `${wedding.content.venueY ?? 78}%`, transform: 'translate(-50%, -50%)' }"
         >
-          <p v-if="wedding.content.venueAddress" class="text-xs sm:text-sm text-white/80 italic drop-shadow-md" :style="{ fontWeight: 'var(--theme-text-weight)' }">
+          <p v-if="wedding.content.venueAddress" class="text-xs sm:text-sm text-white/80 italic overlay-text-shadow" :style="{ fontWeight: 'var(--theme-text-weight)' }">
             {{ wedding.content.venueAddress }}
           </p>
         </div>
@@ -168,14 +173,19 @@
 
       <!-- A small "scroll for more" cue only makes sense once content is open -->
       <div v-if="opened" class="absolute bottom-4 inset-x-0 flex justify-center z-10 pointer-events-none animate-bounce opacity-60">
-        <UIcon name="i-heroicons-chevron-down" class="w-6 h-6" :style="{ color: 'var(--theme-accent)' }" />
+        <UIcon name="i-heroicons-chevron-down" class="w-6 h-6" :style="{ color: 'var(--theme-accent)', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))' }" />
       </div>
     </div>
 
     <!-- FOOTER: normal document flow, always directly below the hero canvas -
          never overlaps anything above since it's a separate layout region,
          not absolutely positioned on top of it. -->
-    <div v-if="opened" class="relative z-20 flex flex-col items-center pb-16 pt-12 px-6 bg-gradient-to-b from-transparent to-black/30 animate-in fade-in duration-700">
+    <!-- Fades toward the theme's own --theme-bg-to (not a literal black) so
+         this transition blends into whatever the page's own background
+         gradient already ends on - near-invisible on the dark themes since
+         their bg-to is already near-black, but no longer a jarring
+         light-pink-to-black seam on a light theme like Matcha Strawberry. -->
+    <div v-if="opened" class="relative z-20 flex flex-col items-center pb-16 pt-12 px-6 bg-gradient-to-b from-transparent to-[color-mix(in_srgb,var(--theme-bg-to)_65%,transparent)] animate-in fade-in duration-700">
       <div v-if="wedding.content.dateISO" class="mb-8">
         <CountdownTimer :target="wedding.content.dateISO" />
       </div>
@@ -186,7 +196,9 @@
           :color="wedding.content.rsvpEnabled === false ? 'primary' : 'neutral'"
           :variant="wedding.content.rsvpEnabled === false ? 'solid' : 'soft'"
           class="w-full sm:w-auto font-medium rounded-full px-8 transition-colors"
-          :class="wedding.content.rsvpEnabled === false ? 'shadow-[0_0_30px_-5px_var(--theme-accent)] animate-glow' : 'bg-white/5 hover:bg-white/10 border border-white/10'"
+          :class="wedding.content.rsvpEnabled === false
+            ? 'shadow-[0_0_30px_-5px_var(--theme-accent)] animate-glow'
+            : 'text-[color-mix(in_srgb,var(--theme-ink)_90%,transparent)] bg-[color-mix(in_srgb,var(--theme-ink)_5%,transparent)] hover:bg-[color-mix(in_srgb,var(--theme-ink)_10%,transparent)] border border-[color-mix(in_srgb,var(--theme-ink)_12%,transparent)]'"
         >
           {{ wedding.content.btnDetails || 'View Details' }}
         </UButton>
@@ -287,3 +299,19 @@ watch(
   { immediate: true }
 )
 </script>
+
+<style scoped>
+/* Stronger, multi-layer shadow (same idea as EnvelopeIntro's titleShadow)
+   for the white hero-overlay text (greeting/intro/date/venue) - the old
+   drop-shadow-md utility is a very faint blur, which only ever worked
+   because the black/40 tint underneath was doing the real contrast work.
+   Now that the tint is much lighter for light themes like Matcha
+   Strawberry (see --overlay-tint), the text needs to carry its own
+   legibility instead of leaning on a dark wash over the whole photo. */
+.overlay-text-shadow {
+  text-shadow:
+    0 2px 12px rgba(0, 0, 0, 0.6),
+    0 2px 5px rgba(0, 0, 0, 0.75),
+    0 1px 2px rgba(0, 0, 0, 0.9);
+}
+</style>

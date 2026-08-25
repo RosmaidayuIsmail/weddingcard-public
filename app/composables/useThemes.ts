@@ -65,6 +65,14 @@ export interface Theme {
    *  stuck showing the old mismatched dark card). Leave unset for a theme
    *  where the per-wedding override should keep working normally. */
   lockCardStyle?: boolean
+  /** Opacity (0-1) of the dark scrim laid over an uploaded cover/opening
+   *  photo for text legibility (Opening screen doors/background, Hero cover
+   *  photo). Defaults to 0.4 when unset - the right amount for a photo sitting
+   *  behind mostly-dark theme colors. A theme whose own palette (and likely
+   *  its couples' photos) is already light and pastel needs much less
+   *  darkening to stay legible - too much just muddies the photo's real
+   *  colors into grey instead of protecting the text. */
+  overlayTintOpacity?: number
 }
 
 export interface FontOption {
@@ -249,7 +257,13 @@ export const themes: Theme[] = [
     // already have saved from before this change, so every Matcha
     // Strawberry wedding shows the light card without needing anyone to
     // manually flip a setting.
-    lockCardStyle: true
+    lockCardStyle: true,
+    // The default 0.4 dark scrim over an uploaded photo was mixing with
+    // this theme's already-light, pastel colors and reading as a flat grey
+    // wash instead of the couple's actual photo - a much lighter touch
+    // keeps text legible (text also carries its own drop-shadow) without
+    // hiding the photo's real colors.
+    overlayTintOpacity: 0.16
   }
 ]
 
@@ -845,7 +859,8 @@ export function useThemes() {
       '--theme-ink': theme.palette.ink,
       '--theme-on-accent': theme.palette.onAccent,
       '--theme-heading-font': finalFont,
-      '--theme-text-weight': textWeight || '300'
+      '--theme-text-weight': textWeight || '300',
+      '--overlay-tint': String(theme.overlayTintOpacity ?? 0.4)
     }
   }
 
