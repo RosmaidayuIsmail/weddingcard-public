@@ -102,7 +102,7 @@
           <UIcon v-else-if="wedding.content.innerTopIcon === 'rings'" name="i-heroicons-lifebuoy" :style="{ color: 'var(--theme-accent)', width: `${2 * ((wedding.content.iconSize ?? 100) / 100)}rem`, height: `${2 * ((wedding.content.iconSize ?? 100) / 100)}rem` }" />
           <UIcon v-else-if="wedding.content.innerTopIcon === 'heart'" name="i-heroicons-heart" :style="{ color: 'var(--theme-accent)', width: `${2 * ((wedding.content.iconSize ?? 100) / 100)}rem`, height: `${2 * ((wedding.content.iconSize ?? 100) / 100)}rem` }" />
           <img v-else-if="wedding.content.innerTopIcon === 'custom' && wedding.content.customIconUrl" :src="wedding.content.customIconUrl" alt="" class="object-contain drop-shadow" :style="{ width: `${7 * ((wedding.content.iconSize ?? 100) / 100)}rem`, height: 'auto', maxWidth: '90vw', maxHeight: `${7 * ((wedding.content.iconSize ?? 100) / 100)}rem` }">
-          <p v-if="wedding.content.iconSubtitle" class="mt-3 text-xs sm:text-sm text-white/60 italic">{{ wedding.content.iconSubtitle }}</p>
+          <p v-if="wedding.content.iconSubtitle" class="mt-3 text-xs sm:text-sm text-[color-mix(in_srgb,var(--theme-ink)_60%,transparent)] italic overlay-text-shadow">{{ wedding.content.iconSubtitle }}</p>
         </div>
 
         <!-- 2. Greeting -->
@@ -120,7 +120,7 @@
           class="absolute w-full max-w-3xl text-center px-4 flex flex-col items-center transition-all duration-700 animate-in fade-in zoom-in delay-300"
           :style="{ left: `${wedding.content.introX ?? 50}%`, top: `${wedding.content.introY ?? 32}%`, transform: 'translate(-50%, -50%)' }"
         >
-          <p class="text-base sm:text-lg text-white/80 italic overlay-text-shadow" :style="{ fontWeight: 'var(--theme-text-weight)' }">
+          <p class="text-base sm:text-lg text-[color-mix(in_srgb,var(--theme-ink)_80%,transparent)] italic overlay-text-shadow" :style="{ fontWeight: 'var(--theme-text-weight)' }">
             {{ wedding.content.innerIntro || "To the wedding celebration of" }}
           </p>
         </div>
@@ -133,20 +133,20 @@
           <!-- Vertical Layout -->
           <div v-if="wedding.content.namesLayout === 'vertical'" class="flex flex-col items-center gap-0 font-heading drop-shadow-2xl" :style="{ color: wedding.content.nameColor || 'var(--theme-ink)', fontFamily: 'var(--theme-heading-font)', fontSize: `clamp(${2 * ((wedding.content.nameSize ?? 100) / 100)}rem, ${4.2 * ((wedding.content.nameSize ?? 100) / 100)}vw, ${3 * ((wedding.content.nameSize ?? 100) / 100)}rem)`, lineHeight: '1.15' }">
             <span>{{ wedding.content.brideName }}</span>
-            <span class="text-[0.4em] opacity-80 leading-none" style="color: #e3b04a;">&amp;</span>
+            <span class="text-[0.4em] opacity-80 leading-none" style="color: var(--theme-accent);">&amp;</span>
             <span>{{ wedding.content.groomName }}</span>
           </div>
           
           <!-- ADDED: Diagonal Layout -->
           <div v-else-if="wedding.content.namesLayout === 'diagonal'" class="flex flex-col font-heading drop-shadow-2xl w-full max-w-xs mx-auto" :style="{ color: wedding.content.nameColor || 'var(--theme-ink)', fontFamily: 'var(--theme-heading-font)', fontSize: `clamp(${2.5 * ((wedding.content.nameSize ?? 100) / 100)}rem, ${5 * ((wedding.content.nameSize ?? 100) / 100)}vw, ${3.5 * ((wedding.content.nameSize ?? 100) / 100)}rem)`, lineHeight: '1.1' }">
             <span class="self-start text-left ml-4 sm:-ml-8">{{ wedding.content.brideName }}</span>
-            <span class="text-[0.5em] opacity-80 leading-none self-center my-2" style="color: #e3b04a;">&amp;</span>
+            <span class="text-[0.5em] opacity-80 leading-none self-center my-2" style="color: var(--theme-accent);">&amp;</span>
             <span class="self-end text-right mr-4 sm:-mr-8">{{ wedding.content.groomName }}</span>
           </div>
 
           <!-- Horizontal Layout (Fallback/Default) -->
           <h2 v-else class="drop-shadow-2xl leading-tight" :style="{ color: wedding.content.nameColor || 'var(--theme-ink)', fontFamily: 'var(--theme-heading-font)', fontSize: `clamp(${3.5 * ((wedding.content.nameSize ?? 100) / 100)}rem, ${8 * ((wedding.content.nameSize ?? 100) / 100)}vw, ${6 * ((wedding.content.nameSize ?? 100) / 100)}rem)` }">
-            {{ wedding.content.brideName }} <span class="text-[0.7em] mx-2 opacity-80" style="color: #e3b04a;">&amp;</span> {{ wedding.content.groomName }}
+            {{ wedding.content.brideName }} <span class="text-[0.7em] mx-2 opacity-80" style="color: var(--theme-accent);">&amp;</span> {{ wedding.content.groomName }}
           </h2>
         </div>
 
@@ -155,7 +155,7 @@
           class="absolute w-full max-w-3xl text-center px-4 flex flex-col items-center transition-all duration-700 animate-in fade-in zoom-in delay-500"
           :style="{ left: `${wedding.content.dateX ?? 50}%`, top: `${wedding.content.dateY ?? 70}%`, transform: 'translate(-50%, -50%)' }"
         >
-          <p class="text-sm sm:text-base font-medium text-white/90 overlay-text-shadow">
+          <p class="text-sm sm:text-base font-medium text-[color-mix(in_srgb,var(--theme-ink)_90%,transparent)] overlay-text-shadow">
             {{ wedding.content.dateLabel }}
           </p>
         </div>
@@ -165,7 +165,7 @@
           class="absolute w-full max-w-md text-center px-4 flex flex-col items-center transition-all duration-700 animate-in fade-in zoom-in delay-500"
           :style="{ left: `${wedding.content.venueX ?? 50}%`, top: `${wedding.content.venueY ?? 78}%`, transform: 'translate(-50%, -50%)' }"
         >
-          <p v-if="wedding.content.venueAddress" class="text-xs sm:text-sm text-white/80 italic overlay-text-shadow" :style="{ fontWeight: 'var(--theme-text-weight)' }">
+          <p v-if="wedding.content.venueAddress" class="text-xs sm:text-sm text-[color-mix(in_srgb,var(--theme-ink)_80%,transparent)] italic overlay-text-shadow" :style="{ fontWeight: 'var(--theme-text-weight)' }">
             {{ wedding.content.venueAddress }}
           </p>
         </div>
@@ -306,12 +306,17 @@ watch(
 
 <style scoped>
 /* Stronger, multi-layer shadow (same idea as EnvelopeIntro's titleShadow)
-   for the white hero-overlay text (greeting/intro/date/venue) - the old
+   for the hero-overlay text (icon subtitle/intro/date/venue) - the old
    drop-shadow-md utility is a very faint blur, which only ever worked
    because the black/40 tint underneath was doing the real contrast work.
    Now that the tint is much lighter for light themes like Matcha
    Strawberry (see --overlay-tint), the text needs to carry its own
-   legibility instead of leaning on a dark wash over the whole photo. */
+   legibility instead of leaning on a dark wash over the whole photo.
+   These elements were also hardcoded to text-white/*, which read as a
+   washed-out near-invisible haze on light themes (their light background/
+   photo tints have nothing for white text to contrast against) - now
+   ink-aware via --theme-ink like every other adaptive element on this
+   page, so it's dark text on light themes and white text on dark ones. */
 .overlay-text-shadow {
   text-shadow:
     0 2px 12px rgba(0, 0, 0, 0.6),

@@ -78,7 +78,10 @@
           {{ wedding.content.rsvpTitle || 'RSVP' }}
         </h1>
         <div class="h-px w-24 mx-auto" :style="{ background: 'var(--theme-accent)' }" />
-        <p v-if="wedding.content.rsvpDeadlineLabel" class="text-sm text-white/70 font-light tracking-wide pt-2">
+        <!-- Was hardcoded text-white/70 - same wash-out on light themes
+             (Matcha Strawberry, Ivory, Sky) as the back-button pill above,
+             which already uses this same --theme-ink color-mix pattern. -->
+        <p v-if="wedding.content.rsvpDeadlineLabel" class="text-sm text-[color-mix(in_srgb,var(--theme-ink)_70%,transparent)] font-light tracking-wide pt-2">
           {{ wedding.content.rsvpDeadlineText || 'Kindly respond by' }} <span class="font-medium" :style="{ color: 'var(--theme-accent)' }">{{ wedding.content.rsvpDeadlineLabel }}</span>
         </p>
       </div>
