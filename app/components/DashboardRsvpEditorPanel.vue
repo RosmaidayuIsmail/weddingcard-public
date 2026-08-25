@@ -71,7 +71,10 @@
             <div class="space-y-4">
               <div>
                 <p class="text-xs text-gray-400 mb-2">Card Background</p>
-                <div class="grid sm:grid-cols-2 gap-2">
+                <div v-if="isCardStyleLocked" class="p-3 rounded-lg border border-gray-700 bg-gray-900/40 text-xs text-gray-400">
+                  This theme always uses its own light, theme-colored card for the best contrast with its palette - there's nothing to choose here.
+                </div>
+                <div v-else class="grid sm:grid-cols-2 gap-2">
                   <button
                     type="button"
                     class="p-3 rounded-lg border text-left transition-colors"
@@ -504,7 +507,7 @@ import type { RsvpPreset } from '~/composables/useThemes'
 // pass it, so useMyWedding() falls back to its normal own-wedding lookup.
 const props = defineProps<{ overrideWeddingId?: string | null }>()
 const { wedding, loading, saving, updateContent } = useMyWedding(toRef(props, 'overrideWeddingId'))
-const { themeStyleVars, allRsvpPresets, resolveCardStyle } = useThemes()
+const { themeStyleVars, allRsvpPresets, resolveCardStyle, getTheme } = useThemes()
 const toast = useToast()
 
 // Same cardStyle resolution as the real page (app/pages/w/[slug]/rsvp.vue) -
@@ -515,6 +518,10 @@ const cardStyleResolved = computed(() => resolveCardStyle(wedding.value?.themeId
 const cardTextColorResolved = computed(() =>
   form.cardTextColor || (cardStyleResolved.value === 'dark' ? '#ffffff' : 'var(--theme-ink)')
 )
+// Some themes (e.g. Matcha Strawberry) lock the card to always follow the
+// theme's own colors - the picker below is disabled for those since picking
+// "Dark Card" wouldn't actually do anything (see Theme.lockCardStyle).
+const isCardStyleLocked = computed(() => getTheme(wedding.value?.themeId).lockCardStyle === true)
 
 const form = reactive<WeddingContent>(createDefaultContent())
 const savedAt = ref<number | null>(null)

@@ -58,6 +58,13 @@ export interface Theme {
    *  theme's own palette. Every couple can still override either way
    *  per-wedding via WeddingContent.cardStyle - this is only the default. */
   defaultCardStyle?: 'theme' | 'dark'
+  /** When true, this theme's card style is fixed to defaultCardStyle and a
+   *  couple's own WeddingContent.cardStyle is ignored entirely for it (used
+   *  instead of just changing defaultCardStyle, so any wedding that already
+   *  had 'dark' saved from before this theme's colors were revised isn't
+   *  stuck showing the old mismatched dark card). Leave unset for a theme
+   *  where the per-wedding override should keep working normally. */
+  lockCardStyle?: boolean
 }
 
 export interface FontOption {
@@ -234,13 +241,15 @@ export const themes: Theme[] = [
       accentSoft: 'rgba(124, 154, 111, 0.16)',
       ink: '#4a3b3a',
       onAccent: '#fefaf6'
-    }
-    // Used to force a fixed dark navy card here (defaultCardStyle: 'dark'),
-    // but that clashed badly against this theme's own soft strawberry-pink
-    // palette and floral cover photos - removed so Matcha Strawberry now
-    // follows its own colors like every other theme (see resolveCardStyle
-    // below). A couple can still opt back into a dark card manually via
-    // WeddingContent.cardStyle in Card Appearance.
+    },
+    // Used to force a fixed dark navy card (defaultCardStyle: 'dark'), but
+    // that clashed badly against this theme's own soft strawberry-pink
+    // palette and floral cover photos - now always follows its own colors
+    // instead. lockCardStyle also overrides any 'dark' value a wedding may
+    // already have saved from before this change, so every Matcha
+    // Strawberry wedding shows the light card without needing anyone to
+    // manually flip a setting.
+    lockCardStyle: true
   }
 ]
 
@@ -808,8 +817,13 @@ export function useThemes() {
   // choice always wins; an empty/unset value falls back to the theme's own
   // defaultCardStyle (which only Matcha Strawberry sets to 'dark' today).
   function resolveCardStyle(themeId: string | undefined | null, override?: string | null): 'theme' | 'dark' {
+    const theme = getTheme(themeId)
+    // Locked themes ignore any saved per-wedding override, including a
+    // stale 'dark' value saved back when the theme's own default forced a
+    // dark card - see Theme.lockCardStyle.
+    if (theme.lockCardStyle) return theme.defaultCardStyle === 'dark' ? 'dark' : 'theme'
     if (override === 'dark' || override === 'theme') return override
-    return getTheme(themeId).defaultCardStyle === 'dark' ? 'dark' : 'theme'
+    return theme.defaultCardStyle === 'dark' ? 'dark' : 'theme'
   }
 
   function themeStyleVars(themeId: string | undefined | null, overrides?: ColorOverrides, fontFamily?: string, textWeight?: string) {
