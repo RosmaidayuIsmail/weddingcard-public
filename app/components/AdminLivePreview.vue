@@ -446,6 +446,12 @@ const sampleStyleVars = computed(() => themeStyleVars(sampleThemeId.value))
   padding: 1.75rem 1.5rem;
   max-width: 420px;
   margin: 0 auto;
+  /* Fixed white, not inherited - see the detailed comment on
+     .classic-rsvp-card in app/pages/w/[slug]/rsvp.vue. Without this,
+     unstyled descendants quietly inherit --theme-ink from the ancestor
+     .theme-surface, which is a dim brown for light themes like Matcha
+     Strawberry. */
+  color: #fff;
 }
 
 .real-step-dot {

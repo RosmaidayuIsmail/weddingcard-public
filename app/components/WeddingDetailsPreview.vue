@@ -212,6 +212,12 @@ function prev() {
     color-mix(in srgb, var(--theme-bg-via, #0b1c30) 30%, #0a1420) 0%,
     color-mix(in srgb, var(--theme-bg-to, #142a45) 25%, #050b14) 100%
   );
+  /* Fixed white, not inherited - see the detailed comment on
+     .classic-rsvp-card in app/pages/w/[slug]/rsvp.vue. Without this,
+     unstyled descendants quietly inherit --theme-ink from the ancestor
+     .theme-surface, which is a dim brown for light themes like Matcha
+     Strawberry. */
+  color: #fff;
 }
 
 .slide-next-enter-active,

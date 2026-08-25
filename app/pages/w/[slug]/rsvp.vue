@@ -590,6 +590,10 @@ watch(
     0 0 0 7px var(--theme-bg-to, #150a20),
     0 0 0 8px color-mix(in srgb, var(--theme-accent) 45%, transparent),
     0 25px 55px -20px rgba(0, 0, 0, .7);
+  /* Same inheritance fix as .classic-rsvp-card above - this card is
+     always dark too, so unstyled descendants need a fixed white to
+     inherit instead of picking up theme-ink from .theme-surface. */
+  color: #fff;
 }
 
 /* Everything inside this card (labels, option cards, step dots, the
@@ -610,5 +614,18 @@ watch(
     color-mix(in srgb, var(--theme-bg-via, #0b1c30) 30%, #0a1420) 0%,
     color-mix(in srgb, var(--theme-bg-to, #142a45) 25%, #050b14) 100%
   );
+  /* Fixed white, not inherited. .theme-surface (main.css) sets an
+     unlayered `color: var(--theme-ink)` on the parent <section> -
+     unlayered CSS always beats a layered Tailwind utility like the
+     section's own `text-white` class, so every element in here that
+     doesn't set its OWN color (the unselected .option-card, the
+     UFormField "Name" label, etc.) was quietly inheriting theme-ink
+     instead of white. For a light theme like Matcha Strawberry
+     (ink: #4a3b3a) that's a dim brown, unreadable on this always-dark
+     card. Declaring color here directly on the card stops that
+     inheritance chain for every descendant that doesn't override it
+     itself - elements with their own explicit color (accent labels,
+     .option-card-active, etc.) are unaffected. */
+  color: #fff;
 }
 </style>
