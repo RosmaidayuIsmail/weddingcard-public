@@ -78,7 +78,6 @@ const redirectTo = computed(() => {
   const isSafeInternalPath = typeof raw === 'string' && raw.startsWith('/') && !raw.startsWith('//')
   if (isSafeInternalPath) return raw
   if (profile.value?.role === 'superadmin') return '/admin'
-  if (profile.value?.role === 'vip') return '/vip/dashboard'
   return '/dashboard'
 })
 
@@ -90,8 +89,8 @@ async function handleLogin() {
   }
   loading.value = true
   try {
-    await signIn(email.value, password.value)
-    await navigateTo(redirectTo.value)
+    const user = await signIn(email.value, password.value)
+    await navigateTo(user.emailVerified ? redirectTo.value : '/verify-email')
   } catch (error) {
     errorMessage.value = 'Could not sign in \u2014 check your email and password.'
     console.error(error)
@@ -104,8 +103,8 @@ async function handleGoogle() {
   errorMessage.value = ''
   googleLoading.value = true
   try {
-    await signInWithGoogle()
-    await navigateTo(redirectTo.value)
+    const user = await signInWithGoogle()
+    await navigateTo(user.emailVerified ? redirectTo.value : '/verify-email')
   } catch (error) {
     errorMessage.value = 'Google sign-in failed. Please try again.'
     console.error(error)

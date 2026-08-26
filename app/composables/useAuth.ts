@@ -5,6 +5,8 @@ import {
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut,
+  sendEmailVerification,
+  reload,
   updateProfile,
   type User
 } from 'firebase/auth'
@@ -166,6 +168,7 @@ export function useAuth() {
     try {
       if (displayName) await updateProfile(credential.user, { displayName })
       await loadProfile(credential.user, db)
+      await sendVerificationEmail(credential.user)
       currentUser.value = credential.user
       return credential.user
     } finally {
@@ -215,6 +218,7 @@ export function useAuth() {
   async function signIn(email: string, password: string) {
     if (!auth) throw new Error('Firebase is not configured')
     const credential = await signInWithEmailAndPassword(auth, email, password)
+    await reload(credential.user)
     await loadProfile(credential.user, db)
     currentUser.value = credential.user
     return credential.user
@@ -223,6 +227,7 @@ export function useAuth() {
   async function signInWithGoogle() {
     if (!auth) throw new Error('Firebase is not configured')
     const credential = await signInWithPopup(auth, new GoogleAuthProvider())
+    await reload(credential.user)
     await loadProfile(credential.user, db)
     currentUser.value = credential.user
     return credential.user
@@ -236,6 +241,19 @@ export function useAuth() {
     if (!db || !currentUser.value) return
     await updateDoc(doc(db, 'users', currentUser.value.uid), { vipApprovalStatus: 'pending' })
     if (profile.value) profile.value = { ...profile.value, vipApprovalStatus: 'pending' }
+  }
+
+  async function sendVerificationEmail(user = currentUser.value) {
+    if (!auth || !user) throw new Error('No signed-in user')
+    const siteUrl = useRuntimeConfig().public.siteUrl || window.location.origin
+    await sendEmailVerification(user, { url: `${siteUrl.replace(/\/$/, '')}/verify-email` })
+  }
+
+  async function refreshEmailVerification() {
+    if (!currentUser.value) return false
+    await reload(currentUser.value)
+    currentUser.value = auth?.currentUser || currentUser.value
+    return currentUser.value.emailVerified
   }
 
   async function logOut() {
@@ -256,6 +274,8 @@ export function useAuth() {
     signIn,
     signInWithGoogle,
     requestVipStatus,
+    sendVerificationEmail,
+    refreshEmailVerification,
     logOut
   }
 }

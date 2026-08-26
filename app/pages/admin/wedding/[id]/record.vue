@@ -44,16 +44,6 @@
                 >
                   Classic Invite
                 </button>
-                <button
-                  v-if="wedding.vipEnabled"
-                  type="button"
-                  class="p-3 rounded-lg border text-sm font-medium transition-colors"
-                  :class="previewMode === 'vip' ? 'border-gold-400 bg-gold-400/10 text-gold-200' : 'border-gray-700 text-gray-300 hover:border-gray-600'"
-                  :disabled="recordingState !== 'idle'"
-                  @click="previewMode = 'vip'"
-                >
-                  VIP Cinematic
-                </button>
               </div>
             </div>
 
@@ -164,7 +154,7 @@ const route = useRoute()
 const weddingId = computed(() => route.params.id as string)
 const { wedding, loading } = useMyWedding(weddingId)
 
-const previewMode = ref<'classic' | 'vip'>('classic')
+const previewMode = ref<'classic'>('classic')
 const previewGuestName = ref('Ahmad & Family')
 const previewReloadKey = ref(0)
 const frameEl = ref<HTMLIFrameElement | null>(null)
@@ -172,7 +162,7 @@ const previewLoaded = ref(false)
 
 const previewUrl = computed(() => {
   if (!wedding.value) return 'about:blank'
-  const base = `/w/${wedding.value.slug}${previewMode.value === 'vip' ? '/vip' : ''}`
+  const base = `/w/${wedding.value.slug}`
   const name = previewGuestName.value.trim()
   return name ? `${base}?to=${encodeURIComponent(name)}` : base
 })

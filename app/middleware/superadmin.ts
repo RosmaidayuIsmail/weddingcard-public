@@ -8,8 +8,12 @@ export default defineNuxtRouteMiddleware(async (to) => {
     return navigateTo({ path: '/login', query: { redirect: to.fullPath } })
   }
 
+  if (!currentUser.value.emailVerified) {
+    return navigateTo('/verify-email')
+  }
+
   if (profile.value?.role !== 'superadmin') {
-    return navigateTo(profile.value?.role === 'vip' ? '/vip/dashboard' : '/dashboard')
+    return navigateTo('/dashboard')
   }
 
   // /admin/wedding/[id]/* is how a superadmin opens and edits one specific

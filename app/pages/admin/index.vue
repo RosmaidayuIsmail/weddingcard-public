@@ -62,7 +62,6 @@
       <AdminGuestListControls v-else-if="section === 'guests'" />
       <AdminCustomCode v-else-if="section === 'custom-code'" />
       <AdminWeddingsList v-else-if="section === 'weddings'" />
-      <AdminVipApprovals v-else-if="section === 'vip-approvals'" />
       <AdminPhysicalOrders v-else-if="section === 'physical-orders'" />
       <AdminCatalogManager v-else :section="section" />
     </main>
@@ -75,11 +74,10 @@ definePageMeta({ middleware: 'superadmin' })
 const { logOut } = useAuth()
 const { currentUser, profile, authReady } = useAuthState()
 
-type Section = 'dashboard' | 'themes' | 'fonts' | 'presets' | 'rsvp' | 'opening-styles' | 'design-options' | 'day-flow' | 'guests' | 'custom-code' | 'starter-defaults' | 'weddings' | 'vip-approvals' | 'physical-orders'
+type Section = 'dashboard' | 'themes' | 'fonts' | 'presets' | 'rsvp' | 'opening-styles' | 'design-options' | 'day-flow' | 'guests' | 'custom-code' | 'starter-defaults' | 'weddings' | 'physical-orders'
 
 const navItems: { id: Section; label: string; icon: string; description: string }[] = [
   { id: 'weddings', label: 'Weddings & Sync', icon: 'i-heroicons-rectangle-stack', description: 'The admin home - every wedding on the platform, plus applying the platform template to weddings that already exist.' },
-  { id: 'vip-approvals', label: 'VIP Approvals', icon: 'i-heroicons-film', description: 'VIP Cinematic is a wholly separate, invitation-only tier with its own sign-up at /vip - review requests here and grant or revoke each account\'s access.' },
   { id: 'physical-orders', label: 'Physical Card Orders', icon: 'i-heroicons-square-3-stack-3d', description: 'Every couple\'s physical card order across the platform - confirm, move through production, and mark shipped.' },
   { id: 'dashboard', label: 'User Dashboard', icon: 'i-heroicons-squares-2x2', description: 'Control the labels and enabled pages every user sees in their dashboard.' },
   { id: 'themes', label: 'Design Studio', icon: 'i-heroicons-swatch', description: 'Themes and palette pricing available in the user Design Studio.' },
