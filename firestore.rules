@@ -25,6 +25,17 @@ rules_version = '2';
 //                                         only the owner (create/read their
 //                                         own) or a superadmin (read/update
 //                                         to approve/decline) can touch these.
+//   weddings/{weddingId}/physicalOrders/{id} - a couple's own physical card
+//                                         orders (see usePhysicalOrders.ts).
+//                                         Same shape as billingRequests:
+//                                         PRIVATE, owner can create/read
+//                                         their own as 'pending', only a
+//                                         superadmin can update the status
+//                                         as it moves through fulfillment.
+//                                         AdminPhysicalOrders.vue reads
+//                                         across every wedding at once via a
+//                                         collectionGroup('physicalOrders')
+//                                         query, which this same rule covers.
 //
 // The guests/wishes split exists specifically so the full guest list (phone
 // numbers, dietary needs, guest counts) never has to be publicly readable -
@@ -97,6 +108,18 @@ service cloud.firestore {
         allow read: if isOwner(get(/databases/$(database)/documents/weddings/$(weddingId)).data) || isSuperAdmin();
         // A couple can only ever file a new request as 'pending' for their
         // own wedding - only a superadmin can flip it to approved/declined.
+        allow create: if isOwner(get(/databases/$(database)/documents/weddings/$(weddingId)).data) &&
+          request.resource.data.status == 'pending';
+        allow update: if isSuperAdmin();
+        allow delete: if false;
+      }
+
+      match /physicalOrders/{orderId} {
+        allow read: if isOwner(get(/databases/$(database)/documents/weddings/$(weddingId)).data) || isSuperAdmin();
+        // Same shape as billingRequests: a couple can only ever file a new
+        // order as 'pending' for their own wedding - only a superadmin can
+        // move it through confirmed/in_production/shipped/delivered (or
+        // cancel it).
         allow create: if isOwner(get(/databases/$(database)/documents/weddings/$(weddingId)).data) &&
           request.resource.data.status == 'pending';
         allow update: if isSuperAdmin();

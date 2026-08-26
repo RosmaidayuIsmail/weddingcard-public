@@ -87,6 +87,7 @@
       { to: `${base}/guests`, label: 'Guest List', icon: 'i-heroicons-users' },
       { to: `${base}/flow`, label: 'Wedding Day Flow', icon: 'i-heroicons-clock' },
       { to: `${base}/record`, label: 'Promo Video', icon: 'i-heroicons-video-camera' },
+      { to: `${base}/physical-cards`, label: 'Physical Cards', icon: 'i-heroicons-square-3-stack-3d' },
       { to: `${base}/billing`, label: 'Billing', icon: 'i-heroicons-credit-card' }
     ]
   })

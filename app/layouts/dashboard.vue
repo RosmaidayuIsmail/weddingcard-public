@@ -76,6 +76,7 @@ const dashboardPages = [
   { id: 'rsvp', to: '/dashboard/rsvp-editor', label: 'RSVP Editor', icon: 'i-heroicons-pencil-square' },
   { id: 'guests', to: '/dashboard/guests', label: 'Guest List', icon: 'i-heroicons-users' },
   { id: 'flow', to: '/dashboard/flow', label: 'Day Flow', icon: 'i-heroicons-clock' },
+  { id: 'physical-cards', to: '/dashboard/physical-cards', label: 'Physical Cards', icon: 'i-heroicons-square-3-stack-3d' },
   { id: 'billing', to: '/dashboard/billing', label: 'Billing & Plans', icon: 'i-heroicons-credit-card' }
 ] as const
 const navItems = computed(() => dashboardPages.flatMap((page) => {
