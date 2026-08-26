@@ -134,24 +134,38 @@ const tabs: { id: FilterTab; label: string }[] = [
   { id: 'all', label: 'All' }
 ]
 
+// Bug fix: the original version of this function ran both reads through a
+// single Promise.all and a single catch block, so any failure surfaced as
+// the same generic "check your superadmin role" toast regardless of which
+// query actually failed or why (wrong Firestore project, rules not yet
+// published, a genuine role problem, network error, etc). Fetching them
+// separately - and putting the real Firebase error code/message from
+// whichever one throws into the toast - turns "it doesn't work" into an
+// actual diagnosis without needing to open devtools.
 async function loadOrders() {
   if (!isConfigured || !db) {
     loading.value = false
     return
   }
   loading.value = true
-  try {
-    const [ordersSnap, weddingsSnap] = await Promise.all([
-      getDocs(collectionGroup(db, 'physicalOrders')),
-      getDocs(collection(db, 'weddings'))
-    ])
 
-    const coupleNameById = new Map<string, string>()
+  const coupleNameById = new Map<string, string>()
+  try {
+    const weddingsSnap = await getDocs(collection(db, 'weddings'))
     weddingsSnap.docs.forEach((d) => {
       const w = d.data() as WeddingDoc
       coupleNameById.set(d.id, `${w.content?.brideName || 'Bride'} & ${w.content?.groomName || 'Groom'}`)
     })
+  } catch (error) {
+    console.error('[AdminPhysicalOrders] failed to load weddings', error)
+    const detail = (error as { code?: string; message?: string })?.code || (error as Error)?.message || 'unknown error'
+    toast.add({ title: 'Could not load couples list', description: `Reading weddings failed: ${detail}`, color: 'error' })
+    loading.value = false
+    return
+  }
 
+  try {
+    const ordersSnap = await getDocs(collectionGroup(db, 'physicalOrders'))
     orders.value = ordersSnap.docs
       .map((d) => {
         const weddingId = d.ref.parent.parent?.id || ''
@@ -174,8 +188,9 @@ async function loadOrders() {
       })
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
   } catch (error) {
-    console.error(error)
-    toast.add({ title: 'Could not load physical card orders', description: 'Check that your account has the superadmin role in Firestore.', color: 'error' })
+    console.error('[AdminPhysicalOrders] failed to load physicalOrders', error)
+    const detail = (error as { code?: string; message?: string })?.code || (error as Error)?.message || 'unknown error'
+    toast.add({ title: 'Could not load physical card orders', description: `Firestore said: ${detail}`, color: 'error' })
   } finally {
     loading.value = false
   }
