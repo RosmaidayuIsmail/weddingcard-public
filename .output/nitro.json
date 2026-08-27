@@ -1,0 +1,20 @@
+{
+  "date": "2026-08-26T14:26:34.187Z",
+  "preset": "node-server",
+  "framework": {
+    "name": "nuxt",
+    "version": "4.4.8"
+  },
+  "versions": {
+    "nitro": "2.13.4"
+  },
+  "commands": {
+    "preview": "node server/index.mjs"
+  },
+  "config": {
+    "firebase": {
+      "gen": 2,
+      "nodeVersion": "22"
+    }
+  }
+}
