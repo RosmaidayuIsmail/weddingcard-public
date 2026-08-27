@@ -107,7 +107,7 @@ Production runs on **Vercel** (hosting + serverless functions). **Firebase is th
 
 There are two separate deploys:
 
-1. **Code → Vercel (automatic).** Push to `main` on GitHub and Vercel builds with the Nuxt preset (auto-detected) and deploys. Static assets are served from the edge; `/api/*` routes (the ToyyibPay payment endpoints) run as Vercel serverless functions. `vercel.json` caps those functions at a 10s duration to stay within Hobby-plan limits.
+1. **Code → Vercel (automatic).** Push to `main` on GitHub (or run `vercel --prod`) and Vercel builds with the Nuxt preset (auto-detected — no `vercel.json` needed) and deploys. Static assets are served from the edge; the SSR server and `/api/*` payment routes run as Vercel serverless functions.
 
 2. **Rules/indexes → Firebase CLI (manual).** Firestore rules and indexes live in `firestore.rules` / `firestore.indexes.json` and are deployed separately:
    ```bash

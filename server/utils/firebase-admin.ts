@@ -1,5 +1,4 @@
 import { cert, getApps, initializeApp, type App } from 'firebase-admin/app'
-import { getAuth, type Auth } from 'firebase-admin/auth'
 import { getFirestore, type Firestore } from 'firebase-admin/firestore'
 
 let adminApp: App | null = null
@@ -8,6 +7,11 @@ let adminApp: App | null = null
  * Lazy Firebase Admin singleton for Nitro server routes. The service account
  * arrives as a stringified JSON env var (NUXT_FIREBASE_SERVICE_ACCOUNT_JSON)
  * because Vercel serverless has no writable filesystem for key files.
+ *
+ * Only the Firestore Admin SDK is used here. ID-token verification is done
+ * with `jose` in verify-id-token.ts instead of firebase-admin/auth, because
+ * firebase-admin/auth pulls jwks-rsa, which `require()`s ESM-only jose and
+ * crashes the Vercel serverless runtime at boot.
  *
  * Admin SDK bypasses firestore.rules entirely - these helpers must only ever
  * be used from server/api routes behind requireAuth(), never echoed to clients.
@@ -45,8 +49,4 @@ function getAdminApp(): App {
 
 export function getAdminDb(): Firestore {
   return getFirestore(getAdminApp())
-}
-
-export function getAdminAuth(): Auth {
-  return getAuth(getAdminApp())
 }

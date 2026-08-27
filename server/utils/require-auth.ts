@@ -14,7 +14,7 @@ export async function requireAuth(event: H3Event): Promise<{ uid: string }> {
   }
 
   try {
-    const decoded = await getAdminAuth().verifyIdToken(token)
+    const decoded = await verifyFirebaseIdToken(token)
     return { uid: decoded.uid }
   } catch {
     throw createError({ statusCode: 401, statusMessage: 'Invalid or expired token' })
