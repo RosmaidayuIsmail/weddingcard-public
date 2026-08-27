@@ -1,8 +1,7 @@
 <template>
   <div class="pb-12">
-    <div v-if="weddingLoading" class="flex flex-col items-center justify-center min-h-[50vh] text-white/60 space-y-4">
-      <UIcon name="i-heroicons-arrow-path" class="w-8 h-8 animate-spin text-gold-400" />
-      <p class="animate-pulse tracking-widest uppercase text-xs">Loading Guests...</p>
+    <div v-if="weddingLoading" class="min-h-[50vh] flex items-center">
+      <PageSkeleton variant="page" />
     </div>
 
     <div v-else-if="!wedding" class="flex flex-col items-center justify-center min-h-[50vh] text-white/60 space-y-6">
@@ -88,16 +87,17 @@
       </div>
 
       <!-- List -->
-      <div v-if="loading" class="text-center text-white/50 py-16">
-        <UIcon name="i-heroicons-arrow-path" class="w-6 h-6 animate-spin mx-auto mb-2" />
-        <p>Loading guest data...</p>
+      <div v-if="loading" class="py-8">
+        <PageSkeleton variant="list" />
       </div>
-      <div v-else-if="filteredGuests.length === 0" class="text-center text-white/50 py-16 bg-white/5 rounded-2xl border border-white/10 border-dashed">
-        <UIcon name="i-heroicons-users" class="w-10 h-10 mx-auto mb-3 opacity-50" />
-        <p>No guests in this view.</p>
-      </div>
-      
-      <div v-else id="guest-print-area" class="space-y-3 animate-fade-up delay-3">
+      <EmptyState
+        v-else-if="filteredGuests.length === 0"
+        icon="i-heroicons-users"
+        title="No guests in this view"
+        description="Add your first guest above, or adjust the filters to see more of your list."
+      />
+
+      <TransitionGroup v-else name="list" tag="div" id="guest-print-area" class="space-y-3 animate-fade-up delay-3">
         <div v-for="guest in filteredGuests" :key="guest.id" class="guest-row group">
           
           <div class="flex items-center gap-4 min-w-[200px]">
@@ -182,7 +182,7 @@
             </div>
           </div>
         </div>
-      </div>
+      </TransitionGroup>
     </div>
 
     <!-- Edit guest / record RSVP manually -->

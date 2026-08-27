@@ -1,4 +1,5 @@
 import type { WeddingContent } from './useWeddingTypes'
+import { BUILTIN_THEME_PRICING } from '~~/shared/utils/theme-pricing'
 
 export interface ThemePalette {
   bgFrom: string
@@ -100,9 +101,9 @@ export const DEFAULT_FONT = 'Great Vibes'
 export const themes: Theme[] = [
   {
     id: 'timeless-gold',
-    name: 'Timeless Gold',
+    name: BUILTIN_THEME_PRICING['timeless-gold'].name,
     tagline: 'Midnight navy with champagne gold — the original',
-    price: 0,
+    price: BUILTIN_THEME_PRICING['timeless-gold'].priceRM,
     currency: 'RM',
     headingFont: 'Great Vibes',
     palette: {
@@ -117,9 +118,9 @@ export const themes: Theme[] = [
   },
   {
     id: 'ivory-minimalist',
-    name: 'Ivory Minimalist',
+    name: BUILTIN_THEME_PRICING['ivory-minimalist'].name,
     tagline: 'Clean cream and charcoal for a modern, understated look',
-    price: 0,
+    price: BUILTIN_THEME_PRICING['ivory-minimalist'].priceRM,
     currency: 'RM',
     headingFont: 'Marcellus',
     palette: {
@@ -134,9 +135,9 @@ export const themes: Theme[] = [
   },
   {
     id: 'nusantara-elegance',
-    name: 'Nusantara Elegance',
+    name: BUILTIN_THEME_PRICING['nusantara-elegance'].name,
     tagline: 'Deep emerald and rich bronze inspired by traditional heritage',
-    price: 0,
+    price: BUILTIN_THEME_PRICING['nusantara-elegance'].priceRM,
     currency: 'RM',
     headingFont: 'Amiri',
     palette: {
@@ -151,9 +152,9 @@ export const themes: Theme[] = [
   },
   {
     id: 'blush-botanical',
-    name: 'Blush Botanical',
+    name: BUILTIN_THEME_PRICING['blush-botanical'].name,
     tagline: 'Soft blush and sage for a romantic, floral feel',
-    price: 29,
+    price: BUILTIN_THEME_PRICING['blush-botanical'].priceRM,
     currency: 'RM',
     headingFont: 'Parisienne',
     palette: {
@@ -168,9 +169,9 @@ export const themes: Theme[] = [
   },
   {
     id: 'velvet-romance',
-    name: 'Velvet Romance',
+    name: BUILTIN_THEME_PRICING['velvet-romance'].name,
     tagline: 'Deep burgundy and rose gold for a striking, intimate mood',
-    price: 29,
+    price: BUILTIN_THEME_PRICING['velvet-romance'].priceRM,
     currency: 'RM',
     headingFont: 'Playfair Display',
     palette: {
@@ -185,9 +186,9 @@ export const themes: Theme[] = [
   },
   {
     id: 'royal-emerald',
-    name: 'Royal Emerald',
+    name: BUILTIN_THEME_PRICING['royal-emerald'].name,
     tagline: 'Deep emerald and gold for a luxurious statement',
-    price: 49,
+    price: BUILTIN_THEME_PRICING['royal-emerald'].priceRM,
     currency: 'RM',
     headingFont: 'Cinzel',
     palette: {
@@ -202,9 +203,9 @@ export const themes: Theme[] = [
   },
   {
     id: 'lavender-dusk',
-    name: 'Lavender Dusk',
+    name: BUILTIN_THEME_PRICING['lavender-dusk'].name,
     tagline: 'Deep plum and soft lilac for a dreamy, romantic evening',
-    price: 29,
+    price: BUILTIN_THEME_PRICING['lavender-dusk'].priceRM,
     currency: 'RM',
     headingFont: 'Allura',
     palette: {
@@ -219,9 +220,9 @@ export const themes: Theme[] = [
   },
   {
     id: 'sky-serenade',
-    name: 'Sky Serenade',
+    name: BUILTIN_THEME_PRICING['sky-serenade'].name,
     tagline: 'Soft powder blue and cream for a light, airy feel',
-    price: 0,
+    price: BUILTIN_THEME_PRICING['sky-serenade'].priceRM,
     currency: 'RM',
     headingFont: 'Cormorant Garamond',
     palette: {
@@ -236,9 +237,9 @@ export const themes: Theme[] = [
   },
   {
     id: 'matcha-strawberry',
-    name: 'Matcha Strawberry',
+    name: BUILTIN_THEME_PRICING['matcha-strawberry'].name,
     tagline: 'Soft strawberry cream with matcha green accents for a sweet, playful feel',
-    price: 0,
+    price: BUILTIN_THEME_PRICING['matcha-strawberry'].priceRM,
     currency: 'RM',
     headingFont: 'Dancing Script',
     palette: {

@@ -4,11 +4,9 @@
   "type": "module",
   "scripts": {
     "build": "nuxt build",
-    "build:firebase": "nuxt build --preset=firebase && node -e \"const fs=require('fs'); if (fs.existsSync('.env') && fs.existsSync('.output/server')) fs.copyFileSync('.env', '.output/server/.env')\"",
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "deploy:firebase": "npm run build:firebase && cd .output/server && npm install && cd ../.. && firebase deploy",
     "postinstall": "nuxt prepare"
   },
   "dependencies": {

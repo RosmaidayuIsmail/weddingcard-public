@@ -20,7 +20,7 @@ This started as a single hardcoded wedding invite and was rebuilt into a real pl
 
 Being upfront about scope, since you asked me to prioritize the foundation this round:
 
-- **Payments.** `/dashboard/billing` shows real pricing and an "Upgrade" button, but it's a preview — clicking it shows a toast, not a real charge. Wiring up live Billplz/ToyyibPay checkout needs a webhook that can trust "this was actually paid" and write that back to Firestore, which requires a server-side Firebase Admin SDK (a service account) that this round deliberately doesn't add, to keep this pass dependency-free. Happy to build that next.
+- **Payments — live.** `/dashboard/billing` takes real ToyyibPay (FPX) payments for the Premium upgrade. The flow: the couple submits payer details, `POST /api/payments/create-bill` creates a ToyyibPay bill and a `weddings/{id}/payments` record, the couple is redirected to ToyyibPay, and on success ToyyibPay calls `POST /api/payments/callback` (hash-validated) which atomically marks the payment paid and flips the wedding to Premium. `GET /api/payments/status` reconciles late/lost callbacks. See [Deployment](#deployment) for the required env vars.
 - **VIP invite tracking.** Guests you add manually in the Guests page and guests who RSVP publicly are currently two separate records — a personalized WhatsApp link pre-fills the guest's name in the RSVP form, but doesn't yet mark *that specific* invited guest as responded. Properly linking them needs a per-guest token the public RSVP page can safely look up, which is a reasonable next step but adds real complexity to the security rules.
 - **Guest CSV/PDF export** works (CSV is a real file download; "PDF" is a print-optimized view via the browser's print dialog) but there's no dedicated PDF-generation library — fine for most printers/save-as-PDF flows, less fine if you need pixel-perfect PDF layout.
 
@@ -103,24 +103,28 @@ npm run preview   # preview the production build locally
 
 ## Deployment
 
-**Firebase (Hosting + Cloud Functions)** — works, but two things to know upfront:
-- This app needs SSR (dynamic wedding pages, auth-gated dashboard), so it needs to run on Cloud Functions, not plain static Firebase Hosting. Cloud Functions require the **Blaze plan** regardless of actual usage — same requirement as Cloud Storage.
-- Nuxt's own docs now mark this classic Functions+Hosting path as "deprecated, not recommended" in favor of **Firebase App Hosting**, which is the officially current approach but requires connecting a GitHub repo through the Firebase console (a bigger setup step). The classic path below still works and is a plain CLI deploy with no GitHub needed — useful if you're working locally like this project has been so far.
+Production runs on **Vercel** (hosting + serverless functions). **Firebase is the backend only** — Auth, Firestore, and security rules. There is no Firebase Hosting or Cloud Functions involved.
 
-Steps:
-```bash
-npm install -g firebase-tools   # if you don't have it
-firebase login
-```
-Check `.firebaserc` has your correct project ID (it's pre-filled, but confirm it matches your actual Firebase project). Then:
-```bash
-npm run deploy:firebase
-```
-This runs `nuxt build --preset=firebase`, installs the function's dependencies, and deploys both Hosting and the Functions-based SSR server in one go. Your `.env` values get copied into the deployed function automatically as part of the build step — without that, your Firebase/Cloudinary config would be missing at runtime even though the site "builds" fine.
+There are two separate deploys:
 
-**Netlify** — a solid alternative if you'd rather not touch the Blaze plan at all. `nitro.preset = 'netlify'` and their free tier doesn't require a card. Not set up in this project yet, but it's a one-line preset change plus a Netlify account if you want to go that route instead.
+1. **Code → Vercel (automatic).** Push to `main` on GitHub and Vercel builds with the Nuxt preset (auto-detected) and deploys. Static assets are served from the edge; `/api/*` routes (the ToyyibPay payment endpoints) run as Vercel serverless functions. `vercel.json` caps those functions at a 10s duration to stay within Hobby-plan limits.
 
-**About the Vercel issue**: without seeing the exact error, my best guess is you're hitting the Hobby plan's serverless function count/size limits rather than a real "too many files" problem with the code itself — Nitro's default Vercel output can be adjusted to bundle as fewer functions. Happy to help debug that specifically if you paste the actual error next time, as an alternative to switching platforms entirely.
+2. **Rules/indexes → Firebase CLI (manual).** Firestore rules and indexes live in `firestore.rules` / `firestore.indexes.json` and are deployed separately:
+   ```bash
+   npm install -g firebase-tools   # if you don't have it
+   firebase login
+   firebase deploy --only firestore:rules,firestore:indexes
+   ```
+   `.firebaserc` points at the Firebase project the app actually uses (`onlineinvitation-14480`).
+
+**Vercel environment variables.** In your Vercel project settings, set the server-only vars (never `NUXT_PUBLIC_`):
+
+- `NUXT_FIREBASE_SERVICE_ACCOUNT_JSON` — stringified service-account JSON (Firebase console → Project settings → Service accounts → Generate new private key). Powers the payment routes' Admin SDK writes.
+- `NUXT_TOYYIBPAY_SECRET_KEY`, `NUXT_TOYYIBPAY_CATEGORY_CODE`, `NUXT_TOYYIBPAY_BASE_URL` — ToyyibPay credentials. Base URL is `https://dev.toyyibpay.com` (sandbox) or `https://toyyibpay.com` (production).
+
+Plus the public `NUXT_PUBLIC_*` vars (site URL, Firebase web config, Cloudinary, App Check). See `.env.example` for the full annotated list.
+
+**Note on the service account:** the payments routes verify ID tokens and flip `weddings.plan`/`paymentStatus` server-side via the Admin SDK, which bypasses `firestore.rules`. The rules separately block couples from writing those billing fields themselves, so a client can never self-upgrade.
 
 ## Customizing themes
 
@@ -128,4 +132,4 @@ Themes live in `app/composables/useThemes.ts` as plain data — add a new entry 
 
 ## Suggested next round
 
-Given what's built now, the natural next steps in priority order: (1) wire up real Billplz checkout + webhook (needs `firebase-admin`), (2) link VIP invites to their RSVP response via a per-guest token, (3) a dedicated PDF export for the guest list.
+Given what's built now, the natural next steps in priority order: (1) link VIP invites to their RSVP response via a per-guest token, (2) a dedicated PDF export for the guest list, (3) wire physical-card orders to ToyyibPay the same way as the premium upgrade.

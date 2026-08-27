@@ -25,6 +25,12 @@ rules_version = '2';
 //                                         only the owner (create/read their
 //                                         own) or a superadmin (read/update
 //                                         to approve/decline) can touch these.
+//   weddings/{weddingId}/payments/{id} - ToyyibPay payment records for
+//                                         premium upgrades. Fully server-
+//                                         managed (Firebase Admin SDK only);
+//                                         owner/superadmin read-only, shown
+//                                         as payment history on the Billing
+//                                         page.
 //   weddings/{weddingId}/physicalOrders/{id} - a couple's own physical card
 //                                         orders (see usePhysicalOrders.ts).
 //                                         Same shape as billingRequests:
@@ -90,7 +96,16 @@ service cloud.firestore {
     match /weddings/{weddingId} {
       allow read: if resource.data.status == 'published' || isOwner(resource.data) || isSuperAdmin();
       allow create: if isSignedIn() && request.resource.data.ownerUid == request.auth.uid;
-      allow update, delete: if isOwner(resource.data) || isSuperAdmin();
+      // Owners can update their own wedding freely EXCEPT the billing fields:
+      // plan/paymentStatus may only change via a superadmin (admin panel) or
+      // the Firebase Admin SDK on the server (ToyyibPay payment settlement).
+      // Without this guard a couple could set plan:'premium' from dev tools.
+      allow update: if isSuperAdmin() || (
+        isOwner(resource.data) &&
+        request.resource.data.plan == resource.data.plan &&
+        request.resource.data.paymentStatus == resource.data.paymentStatus
+      );
+      allow delete: if isOwner(resource.data) || isSuperAdmin();
 
       match /guests/{guestId} {
         allow create: if true; // public RSVP submission
@@ -112,6 +127,15 @@ service cloud.firestore {
           request.resource.data.status == 'pending';
         allow update: if isSuperAdmin();
         allow delete: if false;
+      }
+
+      match /payments/{paymentId} {
+        // ToyyibPay payment records. Fully server-managed: created/updated
+        // only by the payments API routes through the Firebase Admin SDK
+        // (which bypasses rules). Clients may only read their own, which
+        // powers the payment history on the Billing page.
+        allow read: if isOwner(get(/databases/$(database)/documents/weddings/$(weddingId)).data) || isSuperAdmin();
+        allow create, update, delete: if false;
       }
 
       match /physicalOrders/{orderId} {

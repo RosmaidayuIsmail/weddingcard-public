@@ -6,7 +6,11 @@
       class="grid grid-cols-4 gap-2 sm:gap-4 max-w-md mx-auto"
     >
       <div v-for="unit in units" :key="unit.label" class="countdown-cell">
-        <span class="countdown-number">{{ unit.value }}</span>
+        <span class="countdown-number">
+          <Transition name="tick" mode="out-in">
+            <span :key="unit.value" class="countdown-value">{{ unit.value }}</span>
+          </Transition>
+        </span>
         <span class="countdown-label">{{ unit.label }}</span>
       </div>
     </div>
@@ -64,6 +68,45 @@ const ariaLabel = computed(() =>
   font-weight: 600;
   color: var(--theme-accent, #ecc973);
   line-height: 1;
+  display: inline-flex;
+  overflow: hidden;
+  height: 1em;
+}
+
+.countdown-value {
+  display: inline-block;
+}
+
+/* Per-digit tick: old value slides up out, new value slides up in. */
+.tick-enter-active,
+.tick-leave-active {
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.35s ease;
+}
+.tick-enter-from {
+  transform: translateY(0.6em);
+  opacity: 0;
+}
+.tick-leave-to {
+  transform: translateY(-0.6em);
+  opacity: 0;
+}
+.tick-enter-active,
+.tick-leave-active,
+.tick-enter-from,
+.tick-leave-to {
+  will-change: transform, opacity;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tick-enter-active,
+  .tick-leave-active {
+    transition: none;
+  }
+  .tick-enter-from,
+  .tick-leave-to {
+    transform: none;
+    opacity: 1;
+  }
 }
 
 .countdown-label {

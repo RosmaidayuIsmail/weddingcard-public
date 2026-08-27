@@ -51,6 +51,7 @@
 
     <!-- Bento Grid Features -->
     <section class="relative z-10 max-w-7xl mx-auto px-6 py-24">
+      <ScrollReveal>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[280px]">
         
         <!-- Large Feature -->
@@ -92,11 +93,13 @@
           </div>
         </div>
       </div>
+      </ScrollReveal>
     </section>
 
     <!-- Themes Showcase -->
     <section class="relative z-10 py-24 bg-ink-900/40 border-y border-white/5 backdrop-blur-sm">
       <div class="max-w-7xl mx-auto px-6">
+        <ScrollReveal :delay="80">
         <div class="text-center mb-16">
           <h2 class="font-display text-4xl font-bold text-white mb-4">Curated Aesthetics</h2>
           <p class="text-white/60 text-lg max-w-2xl mx-auto">From minimalist modern to rich traditional styles, pick a foundation and make it yours.</p>
@@ -124,11 +127,13 @@
             </div>
           </div>
         </div>
+        </ScrollReveal>
       </div>
     </section>
 
     <!-- Final CTA -->
     <section class="relative z-10 max-w-4xl mx-auto px-6 py-32 text-center">
+      <ScrollReveal :delay="120">
       <div class="p-12 sm:p-16 rounded-3xl border border-gold-400/20 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-xl shadow-2xl relative overflow-hidden">
         <div class="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-px bg-gradient-to-r from-transparent via-gold-400 to-transparent opacity-50"></div>
         <h2 class="font-display text-4xl sm:text-5xl font-bold text-white mb-6 leading-tight">Begin your forever,<br/> beautifully.</h2>
@@ -137,6 +142,7 @@
           Start Designing Now
         </UButton>
       </div>
+      </ScrollReveal>
     </section>
     
     <!-- Footer -->

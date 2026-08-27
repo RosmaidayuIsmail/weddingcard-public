@@ -30,16 +30,6 @@ export default defineNuxtConfig({
     }
   },
 
-  // Only takes effect when building with --preset=firebase (see
-  // `npm run build:firebase`) - local `npm run dev`/`build`/`preview` are
-  // unaffected and keep using the default node-server preset.
-  nitro: {
-    firebase: {
-      gen: 2,
-      nodeVersion: '22'
-    }
-  },
-
   app: {
     head: {
       htmlAttrs: { lang: 'en' },
@@ -58,10 +48,14 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
-    billplzApiKey: process.env.BILLPLZ_API_KEY || '',
-    billplzCollectionId: process.env.BILLPLZ_COLLECTION_ID || '',
-    billplzXSignatureKey: process.env.BILLPLZ_X_SIGNATURE_KEY || '',
-    billplzSandbox: process.env.BILLPLZ_SANDBOX !== 'false',
+    // Server-only: ToyyibPay credentials must never reach the browser.
+    toyyibpaySecretKey: process.env.NUXT_TOYYIBPAY_SECRET_KEY || '',
+    toyyibpayCategoryCode: process.env.NUXT_TOYYIBPAY_CATEGORY_CODE || '',
+    // Sandbox: https://dev.toyyibpay.com | Production: https://toyyibpay.com
+    toyyibpayBaseUrl: process.env.NUXT_TOYYIBPAY_BASE_URL || 'https://dev.toyyibpay.com',
+    // Stringified Firebase service-account JSON (Firebase Admin SDK), used by
+    // the payments API routes to verify ID tokens and write plan upgrades.
+    firebaseServiceAccountJson: process.env.NUXT_FIREBASE_SERVICE_ACCOUNT_JSON || '',
 
     public: {
       siteUrl: process.env.NUXT_PUBLIC_SITE_URL || '',

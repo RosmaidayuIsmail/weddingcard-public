@@ -1,9 +1,8 @@
 <template>
     <div class="min-h-screen flex flex-col overflow-x-hidden overflow-y-visible">
       
-      <div v-if="loading" class="flex flex-col items-center justify-center flex-1 text-white/60 space-y-4">
-        <UIcon name="i-heroicons-arrow-path" class="w-8 h-8 animate-spin" style="color: #e3b04a;" />
-        <p class="animate-pulse tracking-widest uppercase text-xs">Loading Studio...</p>
+      <div v-if="loading" class="flex-1 flex items-center">
+        <PageSkeleton variant="page" />
       </div>
   
       <div v-else-if="!wedding" class="flex flex-col items-center justify-center flex-1 text-white/60 space-y-6">

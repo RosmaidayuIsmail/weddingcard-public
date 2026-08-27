@@ -1,8 +1,7 @@
 <template>
   <div class="pb-12">
-    <div v-if="loading" class="flex flex-col items-center justify-center min-h-[50vh] text-white/60 space-y-4">
-      <UIcon name="i-heroicons-arrow-path" class="w-8 h-8 animate-spin text-gold-400" />
-      <p class="animate-pulse tracking-widest uppercase text-xs">Loading Overview...</p>
+    <div v-if="loading" class="min-h-[50vh] flex items-center">
+      <PageSkeleton variant="page" />
     </div>
 
     <div v-else-if="!wedding" class="max-w-md mx-auto mt-12 animate-fade-up">

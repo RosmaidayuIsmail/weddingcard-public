@@ -41,12 +41,35 @@ const { wishes } = useWishes(props.weddingId, props.maxCount)
   border: 1px solid color-mix(in srgb, var(--theme-accent, #d4a017) 25%, transparent);
 }
 
-.wish-enter-active {
+.wish-enter-active,
+.wish-leave-active {
   transition: opacity 0.5s ease, transform 0.5s ease;
 }
 
-.wish-enter-from {
+.wish-enter-from,
+.wish-leave-to {
   opacity: 0;
   transform: translateY(10px);
+}
+
+.wish-leave-active {
+  position: absolute;
+}
+
+.wish-move {
+  transition: transform 0.5s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wish-enter-active,
+  .wish-leave-active,
+  .wish-move {
+    transition: none;
+  }
+  .wish-enter-from,
+  .wish-leave-to {
+    opacity: 1;
+    transform: none;
+  }
 }
 </style>
