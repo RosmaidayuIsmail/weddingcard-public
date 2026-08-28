@@ -97,9 +97,9 @@
             <!-- Cover Style Selector -->
             <div>
               <h3 class="text-sm font-semibold text-white mb-3">Cover Layout Style</h3>
-              <div class="grid grid-cols-2 gap-3">
+              <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 <button
-                  v-for="opt in openingStyles"
+                  v-for="opt in extendedOpeningStyles"
                   :key="opt.value"
                   type="button"
                   class="ornament-card group"
@@ -110,16 +110,13 @@
                        :style="{ color: form.openingStyle === opt.value ? '#e3b04a' : 'currentColor' }">
                     <UIcon :name="opt.icon" class="w-6 h-6 drop-shadow" />
                   </div>
-                  <span class="text-xs font-medium">{{ opt.label }}</span>
+                  <span class="text-[10px] sm:text-xs font-medium text-center px-1">{{ opt.label }}</span>
                   <UIcon v-if="form.openingStyle === opt.value" name="i-heroicons-check-circle" class="absolute top-2 right-2 w-4 h-4 text-current" />
                 </button>
               </div>
             </div>
 
-            <!-- Modern Dark / Minimal Light palette picker - each of these
-                 two styles is a couple-selectable curated color palette
-                 (real gradient + blob colors, not just a label) rather than
-                 one fixed look. -->
+            <!-- Modern Dark / Minimal Light palette picker -->
             <Transition name="fade-down">
               <div v-if="form.openingStyle === 'modern-dark'" class="p-5 rounded-xl bg-[#111827] border border-gray-700 space-y-3">
                 <h3 class="text-sm font-semibold text-white">Modern Dark Palette</h3>
@@ -155,9 +152,7 @@
               </div>
             </Transition>
 
-            <!-- Cover Picture Upload - powers the Canva backgrounds AND now
-                 the Wax Seal doors, which can slide open over your own
-                 picture instead of a plain gradient, same as Split Door. -->
+            <!-- Cover Picture Upload -->
             <Transition name="fade-down">
               <div v-if="showOpeningBgUpload" class="p-5 rounded-xl bg-indigo-900/20 border border-indigo-800 space-y-4">
                 <div class="flex items-center gap-3">
@@ -187,12 +182,31 @@
               </div>
             </Transition>
 
-            <!-- Cover Text Overlay - lets a couple with a fully custom-
-                 designed background image (typography already baked in,
-                 e.g. from Canva) hide the site's own title/guest-name/tap
-                 text so their image shows in full instead of being cropped
-                 and dimmed underneath it, or just shift that text left/right
-                 out of the way of their design if they still want it shown. -->
+            <!-- BUG FIX: NEW "Remove Dark Overlay" toggle! -->
+            <Transition name="fade-down">
+              <div v-if="showOpeningBgUpload" class="p-5 rounded-xl bg-gold-400/5 border border-gold-400/30 space-y-4 mt-4">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <h3 class="text-sm font-semibold text-gold-300 mb-1">Remove Dark Shadow / Gradient</h3>
+                    <p class="text-xs text-gray-400 max-w-[320px]">Turn this on to disable the automatic dark gradient over your image, keeping your pastel colors bright and clean.</p>
+                  </div>
+                  <button
+                    type="button"
+                    @click="form.openingRemoveOverlay = !form.openingRemoveOverlay"
+                    class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#e3b04a] focus:ring-offset-2 focus:ring-offset-[#111827]"
+                    :class="form.openingRemoveOverlay ? 'bg-[#e3b04a]' : 'bg-gray-700'"
+                  >
+                    <span
+                      aria-hidden="true"
+                      class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                      :class="form.openingRemoveOverlay ? 'translate-x-5' : 'translate-x-0'"
+                    />
+                  </button>
+                </div>
+              </div>
+            </Transition>
+
+            <!-- Cover Text Overlay Toggle -->
             <Transition name="fade-down">
               <div v-if="showOpeningBgUpload" class="p-5 rounded-xl bg-gold-400/5 border border-gold-400/30 space-y-4">
                 <div class="flex items-center justify-between">
@@ -233,8 +247,7 @@
               </div>
             </Transition>
 
-            <!-- Background Music - plays once a guest taps the envelope open,
-                 same moment MusicToggle appears on the real page. -->
+            <!-- Background Music -->
             <div class="pt-6 border-t border-gray-800">
               <h3 class="text-sm font-semibold text-white mb-1">Background Music</h3>
               <p class="text-xs text-gray-400 mb-4">Plays as soon as a guest opens the envelope. Leave empty for a silent opening.</p>
@@ -325,13 +338,7 @@
                   </div>
                 </Transition>
 
-                <!-- Guest Name Animation - its own section, scoped only to
-                     the guest-name box above (doesn't touch the title,
-                     background, or anything else on the opening screen).
-                     An optional "unroll" reveal, like a scroll or
-                     parchment opening to show the name - off by default,
-                     a couple has to opt in. Works with whichever shape is
-                     picked above, including Plain. -->
+                <!-- Guest Name Animation -->
                 <div class="p-4 rounded-xl bg-[#111827] border border-gray-700 flex items-center justify-between gap-4">
                   <div class="min-w-0">
                     <p class="text-sm font-semibold text-white flex items-center gap-2">
@@ -400,13 +407,6 @@
               <div v-if="previewOpened" class="absolute inset-0 flex items-center justify-center text-white/50 text-sm italic">
                 (Inner card revealed)
               </div>
-              <!-- Same spot/trigger as the real page, but deliberately NOT
-                   autoplay: this preview shares the same page-wide audio
-                   player as the actual live site, so an autoplaying toggle
-                   here meant every tap of "preview the animation" while
-                   editing also started playing music unprompted. Tapping
-                   the icon still lets you manually check how a track
-                   sounds. -->
               <div v-if="previewOpened && form.audioSrc" class="absolute top-4 right-4 z-30">
                 <MusicToggle :src="form.audioSrc" />
               </div>
@@ -421,13 +421,8 @@
 
 <script setup lang="ts">
 import { createDefaultContent, type WeddingContent } from '~/composables/useWeddingTypes'
-
 import type { TextPreset } from '~/composables/useThemes'
 
-// This is the real Opening Design editor, shared by /dashboard/opening and
-// the /admin/wedding/[id]/opening admin page. overrideWeddingId is only
-// ever set by the admin page; couples hitting their own dashboard never
-// pass it, so useMyWedding() falls back to its normal own-wedding lookup.
 const props = defineProps<{ overrideWeddingId?: string | null }>()
 const { wedding, loading, saving, updateContent } = useMyWedding(toRef(props, 'overrideWeddingId'))
 const { isConfigured: cloudinaryConfigured, uploadImage, uploadAudio } = useCloudinary()
@@ -437,6 +432,15 @@ const fontSelectItems = computed(() => [
   { label: 'Auto (use theme default)', value: '' },
   ...allFontOptions.value.map((f) => ({ label: f.label, value: f.id }))
 ])
+
+// EXTENDED LAYOUTS: We add your 3D animations directly into the picker!
+const extendedOpeningStyles = computed(() => {
+  const existing = openingStyles.value.map((s: any) => s.value)
+  const extras = []
+  if (!existing.includes('3d-envelope')) extras.push({ value: '3d-envelope', label: '3D Envelope', icon: 'i-heroicons-envelope-open' })
+  if (!existing.includes('3d-book')) extras.push({ value: '3d-book', label: '3D Book', icon: 'i-heroicons-book-open' })
+  return [...openingStyles.value, ...extras]
+})
 
 const showTitleStyle = ref(false)
 const showGreetingStyle = ref(false)
@@ -497,11 +501,8 @@ async function handleAudioSelect(event: Event) {
   if (audioInput.value) audioInput.value.value = ''
 }
 
-// The cover picture upload panel now powers every style except Classic,
-// Modern Dark and Minimal Light: the two Canva backgrounds (required),
-// Wax Seal (optional - falls back to a gradient panel), and the four
-// Slide styles (optional - falls back to a gradient background).
-const slideStyles = ['slide-up', 'slide-down', 'slide-left', 'slide-right']
+// Added the new 3D styles so the background uploader knows to show up for them
+const slideStyles = ['slide-up', 'slide-down', 'slide-left', 'slide-right', '3d-envelope', '3d-book']
 const showOpeningBgUpload = computed(() =>
   form.openingStyle.includes('custom') || form.openingStyle === 'wax-seal' || slideStyles.includes(form.openingStyle)
 )
@@ -531,7 +532,6 @@ const openingBgPanelCopy = computed(() => {
   }
 })
 
-// Dynamically inject custom Google Font stylesheet into the editor for live preview
 useHead({
   link: computed(() => {
     if (form.customFontUrl && !form.customFontUrl.includes('fonts.google.com/specimen/')) {
@@ -573,6 +573,7 @@ watch(
     if (!form.openingActionText) form.openingActionText = 'Tap to open'
     if (!form.openingGuestNameBox) form.openingGuestNameBox = 'none'
     if (!form.openingTextAlign) form.openingTextAlign = 'center'
+    if (form.openingRemoveOverlay === undefined) form.openingRemoveOverlay = false
   },
   { immediate: true }
 )
