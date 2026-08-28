@@ -98,10 +98,10 @@
 
       <div
         class="rounded-3xl border backdrop-blur-xl shadow-2xl px-6 py-10 sm:px-10"
-        :class="isVip ? 'vip-rsvp-card' : (cardStyleResolved === 'dark' ? 'classic-rsvp-card' : 'classic-rsvp-card-theme')"
+        :class="isVip ? 'vip-rsvp-card' : (cardStyleResolved === 'dark' ? 'classic-rsvp-card' : (cardStyleResolved === 'glass' ? 'classic-rsvp-card-glass' : 'classic-rsvp-card-theme'))"
         :style="isVip
           ? { '--card-text': '#ffffff', ...cardUiVars }
-          : { borderColor: 'var(--theme-accent-soft)', '--card-text': cardTextColorResolved, ...cardUiVars }"
+          : { borderColor: cardStyleResolved === 'glass' ? 'transparent' : 'var(--theme-accent-soft)', '--card-text': cardTextColorResolved, ...cardUiVars }"
       >
         <template v-if="!submitted">
           <div class="flex items-center justify-center gap-3 mb-10">
@@ -278,13 +278,17 @@ const toast = useToast()
 // for text - self-consistent for every theme, since a theme's ink is always
 // chosen to contrast with its own background). A couple's own cardStyle
 // choice always wins over the theme's default - see useThemes.ts.
-const cardStyleResolved = computed(() => resolveCardStyle(wedding.value?.themeId, wedding.value?.content.cardStyle))
+const cardStyleResolved = computed(() => {
+  if (wedding.value?.content.cardStyle === 'glass') return 'glass'
+  return resolveCardStyle(wedding.value?.themeId, wedding.value?.content.cardStyle)
+})
+
 // The single color every piece of text/border/overlay inside the card
 // derives from (via the --card-text custom property set on the card
 // element below) - a manual override wins, otherwise white for a dark
 // card or the theme's own ink for a theme-tinted card.
 const cardTextColorResolved = computed(() =>
-  wedding.value?.content.cardTextColor || (cardStyleResolved.value === 'dark' ? '#ffffff' : 'var(--theme-ink)')
+  wedding.value?.content.cardTextColor || (cardStyleResolved.value === 'dark' || cardStyleResolved.value === 'glass' ? '#ffffff' : 'var(--theme-ink)')
 )
 
 // Nuxt UI's own form fields (UInput/UInputNumber/UTextarea below) don't
@@ -641,7 +645,7 @@ watch(
   color: var(--card-text, #fff);
 }
 
-/* Two looks for the classic (non-VIP) card, chosen per-wedding by
+/* Three looks for the classic (non-VIP) card, chosen per-wedding by
    cardStyleResolved (see the script setup computed above, backed by
    useThemes.ts's resolveCardStyle):
      - .classic-rsvp-card: a fixed dark card, used when cardStyleResolved
@@ -655,17 +659,13 @@ watch(
        theme's ink is always chosen by its designer to contrast with that
        theme's own background, pairing them on the card is self-consistent
        for every theme without hardcoding a light/dark list anywhere.
+     - .classic-rsvp-card-glass: forces a highly transparent, blurry glass 
+       effect over the existing background.
    Every descendant in here (labels, option cards, step dots, the summary
    box, buttons) reads its color/border/background from --card-text via
    color-mix(), so both looks - and any couple's custom cardTextColor
    override - apply everywhere at once instead of needing a second copy of
-   every rule. See the detailed --theme-ink-vs-inheritance note this
-   replaced in git history if you're wondering why this isn't as simple as
-   "just use --theme-ink here": .theme-surface (main.css) sets an unlayered
-   `color: var(--theme-ink)` on the parent <section>, which silently wins
-   over any Tailwind utility color on the same element or its unstyled
-   descendants - --card-text sidesteps that entirely by being set directly,
-   inline, on the card itself. */
+   every rule. */
 .classic-rsvp-card {
   background: linear-gradient(
     165deg,
@@ -682,5 +682,14 @@ watch(
     color-mix(in srgb, var(--theme-bg-to, #142a45) 88%, var(--theme-ink, #000) 12%) 100%
   );
   color: var(--card-text, var(--theme-ink, #fff));
+}
+
+.classic-rsvp-card-glass {
+  background: rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(16px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.3) !important;
+  color: var(--card-text, #ffffff) !important;
 }
 </style>

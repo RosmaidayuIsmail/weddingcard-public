@@ -529,7 +529,7 @@ const cardStyleResolved = computed(() => {
 })
 
 const cardTextColorResolved = computed(() =>
-  form.cardTextColor || (cardStyleResolved.value === 'dark' ? '#ffffff' : 'var(--theme-ink)')
+  form.cardTextColor || (cardStyleResolved.value === 'dark' || cardStyleResolved.value === 'glass' ? '#ffffff' : 'var(--theme-ink)')
 )
 // Some themes (e.g. Matcha Strawberry) lock the card to always follow the
 // theme's own colors - the picker below is disabled for those since picking
@@ -760,12 +760,12 @@ useSeoMeta({ title: 'RSVP Editor — WeddingCard' })
 }
 
 .classic-rsvp-card-glass {
-  background-color: color-mix(in srgb, var(--card-text, #ffffff) 6%, transparent) !important;
-  background-image: none !important;
-  backdrop-filter: blur(12px) !important;
-  -webkit-backdrop-filter: blur(12px) !important;
-  border: 1px solid color-mix(in srgb, var(--card-text, #ffffff) 15%, transparent) !important;
-  color: var(--card-text, #fff) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(16px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.3) !important;
+  color: var(--card-text, #ffffff) !important;
 }
 
 .preview-step-dot {
