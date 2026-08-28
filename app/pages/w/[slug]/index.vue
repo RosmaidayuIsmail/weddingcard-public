@@ -231,13 +231,20 @@ watch(
 
 <style scoped>
 .overlay-text-shadow {
-  text-shadow: var(--overlay-shadow, 0 2px 12px rgba(0, 0, 0, 0.6), 0 2px 5px rgba(0, 0, 0, 0.75), 0 1px 2px rgba(0, 0, 0, 0.9));
+  text-shadow: 
+  var(
+    --overlay-shadow, 
+    0 2px 12px rgba(0, 0, 0, 0.6), 
+    0 2px 5px rgba(0, 0, 0, 0.75), 
+    0 1px 2px rgba(0, 0, 0, 0.9))
+  ;
 }
 
 .accent-btn {
   background-color: var(--theme-accent, #d4a017) !important;
   color: var(--theme-on-accent, #1f1400) !important;
 }
+
 .accent-btn:hover {
   filter: brightness(1.08);
 }

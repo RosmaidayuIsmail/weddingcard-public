@@ -580,38 +580,178 @@ useSeoMeta({ title: 'Opening Design — WeddingCard' })
 </script>
 
 <style scoped>
-.gn-preview { white-space: nowrap; }
-.gn-preview-arch { background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 50% 50% 2px 2px / 85% 85% 2px 2px; padding-top: 3px; padding-bottom: 1px; }
-.gn-preview-pill { background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 999px; padding-top: 2px; padding-bottom: 2px; }
-.gn-preview-hexagon { background: rgba(255, 255, 255, 0.1); clip-path: polygon(30% 0%, 70% 0%, 100% 50%, 70% 100%, 30% 100%, 0% 50%); padding-top: 2px; padding-bottom: 2px; padding-left: 9px; padding-right: 9px; }
-.gn-preview-ribbon {
-  background: #c9a876; color: #1a1f2e !important;
-  clip-path: polygon(0% 0%, 100% 0%, 100% 28%, 88% 50%, 100% 72%, 100% 100%, 0% 100%, 0% 72%, 12% 50%, 0% 28%);
-  padding-top: 3px; padding-bottom: 3px;
+.gn-preview { 
+  white-space: nowrap; 
 }
 
-.form-panel { border-radius: 1.25rem; padding: 1.75rem; background: #111827; border: 1px solid #374151; box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5); }
-.panel-header { margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid #374151; }
+.gn-preview-arch { 
+  background: rgba(255, 255, 255, 0.08); 
+  border: 1px solid rgba(255, 255, 255, 0.2); 
+  border-radius: 50% 50% 2px 2px / 85% 85% 2px 2px; 
+  padding-top: 3px; 
+  padding-bottom: 1px; 
+}
 
-.ornament-card { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1rem 0.5rem; border-radius: 1rem; background: #1F2937; border: 1px solid #374151; color: #9CA3AF; transition: all 0.3s ease; }
-.ornament-card:hover { background: #374151; border-color: rgba(212, 160, 23, 0.4); color: white; }
-.ornament-card-active { background: rgba(212, 160, 23, 0.1); border-color: var(--color-gold-400); color: #f3ddaa; }
+.gn-preview-pill { 
+  background: rgba(255, 255, 255, 0.08); 
+  border: 1px solid rgba(255, 255, 255, 0.2); 
+  border-radius: 999px; 
+  padding-top: 2px; 
+  padding-bottom: 2px; 
+}
 
-.palette-swatch { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; border-radius: 0.75rem; background: #1F2937; border: 1px solid #374151; color: #9CA3AF; transition: all 0.2s ease; }
-.palette-swatch:hover { border-color: rgba(212, 160, 23, 0.4); color: white; }
-.palette-swatch-active { background: rgba(212, 160, 23, 0.1); border-color: var(--color-gold-400); color: #f3ddaa; }
-.palette-swatch-dot { width: 1rem; height: 1rem; border-radius: 50%; border: 1px solid rgba(255, 255, 255, 0.25); flex-shrink: 0; }
+.gn-preview-hexagon { 
+  background: rgba(255, 255, 255, 0.1); 
+  clip-path: polygon(30% 0%, 70% 0%, 100% 50%, 70% 100%, 30% 100%, 0% 50%); 
+  padding-top: 2px; 
+  padding-bottom: 2px; 
+  padding-left: 9px; 
+  padding-right: 9px; 
+}
 
-.phone-bezel { position: relative; height: 720px; background: #000; border: 12px solid #1e293b; border-radius: 2.5rem; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), inset 0 0 0 2px rgba(255, 255, 255, 0.05); overflow: hidden; transform: translateZ(0); }
-.phone-notch { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 40%; height: 24px; background: #1e293b; border-bottom-left-radius: 14px; border-bottom-right-radius: 14px; z-index: 50; box-shadow: inset 0 -1px 1px rgba(255,255,255,0.05); }
-.phone-screen { width: 100%; height: 100%; overflow-y: auto; overflow-x: hidden; }
+.gn-preview-ribbon {
+  background: #c9a876; 
+  color: #1a1f2e !important;
+  clip-path: polygon(0% 0%, 100% 0%, 100% 28%, 88% 50%, 100% 72%, 100% 100%, 0% 100%, 0% 72%, 12% 50%, 0% 28%);
+  padding-top: 3px; 
+  padding-bottom: 3px;
+}
 
-.fade-down-enter-active, .fade-down-leave-active { transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
-.fade-down-enter-from, .fade-down-leave-to { opacity: 0; transform: translateY(-10px); }
+.form-panel { 
+  border-radius: 1.25rem; 
+  padding: 1.75rem; 
+  background: #111827; 
+  border: 1px solid #374151; 
+  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5); 
+}
 
-.hide-scrollbar::-webkit-scrollbar { display: none; }
-.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-.custom-scrollbar::-webkit-scrollbar { width: 6px; }
-.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background-color: #374151; border-radius: 10px; }
+.panel-header { 
+  margin-bottom: 1.5rem; 
+  padding-bottom: 1rem; 
+  border-bottom: 1px solid #374151; 
+}
+
+.ornament-card { 
+  position: relative; 
+  display: flex; 
+  flex-direction: column; 
+  align-items: center; 
+  justify-content: center; 
+  padding: 1rem 0.5rem; 
+  border-radius: 1rem; 
+  background: #1F2937; 
+  border: 1px solid #374151; 
+  color: #9CA3AF; 
+  transition: all 0.3s ease; 
+}
+
+.ornament-card:hover { 
+  background: #374151; 
+  border-color: rgba(212, 160, 23, 0.4); 
+  color: white; 
+}
+
+.ornament-card-active { 
+  background: rgba(212, 160, 23, 0.1); 
+  border-color: var(--color-gold-400); 
+  color: #f3ddaa; 
+}
+
+.palette-swatch { 
+  display: flex; 
+  align-items: center; 
+  gap: 0.5rem; 
+  padding: 0.5rem 0.75rem; 
+  border-radius: 0.75rem; 
+  background: #1F2937; 
+  border: 1px solid #374151; 
+  color: #9CA3AF; 
+  transition: all 0.2s ease; 
+}
+
+.palette-swatch:hover { 
+  border-color: rgba(212, 160, 23, 0.4); 
+  color: white; 
+}
+
+.palette-swatch-active { 
+  background: rgba(212, 160, 23, 0.1); 
+  border-color: var(--color-gold-400); 
+  color: #f3ddaa; 
+}
+
+.palette-swatch-dot { 
+  width: 1rem; 
+  height: 1rem; 
+  border-radius: 50%; 
+  border: 1px solid rgba(255, 255, 255, 0.25); 
+  flex-shrink: 0; 
+}
+
+.phone-bezel { 
+  position: relative; 
+  height: 720px; 
+  background: #000; 
+  border: 12px solid #1e293b; 
+  border-radius: 2.5rem; 
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), inset 0 0 0 2px rgba(255, 255, 255, 0.05); 
+  overflow: hidden; 
+  transform: translateZ(0); 
+}
+
+.phone-notch { 
+  position: absolute; 
+  top: 0; 
+  left: 50%; 
+  transform: translateX(-50%); 
+  width: 40%; 
+  height: 24px; 
+  background: #1e293b; 
+  border-bottom-left-radius: 14px; 
+  border-bottom-right-radius: 14px; 
+  z-index: 50; 
+  box-shadow: inset 0 -1px 1px rgba(255,255,255,0.05); 
+}
+
+.phone-screen { 
+  width: 100%; 
+  height: 100%; 
+  overflow-y: auto; 
+  overflow-x: hidden; 
+}
+
+.fade-down-enter-active, 
+.fade-down-leave-active { 
+  transition: opacity 0.2s ease, 
+  transform 0.2s cubic-bezier(0.4, 0, 0.2, 1); 
+}
+
+.fade-down-enter-from, 
+.fade-down-leave-to { 
+  opacity: 0; 
+  transform: translateY(-10px); 
+}
+
+.hide-scrollbar::-webkit-scrollbar { 
+  display: none; 
+}
+
+.hide-scrollbar { 
+  -ms-overflow-style: none; 
+  scrollbar-width: none; 
+}
+
+.custom-scrollbar::-webkit-scrollbar { 
+  width: 6px; 
+}
+
+.custom-scrollbar::-webkit-scrollbar-track { 
+  background: transparent; 
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb { 
+  background-color: #374151; 
+  border-radius: 10px; 
+}
+
 </style>
