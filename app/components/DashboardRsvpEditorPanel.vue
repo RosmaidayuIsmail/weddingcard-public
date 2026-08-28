@@ -760,21 +760,12 @@ useSeoMeta({ title: 'RSVP Editor — WeddingCard' })
 }
 
 .classic-rsvp-card-glass {
-  /* Fallback background for older browsers */
-  background: rgba(255, 255, 255, 0.1) !important;
-  /* Modern glass background highly transparent and tinted by the theme's ink color */
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--theme-ink, #ffffff) 10%, transparent) 0%,
-    color-mix(in srgb, var(--theme-ink, #ffffff) 3%, transparent) 100%
-  ) !important;
-  /* Essential glass properties forced over Tailwind defaults */
-  backdrop-filter: blur(20px) saturate(160%) !important;
-  -webkit-backdrop-filter: blur(20px) saturate(160%) !important;
-  
-  color: var(--card-text, var(--theme-ink, #fff)) !important;
-  border: 1px solid color-mix(in srgb, var(--theme-ink, #ffffff) 20%, transparent) !important;
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.15) !important;
+  background-color: color-mix(in srgb, var(--card-text, #ffffff) 6%, transparent) !important;
+  background-image: none !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid color-mix(in srgb, var(--card-text, #ffffff) 15%, transparent) !important;
+  color: var(--card-text, #fff) !important;
 }
 
 .preview-step-dot {
