@@ -37,12 +37,12 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 409, statusMessage: 'This wedding is already on Premium.' })
   }
 
-  const priceRM = getBuiltinPriceRM(input.themeId)
-  const themeName = getBuiltinThemeName(input.themeId)
+  const priceRM = await resolveThemePriceRM(input.themeId)
+  const themeName = await resolveThemeName(input.themeId)
   if (priceRM === null || priceRM <= 0 || !themeName) {
     throw createError({ statusCode: 400, statusMessage: 'That theme is not available for purchase.' })
   }
-  const amountCents = priceRM * 100
+  const amountCents = Math.round(priceRM * 100)
 
   const siteUrl = ((useRuntimeConfig().public.siteUrl as string) || '').replace(/\/$/, '')
   if (!siteUrl) {

@@ -1,5 +1,10 @@
 <template>
-  <div aria-hidden="true" class="petals-container">
+  <div
+    aria-hidden="true"
+    class="petals-container"
+    :class="{ 'petals-tinted': !!color }"
+    :style="color ? { '--petal-color': color } : undefined"
+  >
     <div
       v-for="i in count"
       :key="i"
@@ -48,7 +53,7 @@
 </template>
 
 <script setup lang="ts">
-const props = withDefaults(defineProps<{ count?: number; styleName?: string }>(), { count: 20, styleName: 'petals' })
+const props = withDefaults(defineProps<{ count?: number; styleName?: string; color?: string }>(), { count: 20, styleName: 'petals', color: '' })
 
 // A small mixed palette for confetti so pieces aren't all one flat color -
 // leans on the theme accent plus a couple of complementary tones.
@@ -58,4 +63,14 @@ const confettiColors = [
   'rgba(255, 255, 255, 0.55)',
   'rgba(212, 160, 23, 0.55)'
 ]
+void props
 </script>
+
+<style scoped>
+/* When a couple picked a petal color, override the SVG fill attributes with
+   the chosen color (CSS fill wins over presentation attributes). */
+.petals-tinted :deep(svg rect),
+.petals-tinted :deep(svg path) {
+  fill: var(--petal-color);
+}
+</style>

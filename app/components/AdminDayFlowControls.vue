@@ -56,12 +56,21 @@
       <UButton class="mt-5" color="primary" :loading="saving" :disabled="!canSave" @click="save">{{ editingId ? 'Save preset' : 'Add preset' }}</UButton>
     </div>
 
-    <details class="text-sm text-white/40">
-      <summary class="cursor-pointer hover:text-white/60">Built-in presets ({{ builtInDayFlowPresets.length }}, not editable here)</summary>
-      <div class="mt-3 flex flex-wrap gap-2">
-        <span v-for="p in builtInDayFlowPresets" :key="p.id" class="px-2.5 py-1 rounded-full bg-white/[0.03] text-xs">{{ p.label }}</span>
+    <div>
+      <p class="text-xs font-semibold uppercase tracking-widest text-gold-200/70 mb-2">Built-in presets (editable)</p>
+      <div class="space-y-2">
+        <div v-for="p in builtInEffective" :key="p.id" class="catalog-row group">
+          <div class="min-w-0 flex-1">
+            <p class="font-medium">{{ p.label }}</p>
+            <p class="text-xs text-white/40 mt-1">{{ p.items.length }} item(s)</p>
+          </div>
+          <div class="flex gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+            <UButton size="xs" variant="ghost" color="neutral" icon="i-heroicons-pencil-square" title="Edit built-in preset" @click="editBuiltIn(p)" />
+            <UButton size="xs" variant="ghost" color="neutral" icon="i-heroicons-arrow-path" title="Reset to built-in items" @click="resetBuiltIn(p.id)" />
+          </div>
+        </div>
       </div>
-    </details>
+    </div>
   </div>
 </template>
 
@@ -71,14 +80,16 @@ import { defaultDayFlowSettings, type DayFlowSettings, type FlowPreset } from '~
 const toast = useToast()
 const {
   builtInDayFlowPresets, allDayFlowPresets, addDayFlowPreset, removeDayFlowPreset,
-  dayFlowSettings, saveDayFlowSettings
+  dayFlowSettings, saveDayFlowSettings, saveDayFlowPresetOverride, resetDayFlowPresetOverride
 } = useThemes()
 
 const customPresets = computed(() => allDayFlowPresets.value.filter((p) => !builtInDayFlowPresets.some((b) => b.id === p.id)))
+const builtInEffective = computed(() => allDayFlowPresets.value.filter((p) => builtInDayFlowPresets.some((b) => b.id === p.id)))
 
 const empty = () => ({ label: '', items: [] as { time: string; title: string; description: string }[] })
 const form = ref(empty())
 const editingId = ref('')
+const editingBuiltInId = ref('')
 const saving = ref(false)
 const removing = ref('')
 const showLive = ref(false)
@@ -88,19 +99,32 @@ function slugify(value: string) { return value.trim().toLowerCase().replace(/[^a
 
 function edit(preset: FlowPreset) {
   editingId.value = preset.id
+  editingBuiltInId.value = ''
   form.value = { label: preset.label, items: preset.items.map((i) => ({ ...i })) }
 }
-function reset() { editingId.value = ''; form.value = empty() }
+function editBuiltIn(preset: FlowPreset) {
+  editingBuiltInId.value = preset.id
+  editingId.value = ''
+  form.value = { label: preset.label, items: preset.items.map((i) => ({ ...i })) }
+}
+function reset() { editingId.value = ''; editingBuiltInId.value = ''; form.value = empty() }
+async function resetBuiltIn(id: string) {
+  try { await resetDayFlowPresetOverride(id); if (editingBuiltInId.value === id) reset(); toast.add({ title: 'Preset reset to built-in items', color: 'success' }) }
+  catch (error) { console.error(error); toast.add({ title: 'Could not reset preset', color: 'error' }) }
+}
 
 async function save() {
   if (!canSave.value) return
   saving.value = true
   try {
-    const preset: FlowPreset = {
-      id: editingId.value || `flow-${slugify(form.value.label) || Date.now()}`,
-      label: form.value.label.trim(),
-      items: form.value.items.map((i) => ({ time: i.time.trim(), title: i.title.trim(), description: i.description.trim() }))
+    const items = form.value.items.map((i) => ({ time: i.time.trim(), title: i.title.trim(), description: i.description.trim() }))
+    if (editingBuiltInId.value) {
+      await saveDayFlowPresetOverride(editingBuiltInId.value, { label: form.value.label.trim(), items })
+      toast.add({ title: 'Day Flow preset updated', color: 'success' })
+      reset()
+      return
     }
+    const preset: FlowPreset = { id: editingId.value || `flow-${slugify(form.value.label) || Date.now()}`, label: form.value.label.trim(), items }
     await addDayFlowPreset(preset)
     toast.add({ title: 'Day Flow preset saved', color: 'success' })
     reset()

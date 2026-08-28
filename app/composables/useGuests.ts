@@ -39,6 +39,7 @@ export function useGuests(weddingIdSource: string | Ref<string | undefined> | ((
             specialSeating: Boolean(data.specialSeating),
             dietary: String(data.dietary ?? ''),
             doa: String(data.doa ?? ''),
+            tableAssignment: String(data.tableAssignment ?? ''),
             submittedAt: String(data.submittedAt ?? '')
           }
         })
@@ -80,10 +81,37 @@ export function useGuests(weddingIdSource: string | Ref<string | undefined> | ((
       specialSeating: false,
       dietary: '',
       doa: '',
+      tableAssignment: '',
       submittedAt: new Date().toISOString(),
       invited: true
     })
     toast.add({ title: 'Guest added', color: 'success' })
+  }
+
+  // CSV import: one write batch so a large list lands quickly.
+  async function addGuestsBulk(rows: { name: string; phone: string; tier: 'vip' | 'general' }[]) {
+    const weddingId = currentWeddingId.value
+    if (!db || !weddingId || rows.length === 0) return 0
+    const { writeBatch, doc: fdoc } = await import('firebase/firestore')
+    const batch = writeBatch(db)
+    for (const row of rows) {
+      batch.set(fdoc(collection(db, 'weddings', weddingId, 'guests')), {
+        name: row.name.trim(),
+        phone: row.phone.trim(),
+        tier: row.tier,
+        attending: '',
+        guestCount: 0,
+        specialSeating: false,
+        dietary: '',
+        doa: '',
+        tableAssignment: '',
+        submittedAt: new Date().toISOString(),
+        invited: true
+      })
+    }
+    await batch.commit()
+    toast.add({ title: `${rows.length} guests imported`, color: 'success' })
+    return rows.length
   }
 
   async function updateGuestTier(guestId: string, tier: 'vip' | 'general') {
@@ -165,6 +193,7 @@ export function useGuests(weddingIdSource: string | Ref<string | undefined> | ((
     totalNotAttending,
     totalGuestCount,
     addGuest,
+    addGuestsBulk,
     updateGuestTier,
     updateGuest,
     removeGuest,

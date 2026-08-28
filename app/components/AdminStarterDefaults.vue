@@ -1,4 +1,5 @@
 <template>
+    <AdminSidePreview mode="design" :overrides="livePreviewOverrides">
     <div class="space-y-6 animate-fade-up">
       <UAlert
         icon="i-heroicons-information-circle"
@@ -94,6 +95,7 @@
         <button type="button" class="text-xs text-white/40 hover:text-white/70" @click="resetToBuiltIn">Reset to built-in defaults</button>
       </div>
     </div>
+    </AdminSidePreview>
   </template>
   
   <script setup lang="ts">

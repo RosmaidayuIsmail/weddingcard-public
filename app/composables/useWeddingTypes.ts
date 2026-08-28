@@ -59,6 +59,8 @@ export interface WeddingContent {
   enablePetals: boolean
   /** Which floating particle style to use: 'petals' | 'confetti' | 'hearts' | 'sparkles' */
   petalStyle: string
+  /** Chosen color for the falling particles; empty = the style's default colors */
+  petalColor: string
   bank: WeddingBank
   /** Optional second gift account (e.g. the groom's family's own account) -
    * shown alongside `bank` on the live Gift page when it has any data. */
@@ -72,6 +74,10 @@ export interface WeddingContent {
   customFontUrl: string
   customFontFamily: string
   ornamentStyle: string
+  /** Chosen color for the ornament; empty = the ornament's default color */
+  ornamentColor: string
+  /** Chosen color for the cover/inner top icon; empty = the theme accent */
+  topIconColor: string
   /** CSS font-weight for body/description text (intro, story, addresses) - helps legibility on busy or low-contrast themes */
   textWeight: string
   /** Override color for the bride & groom names specifically - falls back to the theme's ink color when empty */
@@ -359,6 +365,8 @@ export interface GuestDoc {
   specialSeating: boolean
   dietary: string
   doa: string
+  /** Optional reception table assignment (e.g. "T1"). */
+  tableAssignment: string
   submittedAt: string
 }
 
@@ -397,6 +405,7 @@ export function createDefaultContent(brideName = '', groomName = ''): WeddingCon
     enableGift: false,
     enablePetals: true,
     petalStyle: 'petals',
+    petalColor: '',
     bank: { name: '', accountName: '', accountNumber: '', qrCodeUrl: '' },
     bank2: { name: '', accountName: '', accountNumber: '', qrCodeUrl: '' },
     coverPhotoUrl: '',

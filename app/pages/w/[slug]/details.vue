@@ -21,8 +21,8 @@
       <div v-if="!wedding.content.hideSystemText" class="absolute inset-0" :style="{ background: `linear-gradient(to bottom, transparent, var(--theme-bg-to))` }"></div>
     </div>
 
-    <PetalsBackground v-if="wedding.content.enablePetals !== false" :style-name="wedding.content.petalStyle" class="z-0" />
-    <CardOrnament :style="wedding.content.ornamentStyle" color="var(--theme-accent)" class="z-0" />
+    <PetalsBackground v-if="wedding.content.enablePetals !== false" :style-name="wedding.content.petalStyle" :color="wedding.content.petalColor || ''" class="z-0" />
+    <CardOrnament :style="wedding.content.ornamentStyle" :color="wedding.content.ornamentColor || 'var(--theme-accent)'" class="z-0" />
 
     <!-- Same background-music track as the Opening page - MusicToggle just
          hooks into the already-running singleton player, so navigating here

@@ -559,6 +559,20 @@ interface PlatformCatalog {
   dayFlowSettings: DayFlowSettings
   guestListSettings: GuestListSettings
   customCode: CustomCode
+  // Admin edits to BUILT-IN entities, keyed by id. Merged over the hardcoded
+  // baseline at read time (see all* computeds). Empty/absent = original.
+  themeOverrides: Record<string, Partial<Theme>>
+  fontOverrides: Record<string, Partial<FontOption>>
+  textPresetOverrides: Record<string, Partial<TextPreset>>
+  rsvpPresetOverrides: Record<string, Partial<RsvpPreset>>
+  dayFlowPresetOverrides: Record<string, Partial<FlowPreset>>
+  // Admin-defined color choices offered per design-option style. Key = style
+  // value (e.g. 'botanical-corners'), value = array of hex colors a couple
+  // can pick from for that style.
+  ornamentColorTags: Record<string, string[]>
+  petalColorTags: Record<string, string[]>
+  topIconColorTags: Record<string, string[]>
+  openingStyleConfigs: OpeningStyleConfig[]
 }
 
 export interface OpeningStyle {
@@ -566,6 +580,41 @@ export interface OpeningStyle {
   label: string
   icon: string
 }
+
+/**
+ * An admin-authorable opening style. `template` picks one of the fixed,
+ * well-crafted renderer implementations in EnvelopeIntro.vue; everything else
+ * is data (label, colors, timing) the admin composes in the UI. Built-in
+ * styles are seeded as configs too, so new styles need no code.
+ */
+export interface OpeningStyleConfig {
+  id: string
+  label: string
+  icon: string
+  template: 'gradient-fade' | 'split-door' | 'confetti-burst' | 'blob-background'
+  enabled: boolean
+  bgFrom: string
+  bgVia: string
+  bgTo: string
+  accent: string
+  /** 0-1 dark tint over the background for text legibility */
+  overlayTint: number
+  durationMs: number
+}
+
+export const defaultOpeningStyleConfig = (): OpeningStyleConfig => ({
+  id: '',
+  label: '',
+  icon: 'i-heroicons-sparkles',
+  template: 'gradient-fade',
+  enabled: true,
+  bgFrom: '#04101f',
+  bgVia: '#0b1c30',
+  bgTo: '#142a45',
+  accent: '#d4a017',
+  overlayTint: 0.4,
+  durationMs: 900
+})
 
 // The full set of opening-style animations that exist in code (each one is
 // real CSS/animation logic in EnvelopeIntro.vue, not just data) - admins
@@ -645,6 +694,21 @@ export const topIconCatalog: OpeningStyle[] = [
   { label: 'Custom Upload', value: 'custom', icon: 'i-heroicons-arrow-up-tray' }
 ]
 
+// Merge an admin override partial over a built-in baseline. No override (or an
+// empty one) returns the baseline untouched, so existing behavior is preserved.
+function mergeOverride<T extends object>(base: T, override?: Partial<T>): T {
+  if (!override) return base
+  return { ...base, ...override }
+}
+function mergeThemeOverride(base: Theme, override?: Partial<Theme>): Theme {
+  if (!override) return base
+  return { ...base, ...override, palette: { ...base.palette, ...(override.palette || {}) } }
+}
+function mergeRsvpOverride(base: RsvpPreset, override?: Partial<RsvpPreset>): RsvpPreset {
+  if (!override) return base
+  return { ...base, ...override, texts: { ...base.texts, ...(override.texts || {}) } }
+}
+
 export function useThemes() {
   const { db, isConfigured } = useFirebase()
 
@@ -664,6 +728,15 @@ export function useThemes() {
   const dayFlowSettings = useState<DayFlowSettings>('catalog-day-flow-settings', () => structuredClone(defaultDayFlowSettings))
   const guestListSettings = useState<GuestListSettings>('catalog-guest-list-settings', () => structuredClone(defaultGuestListSettings))
   const customCode = useState<CustomCode>('catalog-custom-code', () => structuredClone(defaultCustomCode))
+  const themeOverrides = useState<Record<string, Partial<Theme>>>('catalog-theme-overrides', () => ({}))
+  const fontOverrides = useState<Record<string, Partial<FontOption>>>('catalog-font-overrides', () => ({}))
+  const textPresetOverrides = useState<Record<string, Partial<TextPreset>>>('catalog-text-preset-overrides', () => ({}))
+  const rsvpPresetOverrides = useState<Record<string, Partial<RsvpPreset>>>('catalog-rsvp-preset-overrides', () => ({}))
+  const dayFlowPresetOverrides = useState<Record<string, Partial<FlowPreset>>>('catalog-day-flow-preset-overrides', () => ({}))
+  const ornamentColorTags = useState<Record<string, string[]>>('catalog-ornament-color-tags', () => ({}))
+  const petalColorTags = useState<Record<string, string[]>>('catalog-petal-color-tags', () => ({}))
+  const topIconColorTags = useState<Record<string, string[]>>('catalog-top-icon-color-tags', () => ({}))
+  const openingStyleConfigs = useState<OpeningStyleConfig[]>('catalog-opening-style-configs', () => [])
   const catalogFetched = useState('catalog-fetched', () => false)
 
   async function ensureCatalogLoaded() {
@@ -698,6 +771,15 @@ export function useThemes() {
         dayFlowSettings.value = data.dayFlowSettings ? { ...defaultDayFlowSettings, ...data.dayFlowSettings } : { ...defaultDayFlowSettings }
         guestListSettings.value = data.guestListSettings ? { ...defaultGuestListSettings, ...data.guestListSettings } : { ...defaultGuestListSettings }
         customCode.value = data.customCode ? { ...defaultCustomCode, ...data.customCode } : { ...defaultCustomCode }
+        themeOverrides.value = data.themeOverrides && typeof data.themeOverrides === 'object' ? data.themeOverrides : {}
+        fontOverrides.value = data.fontOverrides && typeof data.fontOverrides === 'object' ? data.fontOverrides : {}
+        textPresetOverrides.value = data.textPresetOverrides && typeof data.textPresetOverrides === 'object' ? data.textPresetOverrides : {}
+        rsvpPresetOverrides.value = data.rsvpPresetOverrides && typeof data.rsvpPresetOverrides === 'object' ? data.rsvpPresetOverrides : {}
+        dayFlowPresetOverrides.value = data.dayFlowPresetOverrides && typeof data.dayFlowPresetOverrides === 'object' ? data.dayFlowPresetOverrides : {}
+        ornamentColorTags.value = data.ornamentColorTags && typeof data.ornamentColorTags === 'object' ? data.ornamentColorTags : {}
+        petalColorTags.value = data.petalColorTags && typeof data.petalColorTags === 'object' ? data.petalColorTags : {}
+        topIconColorTags.value = data.topIconColorTags && typeof data.topIconColorTags === 'object' ? data.topIconColorTags : {}
+        openingStyleConfigs.value = Array.isArray(data.openingStyleConfigs) ? data.openingStyleConfigs : []
       }
     } catch (error) {
       // Non-fatal: the app still works fine with just the built-in catalog.
@@ -824,22 +906,103 @@ export function useThemes() {
     customRsvpPresets.value = next
   }
 
+  // ---- Built-in override helpers ----
+  // Saving an override merges the partial over any existing override for that
+  // id; resetting deletes the key so the entity falls back to its baseline.
+  type OverrideField = 'themeOverrides' | 'fontOverrides' | 'textPresetOverrides' | 'rsvpPresetOverrides' | 'dayFlowPresetOverrides'
+  async function saveOverride(field: OverrideField, state: ReturnType<typeof useState<Record<string, object>>>, id: string, partial: object) {
+    const next = { ...state.value, [id]: { ...(state.value[id] || {}), ...partial } }
+    await saveCatalogField(field, next as never)
+    state.value = next
+  }
+  async function resetOverride(field: OverrideField, state: ReturnType<typeof useState<Record<string, object>>>, id: string) {
+    const next = { ...state.value }
+    delete next[id]
+    await saveCatalogField(field, next as never)
+    state.value = next
+  }
+
+  const saveThemeOverride = (id: string, p: Partial<Theme>) => saveOverride('themeOverrides', themeOverrides as never, id, p)
+  const resetThemeOverride = (id: string) => resetOverride('themeOverrides', themeOverrides as never, id)
+  const saveFontOverride = (id: string, p: Partial<FontOption>) => saveOverride('fontOverrides', fontOverrides as never, id, p)
+  const resetFontOverride = (id: string) => resetOverride('fontOverrides', fontOverrides as never, id)
+  const saveTextPresetOverride = (id: string, p: Partial<TextPreset>) => saveOverride('textPresetOverrides', textPresetOverrides as never, id, p)
+  const resetTextPresetOverride = (id: string) => resetOverride('textPresetOverrides', textPresetOverrides as never, id)
+  const saveRsvpPresetOverride = (id: string, p: Partial<RsvpPreset>) => saveOverride('rsvpPresetOverrides', rsvpPresetOverrides as never, id, p)
+  const resetRsvpPresetOverride = (id: string) => resetOverride('rsvpPresetOverrides', rsvpPresetOverrides as never, id)
+  const saveDayFlowPresetOverride = (id: string, p: Partial<FlowPreset>) => saveOverride('dayFlowPresetOverrides', dayFlowPresetOverrides as never, id, p)
+  const resetDayFlowPresetOverride = (id: string) => resetOverride('dayFlowPresetOverrides', dayFlowPresetOverrides as never, id)
+
+  async function saveOrnamentColorTags(styleValue: string, colors: string[]) {
+    const next = { ...ornamentColorTags.value, [styleValue]: colors }
+    await saveCatalogField('ornamentColorTags', next)
+    ornamentColorTags.value = next
+  }
+  async function savePetalColorTags(styleValue: string, colors: string[]) {
+    const next = { ...petalColorTags.value, [styleValue]: colors }
+    await saveCatalogField('petalColorTags', next)
+    petalColorTags.value = next
+  }
+  async function saveTopIconColorTags(styleValue: string, colors: string[]) {
+    const next = { ...topIconColorTags.value, [styleValue]: colors }
+    await saveCatalogField('topIconColorTags', next)
+    topIconColorTags.value = next
+  }
+
+  // --- Admin-authored opening styles ---
+  async function saveOpeningStyleConfig(config: OpeningStyleConfig) {
+    const id = config.id || `os-${Date.now()}`
+    const next = [...openingStyleConfigs.value.filter((c) => c.id !== id), { ...config, id }]
+    await saveCatalogField('openingStyleConfigs', next)
+    openingStyleConfigs.value = next
+    return id
+  }
+  async function removeOpeningStyleConfig(id: string) {
+    const next = openingStyleConfigs.value.filter((c) => c.id !== id)
+    await saveCatalogField('openingStyleConfigs', next)
+    openingStyleConfigs.value = next
+  }
+  function getOpeningStyleConfig(id: string | undefined | null): OpeningStyleConfig | undefined {
+    return openingStyleConfigs.value.find((c) => c.id === id)
+  }
+
   // What couples should actually see in the Opening Design picker - the
   // built-in catalog minus whatever admin has turned off.
-  const enabledOpeningStyles = computed(() => openingStyleCatalog.filter((s) => !disabledOpeningStyles.value.includes(s.value)))
+  const enabledOpeningStyles = computed(() => [
+    ...openingStyleCatalog.filter((s) => !disabledOpeningStyles.value.includes(s.value)),
+    ...openingStyleConfigs.value
+      .filter((c) => c.enabled)
+      .map((c) => ({ value: c.id, label: c.label, icon: c.icon }))
+  ])
   const enabledOrnamentStyles = computed(() => ornamentStyleCatalog.filter((s) => !disabledOrnamentStyles.value.includes(s.value)))
   const enabledPetalStyles = computed(() => petalStyleCatalog.filter((s) => !disabledPetalStyles.value.includes(s.value)))
   const enabledTopIcons = computed(() => topIconCatalog.filter((s) => !disabledTopIcons.value.includes(s.value)))
-  const allDayFlowPresets = computed(() => [...builtInDayFlowPresets, ...customDayFlowPresets.value])
+  const allDayFlowPresets = computed(() => [
+    ...builtInDayFlowPresets.map((p) => mergeOverride(p, dayFlowPresetOverrides.value[p.id])),
+    ...customDayFlowPresets.value
+  ])
 
-  // The full, "what should actually render" lists - built-ins plus whatever
-  // admins have added. Every existing call site that destructures the plain
-  // `themes`/`fontOptions` arrays keeps working unchanged (those stay static
-  // exports below); anything that should reflect admin additions uses these.
-  const allThemes = computed(() => [...themes, ...customThemes.value])
-  const allFontOptions = computed(() => [...fontOptions, ...customFonts.value])
-  const allTextPresets = computed(() => [...builtInTextPresets, ...customTextPresets.value])
-  const allRsvpPresets = computed(() => [...builtInRsvpPresets, ...customRsvpPresets.value])
+  // The full, "what should actually render" lists - built-ins (with any admin
+  // override merged on top) plus whatever admins have added. Every existing
+  // call site that destructures the plain `themes`/`fontOptions` arrays keeps
+  // working unchanged (those stay static exports below); anything that should
+  // reflect admin additions/edits uses these.
+  const allThemes = computed(() => [
+    ...themes.map((t) => mergeThemeOverride(t, themeOverrides.value[t.id])),
+    ...customThemes.value
+  ])
+  const allFontOptions = computed(() => [
+    ...fontOptions.map((f) => mergeOverride(f, fontOverrides.value[f.id])),
+    ...customFonts.value
+  ])
+  const allTextPresets = computed(() => [
+    ...builtInTextPresets.map((p) => mergeOverride(p, textPresetOverrides.value[p.id])),
+    ...customTextPresets.value
+  ])
+  const allRsvpPresets = computed(() => [
+    ...builtInRsvpPresets.map((p) => mergeRsvpOverride(p, rsvpPresetOverrides.value[p.id])),
+    ...customRsvpPresets.value
+  ])
 
   function getTheme(themeId: string | undefined | null): Theme {
     return allThemes.value.find((theme) => theme.id === themeId) ?? themes.find((theme) => theme.id === DEFAULT_THEME_ID)!
@@ -941,6 +1104,31 @@ export function useThemes() {
     guestListSettings,
     saveGuestListSettings,
     customCode,
-    saveCustomCode
+    saveCustomCode,
+    themeOverrides,
+    fontOverrides,
+    textPresetOverrides,
+    rsvpPresetOverrides,
+    dayFlowPresetOverrides,
+    saveThemeOverride,
+    resetThemeOverride,
+    saveFontOverride,
+    resetFontOverride,
+    saveTextPresetOverride,
+    resetTextPresetOverride,
+    saveRsvpPresetOverride,
+    resetRsvpPresetOverride,
+    saveDayFlowPresetOverride,
+    resetDayFlowPresetOverride,
+    ornamentColorTags,
+    petalColorTags,
+    topIconColorTags,
+    saveOrnamentColorTags,
+    savePetalColorTags,
+    saveTopIconColorTags,
+    openingStyleConfigs,
+    saveOpeningStyleConfig,
+    removeOpeningStyleConfig,
+    getOpeningStyleConfig
   }
 }

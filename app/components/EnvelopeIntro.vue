@@ -11,8 +11,23 @@
       @keydown.enter="open"
       @keydown.space.prevent="open"
     >
+      <!-- Admin-authored opening style: rendered from a saved config (template
+           + colors + timing), so new styles need no code. Takes precedence. -->
+      <div v-if="adminConfig" class="absolute inset-0 z-0 overflow-hidden cfg-bg" :style="cfgVars">
+        <div v-if="adminConfig.template === 'blob-background' || adminConfig.template === 'gradient-fade'" class="cfg-blob cfg-blob-1"></div>
+        <div v-if="adminConfig.template === 'blob-background' || adminConfig.template === 'gradient-fade'" class="cfg-blob cfg-blob-2"></div>
+        <div v-if="adminConfig.template === 'split-door'" class="absolute inset-0 flex">
+          <div class="relative w-1/2 h-full border-r border-white/20 shadow-[5px_0_15px_rgba(0,0,0,0.4)] door-left"></div>
+          <div class="relative w-1/2 h-full border-l border-white/20 shadow-[-5px_0_15px_rgba(0,0,0,0.4)] door-right"></div>
+        </div>
+        <div v-if="adminConfig.template === 'confetti-burst'" class="absolute inset-0">
+          <span v-for="i in 24" :key="i" class="cfg-confetti" :style="{ left: `${(i * 41) % 100}%`, animationDelay: `${(i % 10) * 0.2}s`, background: i % 2 ? adminConfig.accent : '#ffffff' }"></span>
+        </div>
+        <div class="absolute inset-0" :style="{ backgroundColor: `rgba(0,0,0,${adminConfig.overlayTint})` }"></div>
+      </div>
+
       <!-- FIXED: Perfect Image Slicing for Split Door -->
-      <div v-if="content.openingStyle === 'custom-split' && content.openingBgUrl" class="absolute inset-0 z-0 flex">
+      <div v-else-if="content.openingStyle === 'custom-split' && content.openingBgUrl" class="absolute inset-0 z-0 flex">
         <!-- Left Door -->
         <div class="relative w-1/2 h-full overflow-hidden door-left z-10">
           <img :src="optimizedImageUrl(content.openingBgUrl, 1400)" loading="eager" fetchpriority="high" class="absolute top-0 left-0 w-[200%] h-full max-w-none object-cover" />
@@ -290,6 +305,21 @@ const props = withDefaults(defineProps<{ guestName?: string; content: WeddingCon
 const opened = defineModel<boolean>('opened', { default: false })
 const emit = defineEmits<{ open: [] }>()
 
+const { getOpeningStyleConfig } = useThemes()
+// Admin-authored opening style (data-driven); undefined for the built-ins.
+const adminConfig = computed(() => getOpeningStyleConfig(props.content.openingStyle))
+const cfgVars = computed(() => {
+  const c = adminConfig.value
+  if (!c) return {}
+  return {
+    '--cfg-from': c.bgFrom,
+    '--cfg-via': c.bgVia,
+    '--cfg-to': c.bgTo,
+    '--cfg-accent': c.accent,
+    '--cfg-duration': `${c.durationMs}ms`
+  } as Record<string, string>
+})
+
 function open() {
   if (opened.value) return
   opened.value = true
@@ -298,6 +328,12 @@ function open() {
 
 // Dynamically sets the transition animation based on the chosen style
 const transitionName = computed(() => {
+  if (adminConfig.value) {
+    const t = adminConfig.value.template
+    if (t === 'split-door') return 'split-door'
+    if (t === 'confetti-burst') return 'confetti-burst'
+    return 'envelope-fade'
+  }
   if (props.content.openingStyle === 'confetti-burst') return 'confetti-burst'
   if (props.content.openingStyle === 'custom-split' || props.content.openingStyle === 'wax-seal') return 'split-door'
   if (props.content.openingStyle === 'classic') return 'envelope-classic'
@@ -1225,5 +1261,41 @@ const guestBoxStyle = computed(() => {
     clip-path: none;
     opacity: 1;
   }
+}
+
+/* ---- Admin-authored opening styles (config-driven) ---- */
+.cfg-bg {
+  background: linear-gradient(160deg, var(--cfg-from) 0%, var(--cfg-via) 55%, var(--cfg-to) 100%);
+}
+.cfg-blob {
+  position: absolute;
+  width: 60%;
+  aspect-ratio: 1;
+  border-radius: 9999px;
+  filter: blur(60px);
+  opacity: 0.5;
+  background: var(--cfg-accent);
+  animation: cfg-drift var(--cfg-duration, 900ms) ease-in-out infinite alternate;
+}
+.cfg-blob-1 { top: -15%; left: -15%; }
+.cfg-blob-2 { bottom: -20%; right: -15%; background: color-mix(in srgb, var(--cfg-accent) 55%, #ffffff); animation-delay: 0.4s; }
+@keyframes cfg-drift {
+  from { transform: translate(0, 0) scale(1); }
+  to { transform: translate(8%, 10%) scale(1.15); }
+}
+.cfg-confetti {
+  position: absolute;
+  top: -10%;
+  width: 8px;
+  height: 14px;
+  border-radius: 2px;
+  opacity: 0.85;
+  animation: cfg-fall 3s linear infinite;
+}
+@keyframes cfg-fall {
+  to { transform: translateY(120vh) rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cfg-blob, .cfg-confetti { animation: none; }
 }
 </style>

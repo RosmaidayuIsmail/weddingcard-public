@@ -79,6 +79,7 @@
             </div>
           </div>
           <div class="flex gap-3">
+            <UButton size="sm" color="neutral" variant="soft" icon="i-heroicons-arrow-up-tray" class="rounded-full px-4" @click="importOpen = true">Import CSV</UButton>
             <UButton size="sm" color="neutral" variant="soft" icon="i-heroicons-printer" class="rounded-full px-4 hover:bg-white/10 border-white/10" @click="printList">Print / PDF</UButton>
             <UButton size="sm" color="primary" variant="soft" icon="i-heroicons-arrow-down-tray" class="rounded-full px-4" @click="exportCSV()">Export CSV</UButton>
           </div>
@@ -137,6 +138,9 @@
               class="px-3 py-1"
             >
               {{ guest.attending === 'Yes' ? `Attending (${guest.guestCount})` : guest.attending === 'No' ? 'Declined' : 'No Response' }}
+            </UBadge>
+            <UBadge v-if="guest.tableAssignment" color="info" variant="subtle" class="px-2 py-1" :title="'Table ' + guest.tableAssignment">
+              {{ guest.tableAssignment }}
             </UBadge>
             
             <div class="flex items-center border-l border-white/10 pl-3 ml-1 gap-2 print:hidden">
@@ -216,6 +220,9 @@
           <UFormField v-if="editForm.attending === 'Yes'" label="Dietary needs">
             <UInput v-model="editForm.dietary" class="w-full" />
           </UFormField>
+          <UFormField label="Table (optional)">
+            <UInput v-model="editForm.tableAssignment" placeholder="e.g. T1" class="w-full" />
+          </UFormField>
           <UFormField label="Wishes / blessings">
             <UTextarea v-model="editForm.doa" :rows="2" class="w-full" />
           </UFormField>
@@ -225,6 +232,23 @@
         <div class="flex justify-end gap-2 w-full">
           <UButton variant="ghost" color="neutral" @click="editModalOpen = false">Cancel</UButton>
           <UButton color="primary" :loading="savingEdit" @click="saveEdit">Save changes</UButton>
+        </div>
+      </template>
+    </UModal>
+
+    <!-- Bulk CSV import -->
+    <UModal v-model:open="importOpen" title="Import guests from CSV">
+      <template #body>
+        <div class="space-y-4">
+          <p class="text-sm text-white/60">Paste one guest per line as <code class="text-gold-300 bg-white/5 px-1 rounded">Name, Phone, tier</code>. Phone and tier are optional (tier defaults to General; use <code class="text-gold-300 bg-white/5 px-1 rounded">vip</code> for VIP).</p>
+          <UTextarea v-model="importText" :rows="8" class="w-full font-mono text-sm" placeholder="Aisyah binti Ali, 0123456789, vip&#10;Mut bin Abu, 0198765432" />
+          <p class="text-xs text-white/40">{{ parsedImportRows.length }} guest(s) detected.</p>
+        </div>
+      </template>
+      <template #footer>
+        <div class="flex justify-end gap-2 w-full">
+          <UButton variant="ghost" color="neutral" @click="importOpen = false">Cancel</UButton>
+          <UButton color="primary" :loading="importing" :disabled="parsedImportRows.length === 0" @click="doImport">Import {{ parsedImportRows.length }}</UButton>
         </div>
       </template>
     </UModal>
@@ -248,6 +272,7 @@ const {
   totalAttending,
   totalGuestCount,
   addGuest,
+  addGuestsBulk,
   removeGuest,
   updateGuestTier,
   updateGuest,
@@ -355,6 +380,32 @@ async function saveEdit() {
     editModalOpen.value = false
   } finally {
     savingEdit.value = false
+  }
+}
+
+// --- Bulk CSV import ---
+const importOpen = ref(false)
+const importText = ref('')
+const importing = ref(false)
+const parsedImportRows = computed(() => {
+  return importText.value
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [name = '', phone = '', tier = ''] = line.split(',').map((s) => s.trim())
+      return { name, phone, tier: tier.toLowerCase() === 'vip' ? ('vip' as const) : ('general' as const) }
+    })
+    .filter((r) => r.name)
+})
+async function doImport() {
+  importing.value = true
+  try {
+    await addGuestsBulk(parsedImportRows.value)
+    importOpen.value = false
+    importText.value = ''
+  } finally {
+    importing.value = false
   }
 }
 

@@ -63,8 +63,8 @@
            actually means as-is. -->
       <div v-if="!wedding.content.hideSystemText" class="absolute inset-0" :style="{ background: `linear-gradient(to bottom, transparent 0%, var(--theme-bg-to) 90%)` }" />
     </div>
-    <PetalsBackground v-if="wedding.content.enablePetals !== false" :style-name="wedding.content.petalStyle" />
-    <CardOrnament v-if="opened" :style="wedding.content.ornamentStyle" color="var(--theme-accent)" />
+    <PetalsBackground v-if="wedding.content.enablePetals !== false" :style-name="wedding.content.petalStyle" :color="wedding.content.petalColor || ''" />
+    <CardOrnament v-if="opened" :style="wedding.content.ornamentStyle" :color="wedding.content.ornamentColor || 'var(--theme-accent)'" />
 
     <!-- HERO CANVAS: every 0-100% position below is relative to THIS box only,
          same as the editor's preview mockup. Nothing else on the page shares

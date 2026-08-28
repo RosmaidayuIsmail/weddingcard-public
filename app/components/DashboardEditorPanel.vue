@@ -64,6 +64,11 @@
               />
             </UFormField>
 
+            <div v-if="form.innerTopIcon && form.innerTopIcon !== 'none' && topIconColorOptions.length" class="mb-2">
+              <label class="text-xs text-gray-400 block mb-1.5">Icon color</label>
+              <ColorTagPicker v-model="form.topIconColor" :options="topIconColorOptions" />
+            </div>
+
             <div v-if="form.innerTopIcon && form.innerTopIcon !== 'none'" class="flex items-center gap-3 mb-2">
               <span class="text-xs text-white/50 shrink-0">Size</span>
               <input v-model.number="form.iconSize" type="range" min="50" max="200" step="5" class="flex-1 accent-[#e3b04a]">
@@ -805,6 +810,10 @@
                     <UIcon v-if="form.ornamentStyle === opt.value" name="i-heroicons-check-circle" class="absolute top-2 right-2 w-4 h-4 text-current" />
                   </button>
                 </div>
+                <div v-if="form.ornamentStyle !== 'none' && ornamentColorOptions.length" class="mt-3">
+                  <label class="text-xs text-gray-400 block mb-1.5">Ornament color</label>
+                  <ColorTagPicker v-model="form.ornamentColor" :options="ornamentColorOptions" />
+                </div>
               </div>
 
               <!-- Petals Toggle -->
@@ -839,6 +848,10 @@
                   <UIcon :name="opt.icon" class="w-5 h-5" />
                   <span class="text-[10px] font-medium">{{ opt.label }}</span>
                 </button>
+              </div>
+              <div v-if="form.enablePetals && petalColorOptions.length" class="pt-2">
+                <label class="text-xs text-gray-400 block mb-1.5">Petal color</label>
+                <ColorTagPicker v-model="form.petalColor" :options="petalColorOptions" />
               </div>
 
               <div class="pt-4 border-t border-gray-800">
@@ -945,8 +958,13 @@ const props = defineProps<{ overrideWeddingId?: string | null }>()
 const { wedding, loading, saving, updateContent, updateTheme } = useMyWedding(toRef(props, 'overrideWeddingId'))
 const { isConfigured: cloudinaryConfigured, uploadImage } = useCloudinary()
 const { removeBackground, processing: bgRemoving } = useBackgroundRemoval()
-const { getTheme, allFontOptions, enabledOrnamentStyles, enabledPetalStyles, enabledTopIcons } = useThemes()
+const { getTheme, allFontOptions, enabledOrnamentStyles, enabledPetalStyles, enabledTopIcons, ornamentColorTags, petalColorTags, topIconColorTags } = useThemes()
 const toast = useToast()
+
+// Admin-defined color choices for the style the couple currently has selected.
+const ornamentColorOptions = computed(() => ornamentColorTags.value[form.value.ornamentStyle] || [])
+const petalColorOptions = computed(() => petalColorTags.value[form.value.petalStyle] || [])
+const topIconColorOptions = computed(() => topIconColorTags.value[form.value.innerTopIcon] || [])
 
 // The preview panel needs to stay visible while the (much taller) form
 // column scrolls. CSS `position: sticky` kept failing here across multiple

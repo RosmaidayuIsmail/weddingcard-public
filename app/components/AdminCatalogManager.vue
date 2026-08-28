@@ -40,8 +40,8 @@
             <div class="p-2 rounded-lg bg-gold-400/10">
               <UIcon :name="editingThemeId ? 'i-heroicons-pencil-square' : 'i-heroicons-plus'" class="w-4 h-4 text-gold-300" />
             </div>
-            <p class="font-semibold">{{ editingThemeId ? `Editing "${themeForm.name || editingThemeId}"` : 'Add a new theme' }}</p>
-            <button v-if="editingThemeId" type="button" class="text-xs text-white/40 hover:text-white/70 ml-auto" @click="cancelEditTheme">Cancel</button>
+            <p class="font-semibold">{{ editingThemeId || editingBuiltInThemeId ? `Editing "${themeForm.name || (editingBuiltInThemeId || editingThemeId)}"${editingBuiltInThemeId ? ' (built-in)' : ''}` : 'Add a new theme' }}</p>
+            <button v-if="editingThemeId || editingBuiltInThemeId" type="button" class="text-xs text-white/40 hover:text-white/70 ml-auto" @click="cancelEditTheme">Cancel</button>
           </div>
   
           <div class="grid sm:grid-cols-2 gap-4 mt-4">
@@ -81,15 +81,23 @@
           </div>
         </div>
   
-        <details class="text-sm text-white/40">
-          <summary class="cursor-pointer hover:text-white/60">Built-in themes ({{ themes.length }}, not editable here)</summary>
-          <div class="mt-3 grid sm:grid-cols-2 gap-2">
-            <div v-for="theme in themes" :key="theme.id" class="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.02]">
-              <div class="w-5 h-5 rounded shrink-0" :style="{ background: `linear-gradient(135deg, ${theme.palette.bgFrom}, ${theme.palette.bgTo})` }"></div>
-              <span>{{ theme.name }}</span>
+        <div>
+          <p class="section-heading">Built-in themes (editable)</p>
+          <div class="grid sm:grid-cols-2 gap-2">
+            <div v-for="theme in builtInThemesEffective" :key="theme.id" class="catalog-card group flex items-center gap-2">
+              <div class="w-6 h-6 rounded shrink-0 border border-white/10" :style="{ background: `linear-gradient(135deg, ${theme.palette.bgFrom}, ${theme.palette.bgTo})` }"></div>
+              <div class="min-w-0 flex-1">
+                <p class="text-sm truncate">{{ theme.name }}</p>
+                <p class="text-xs text-white/40">{{ theme.price === 0 ? 'Free' : `RM ${theme.price}` }}</p>
+              </div>
+              <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                <UButton size="xs" variant="ghost" color="neutral" icon="i-heroicons-pencil-square" title="Edit built-in (price, name, colours)" @click="startEditBuiltInTheme(theme)" />
+                <UButton size="xs" variant="ghost" color="neutral" icon="i-heroicons-arrow-path" title="Reset to built-in defaults" @click="resetBuiltInTheme(theme.id)" />
+              </div>
             </div>
           </div>
-        </details>
+          <p class="text-xs text-white/40 mt-2">Editing a built-in saves an override that applies everywhere - including the price couples are charged at checkout. Reset returns it to the shipped default.</p>
+        </div>
       </div>
   
       <!-- FONTS -->
@@ -154,12 +162,18 @@
           </div>
         </div>
   
-        <details class="text-sm text-white/40">
-          <summary class="cursor-pointer hover:text-white/60">Built-in fonts ({{ fontOptions.length }}, not editable here)</summary>
-          <div class="mt-3 flex flex-wrap gap-2">
-            <span v-for="font in fontOptions" :key="font.id" class="px-2.5 py-1 rounded-full bg-white/[0.03] text-xs">{{ font.label }}</span>
+        <div>
+          <p class="section-heading">Built-in fonts (editable)</p>
+          <div class="flex flex-wrap gap-2">
+            <div v-for="font in builtInFontsEffective" :key="font.id" class="catalog-card group flex items-center gap-2 !py-1.5">
+              <span class="text-xs">{{ font.label }}</span>
+              <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <UButton size="xs" variant="ghost" color="neutral" icon="i-heroicons-pencil-square" @click="startEditBuiltInFont(font)" />
+                <UButton size="xs" variant="ghost" color="neutral" icon="i-heroicons-arrow-path" @click="resetBuiltInFont(font.id)" />
+              </div>
+            </div>
           </div>
-        </details>
+        </div>
       </div>
   
       <!-- TEXT PRESETS / LANGUAGES -->
@@ -232,12 +246,18 @@
           </div>
         </div>
   
-        <details class="text-sm text-white/40">
-          <summary class="cursor-pointer hover:text-white/60">Built-in presets ({{ builtInTextPresets.length }}, not editable here)</summary>
-          <div class="mt-3 flex flex-wrap gap-2">
-            <span v-for="p in builtInTextPresets" :key="p.id" class="px-2.5 py-1 rounded-full bg-white/[0.03] text-xs">{{ p.label }}</span>
+        <div>
+          <p class="section-heading">Built-in presets / languages (editable)</p>
+          <div class="flex flex-wrap gap-2">
+            <div v-for="p in builtInPresetsEffective" :key="p.id" class="catalog-card group flex items-center gap-2 !py-1.5">
+              <span class="text-xs">{{ p.label }}</span>
+              <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <UButton size="xs" variant="ghost" color="neutral" icon="i-heroicons-pencil-square" @click="startEditBuiltInPreset(p)" />
+                <UButton size="xs" variant="ghost" color="neutral" icon="i-heroicons-arrow-path" @click="resetBuiltInPreset(p.id)" />
+              </div>
+            </div>
           </div>
-        </details>
+        </div>
       </div>
   
       <!-- OPENING STYLES -->
@@ -339,6 +359,49 @@
             </div>
           </div>
         </div>
+
+        <!-- Admin-authored opening styles -->
+        <div class="form-card">
+          <div class="flex items-center gap-3 mb-1">
+            <div class="p-2 rounded-lg bg-gold-400/10"><UIcon :name="editingConfigId ? 'i-heroicons-pencil-square' : 'i-heroicons-sparkles'" class="w-4 h-4 text-gold-300" /></div>
+            <p class="font-semibold">{{ editingConfigId ? 'Edit opening style' : 'Create a new opening style' }}</p>
+            <button v-if="editingConfigId" type="button" class="text-xs text-white/40 hover:text-white/70 ml-auto" @click="cancelEditConfig">Cancel</button>
+          </div>
+          <p class="text-xs text-white/40 mb-4">Compose a brand-new opening animation from a template + your colors - no code needed. It appears in every couple's Opening Style picker once saved.</p>
+
+          <div v-if="openingStyleConfigs.length" class="space-y-2 mb-5">
+            <div v-for="c in openingStyleConfigs" :key="c.id" class="catalog-card flex items-center justify-between">
+              <div class="flex items-center gap-3 min-w-0">
+                <UIcon :name="c.icon" class="w-4 h-4 text-gold-300 shrink-0" />
+                <span class="font-medium truncate">{{ c.label }}</span>
+                <span class="text-xs text-white/40">{{ c.template }}</span>
+              </div>
+              <div class="flex items-center gap-2 shrink-0">
+                <USwitch :model-value="c.enabled" @update:model-value="(v: boolean) => toggleConfigEnabled(c, v)" />
+                <UButton size="xs" variant="ghost" color="neutral" icon="i-heroicons-pencil-square" @click="startEditConfig(c)" />
+                <UButton size="xs" variant="ghost" color="error" icon="i-heroicons-trash" @click="deleteConfig(c.id)" />
+              </div>
+            </div>
+          </div>
+
+          <div class="grid sm:grid-cols-2 gap-4">
+            <UFormField label="Style name"><UInput v-model="configForm.label" placeholder="e.g. Golden Hour" class="w-full" /></UFormField>
+            <UFormField label="Template">
+              <USelect v-model="configForm.template" :items="templateOptions" class="w-full" />
+            </UFormField>
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
+            <div><label class="field-label">From</label><input v-model="configForm.bgFrom" type="color" class="w-9 h-9 rounded-lg border border-white/20 bg-transparent cursor-pointer" /></div>
+            <div><label class="field-label">Mid</label><input v-model="configForm.bgVia" type="color" class="w-9 h-9 rounded-lg border border-white/20 bg-transparent cursor-pointer" /></div>
+            <div><label class="field-label">To</label><input v-model="configForm.bgTo" type="color" class="w-9 h-9 rounded-lg border border-white/20 bg-transparent cursor-pointer" /></div>
+            <div><label class="field-label">Accent</label><input v-model="configForm.accent" type="color" class="w-9 h-9 rounded-lg border border-white/20 bg-transparent cursor-pointer" /></div>
+          </div>
+          <div class="flex items-center gap-3 mt-5">
+            <UButton color="primary" :icon="editingConfigId ? 'i-heroicons-check' : 'i-heroicons-plus'" :loading="savingConfig" :disabled="!configForm.label.trim()" @click="saveConfig">
+              {{ editingConfigId ? 'Save changes' : 'Add opening style' }}
+            </UButton>
+          </div>
+        </div>
       </div>
 
       <!-- DESIGN OPTIONS: ornaments, falling-particle styles, and cover/inner
@@ -405,6 +468,32 @@
             </div>
           </div>
         </div>
+
+        <div class="form-card">
+          <h3 class="section-heading">Color choices for couples</h3>
+          <p class="text-xs text-white/40 mb-4">Pick a category + style, then define the colors a couple can choose for it. If a style has no colors here, couples won't see a color picker for it.</p>
+          <div class="grid sm:grid-cols-2 gap-4">
+            <UFormField label="Category">
+              <USelect v-model="colorCategory" :items="[{ label: 'Ornament styles', value: 'ornament' }, { label: 'Falling particles', value: 'petal' }, { label: 'Top icons', value: 'topIcon' }]" class="w-full" />
+            </UFormField>
+            <UFormField label="Style">
+              <USelect v-model="colorStyle" :items="colorStyleOptions" class="w-full" />
+            </UFormField>
+          </div>
+          <div class="mt-4">
+            <label class="field-label">Offered colors</label>
+            <div class="flex items-center gap-2 flex-wrap">
+              <div v-for="c in currentColorTags" :key="c" class="group relative w-8 h-8 rounded-full border border-white/20" :style="{ background: c }">
+                <button type="button" class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[9px] leading-none items-center justify-center hidden group-hover:flex" title="Remove" @click="removeColor(c)">✕</button>
+              </div>
+              <label class="w-8 h-8 rounded-full border border-dashed border-white/30 flex items-center justify-center cursor-pointer overflow-hidden relative" title="Add color">
+                <input v-model="newColor" type="color" class="absolute inset-0 opacity-0 cursor-pointer" />
+                <UIcon name="i-heroicons-plus" class="w-3.5 h-3.5 text-white/60" />
+              </label>
+              <UButton size="xs" color="primary" variant="soft" @click="addColor">Add {{ newColor }}</UButton>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </template>
@@ -424,8 +513,12 @@
     setOrnamentStyleEnabled, setPetalStyleEnabled, setTopIconEnabled,
     allThemes, allFontOptions, allTextPresets,
     addCustomTheme, removeCustomTheme, addCustomFont, removeCustomFont, addTextPreset, removeTextPreset,
-    setOpeningStyleEnabled, themeStyleVars
+    setOpeningStyleEnabled, themeStyleVars,
+    saveThemeOverride, resetThemeOverride, saveFontOverride, resetFontOverride, saveTextPresetOverride, resetTextPresetOverride,
+    ornamentColorTags, petalColorTags, topIconColorTags, saveOrnamentColorTags, savePetalColorTags, saveTopIconColorTags,
+    openingStyleConfigs, saveOpeningStyleConfig, removeOpeningStyleConfig
   } = useThemes()
+  import { defaultOpeningStyleConfig, type OpeningStyleConfig } from '~/composables/useThemes'
 
   // --- Design Options (ornaments / petals / top icons) ---
   const togglingOrnament = ref('')
@@ -448,6 +541,38 @@
     togglingTopIcon.value = value
     try { await setTopIconEnabled(value, enabled) } catch (error) { console.error(error); toast.add({ title: 'Could not update that icon', color: 'error' }) } finally { togglingTopIcon.value = '' }
   }
+
+  // --- Color choices per design-option style ---
+  const colorCategory = ref<'ornament' | 'petal' | 'topIcon'>('ornament')
+  const colorStyle = ref('')
+  const newColor = ref('#d4a017')
+  const colorStyleOptions = computed(() => {
+    const list = colorCategory.value === 'ornament' ? ornamentStyleCatalog : colorCategory.value === 'petal' ? petalStyleCatalog : topIconCatalog
+    return list.map((o) => ({ label: o.label, value: o.value }))
+  })
+  // Keep the selected style valid when the category changes.
+  watch(colorCategory, (cat) => {
+    const list = cat === 'ornament' ? ornamentStyleCatalog : cat === 'petal' ? petalStyleCatalog : topIconCatalog
+    if (!list.some((o) => o.value === colorStyle.value)) colorStyle.value = list[0]?.value || ''
+  }, { immediate: true })
+  const currentColorTags = computed(() => {
+    const map = colorCategory.value === 'ornament' ? ornamentColorTags.value : colorCategory.value === 'petal' ? petalColorTags.value : topIconColorTags.value
+    return map[colorStyle.value] || []
+  })
+  async function persistColors(next: string[]) {
+    try {
+      if (colorCategory.value === 'ornament') await saveOrnamentColorTags(colorStyle.value, next)
+      else if (colorCategory.value === 'petal') await savePetalColorTags(colorStyle.value, next)
+      else await saveTopIconColorTags(colorStyle.value, next)
+    } catch (error) { console.error(error); toast.add({ title: 'Could not save colors', color: 'error' }) }
+  }
+  function addColor() {
+    if (!colorStyle.value || currentColorTags.value.includes(newColor.value)) return
+    persistColors([...currentColorTags.value, newColor.value])
+  }
+  function removeColor(c: string) {
+    persistColors(currentColorTags.value.filter((x) => x !== c))
+  }
   
   const removingId = ref('')
   const showLive = ref(false)
@@ -461,6 +586,12 @@
   const customThemes = computed(() => allThemes.value.filter((t) => !themes.some((b) => b.id === t.id)))
   const customFonts = computed(() => allFontOptions.value.filter((f) => !fontOptions.some((b) => b.id === f.id)))
   const customPresets = computed(() => allTextPresets.value.filter((p) => !builtInTextPresets.some((b) => b.id === p.id)))
+
+  // Built-ins WITH any admin override merged on top - what the built-in edit
+  // sections display so an edited price/name shows its current value.
+  const builtInThemesEffective = computed(() => allThemes.value.filter((t) => themes.some((b) => b.id === t.id)))
+  const builtInFontsEffective = computed(() => allFontOptions.value.filter((f) => fontOptions.some((b) => b.id === f.id)))
+  const builtInPresetsEffective = computed(() => allTextPresets.value.filter((p) => builtInTextPresets.some((b) => b.id === p.id)))
   
   function slugify(text: string) {
     return text.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
@@ -479,11 +610,21 @@
   ]
   const themeForm = ref(emptyThemeForm())
   const editingThemeId = ref<string | null>(null)
+  const editingBuiltInThemeId = ref<string | null>(null)
   const canAddTheme = computed(() => themeForm.value.name.trim().length > 0)
   const addingTheme = ref(false)
-  
+
   function startEditTheme(theme: Theme) {
     editingThemeId.value = theme.id
+    editingBuiltInThemeId.value = null
+    loadThemeForm(theme)
+  }
+  function startEditBuiltInTheme(theme: Theme) {
+    editingBuiltInThemeId.value = theme.id
+    editingThemeId.value = null
+    loadThemeForm(theme)
+  }
+  function loadThemeForm(theme: Theme) {
     themeForm.value = {
       name: theme.name,
       tagline: theme.tagline,
@@ -498,13 +639,47 @@
   }
   function cancelEditTheme() {
     editingThemeId.value = null
+    editingBuiltInThemeId.value = null
     themeForm.value = emptyThemeForm()
   }
-  
+
+  async function resetBuiltInTheme(id: string) {
+    try {
+      await resetThemeOverride(id)
+      if (editingBuiltInThemeId.value === id) cancelEditTheme()
+      toast.add({ title: 'Theme reset to its built-in defaults', color: 'success' })
+    } catch (error) {
+      console.error(error)
+      toast.add({ title: 'Could not reset theme', color: 'error' })
+    }
+  }
+
   async function submitTheme() {
     if (!canAddTheme.value) return
     addingTheme.value = true
     try {
+      // Editing a BUILT-IN writes an override (price/name/palette) that merges
+      // over the baseline everywhere, including the ToyyibPay checkout.
+      if (editingBuiltInThemeId.value) {
+        await saveThemeOverride(editingBuiltInThemeId.value, {
+          name: themeForm.value.name.trim(),
+          tagline: themeForm.value.tagline.trim(),
+          price: Number(themeForm.value.price) || 0,
+          headingFont: themeForm.value.headingFont,
+          palette: {
+            bgFrom: themeForm.value.bgFrom,
+            bgVia: themeForm.value.bgVia,
+            bgTo: themeForm.value.bgTo,
+            accent: themeForm.value.accent,
+            accentSoft: hexToRgba(themeForm.value.accent, 0.18),
+            ink: themeForm.value.ink,
+            onAccent: themeForm.value.bgFrom
+          }
+        })
+        toast.add({ title: `"${themeForm.value.name}" updated`, color: 'success' })
+        cancelEditTheme()
+        return
+      }
       const id = editingThemeId.value || `custom-${slugify(themeForm.value.name)}` || `custom-${Date.now()}`
       const theme: Theme = {
         id,
@@ -552,22 +727,49 @@
   const emptyFontForm = () => ({ id: '', label: '', category: 'sans' as FontOption['category'] })
   const fontForm = ref(emptyFontForm())
   const editingFontId = ref<string | null>(null)
+  const editingBuiltInFontId = ref<string | null>(null)
   const canAddFont = computed(() => fontForm.value.id.trim().length > 0)
   const addingFont = ref(false)
-  
+
   function startEditFont(font: FontOption) {
     editingFontId.value = font.id
+    editingBuiltInFontId.value = null
+    fontForm.value = { id: font.id, label: font.label, category: font.category }
+  }
+  function startEditBuiltInFont(font: FontOption) {
+    editingBuiltInFontId.value = font.id
+    editingFontId.value = null
     fontForm.value = { id: font.id, label: font.label, category: font.category }
   }
   function cancelEditFont() {
     editingFontId.value = null
+    editingBuiltInFontId.value = null
     fontForm.value = emptyFontForm()
   }
-  
+  async function resetBuiltInFont(id: string) {
+    try {
+      await resetFontOverride(id)
+      if (editingBuiltInFontId.value === id) cancelEditFont()
+      toast.add({ title: 'Font reset to its built-in label', color: 'success' })
+    } catch (error) {
+      console.error(error)
+      toast.add({ title: 'Could not reset font', color: 'error' })
+    }
+  }
+
   async function submitFont() {
     if (!canAddFont.value) return
     addingFont.value = true
     try {
+      if (editingBuiltInFontId.value) {
+        await saveFontOverride(editingBuiltInFontId.value, {
+          label: fontForm.value.label.trim() || fontForm.value.id.trim(),
+          category: fontForm.value.category
+        })
+        toast.add({ title: `"${fontForm.value.label}" updated`, color: 'success' })
+        cancelEditFont()
+        return
+      }
       const font: FontOption = {
         id: fontForm.value.id.trim(),
         label: fontForm.value.label.trim() || fontForm.value.id.trim(),
@@ -602,13 +804,23 @@
   const emptyPresetForm = () => ({ label: '', openingTitle: '', openingGreeting: '', openingActionText: '' })
   const presetForm = ref(emptyPresetForm())
   const editingPresetId = ref<string | null>(null)
+  const editingBuiltInPresetId = ref<string | null>(null)
   const canAddPreset = computed(() =>
     presetForm.value.label.trim() && presetForm.value.openingTitle.trim() && presetForm.value.openingGreeting.trim() && presetForm.value.openingActionText.trim()
   )
   const addingPreset = ref(false)
-  
+
   function startEditPreset(preset: TextPreset) {
     editingPresetId.value = preset.id
+    editingBuiltInPresetId.value = null
+    loadPresetForm(preset)
+  }
+  function startEditBuiltInPreset(preset: TextPreset) {
+    editingBuiltInPresetId.value = preset.id
+    editingPresetId.value = null
+    loadPresetForm(preset)
+  }
+  function loadPresetForm(preset: TextPreset) {
     presetForm.value = {
       label: preset.label,
       openingTitle: preset.openingTitle,
@@ -618,13 +830,35 @@
   }
   function cancelEditPreset() {
     editingPresetId.value = null
+    editingBuiltInPresetId.value = null
     presetForm.value = emptyPresetForm()
   }
-  
+  async function resetBuiltInPreset(id: string) {
+    try {
+      await resetTextPresetOverride(id)
+      if (editingBuiltInPresetId.value === id) cancelEditPreset()
+      toast.add({ title: 'Preset reset to its built-in wording', color: 'success' })
+    } catch (error) {
+      console.error(error)
+      toast.add({ title: 'Could not reset preset', color: 'error' })
+    }
+  }
+
   async function submitPreset() {
     if (!canAddPreset.value) return
     addingPreset.value = true
     try {
+      if (editingBuiltInPresetId.value) {
+        await saveTextPresetOverride(editingBuiltInPresetId.value, {
+          label: presetForm.value.label.trim(),
+          openingTitle: presetForm.value.openingTitle.trim(),
+          openingGreeting: presetForm.value.openingGreeting.trim(),
+          openingActionText: presetForm.value.openingActionText.trim()
+        })
+        toast.add({ title: `"${presetForm.value.label}" updated`, color: 'success' })
+        cancelEditPreset()
+        return
+      }
       const preset: TextPreset = {
         id: editingPresetId.value || `custom-${slugify(presetForm.value.label)}` || `custom-${Date.now()}`,
         label: presetForm.value.label.trim(),
@@ -672,6 +906,52 @@
     } finally {
       togglingStyle.value = ''
     }
+  }
+
+  // --- Admin-authored opening styles (data-driven) ---
+  const configForm = ref<OpeningStyleConfig>(defaultOpeningStyleConfig())
+  const editingConfigId = ref('')
+  const savingConfig = ref(false)
+  const templateOptions = [
+    { label: 'Gradient Fade (soft, elegant)', value: 'gradient-fade' },
+    { label: 'Blob Background (drifting color)', value: 'blob-background' },
+    { label: 'Split Door (two panels part)', value: 'split-door' },
+    { label: 'Confetti Burst (celebratory)', value: 'confetti-burst' }
+  ]
+  function startEditConfig(c: OpeningStyleConfig) {
+    editingConfigId.value = c.id
+    configForm.value = { ...defaultOpeningStyleConfig(), ...c }
+  }
+  function cancelEditConfig() {
+    editingConfigId.value = ''
+    configForm.value = defaultOpeningStyleConfig()
+  }
+  async function saveConfig() {
+    if (!configForm.value.label.trim()) return
+    savingConfig.value = true
+    try {
+      await saveOpeningStyleConfig({ ...configForm.value, id: editingConfigId.value || '' })
+      toast.add({ title: `"${configForm.value.label}" saved`, description: 'It now appears in the couple Opening Style picker.', color: 'success' })
+      cancelEditConfig()
+    } catch (error) {
+      console.error(error)
+      toast.add({ title: 'Could not save opening style', color: 'error' })
+    } finally {
+      savingConfig.value = false
+    }
+  }
+  async function deleteConfig(id: string) {
+    try {
+      await removeOpeningStyleConfig(id)
+      if (editingConfigId.value === id) cancelEditConfig()
+      toast.add({ title: 'Opening style removed', color: 'success' })
+    } catch (error) {
+      console.error(error)
+      toast.add({ title: 'Could not remove opening style', color: 'error' })
+    }
+  }
+  async function toggleConfigEnabled(c: OpeningStyleConfig, enabled: boolean) {
+    await saveOpeningStyleConfig({ ...c, enabled })
   }
   
   // Demo-only preview state - never a real couple's wedding. EnvelopeIntro
