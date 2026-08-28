@@ -50,15 +50,6 @@
           
           <div class="space-y-8 form-panel animate-in fade-in slide-in-from-bottom-4 duration-500">
 
-            <!-- Page Layout - Classic (today's Opening -> Details -> RSVP
-                 three separate pages) vs Story (one continuously-scrolling
-                 page with scroll-triggered scenes, matching the reference
-                 invitation the client asked to match). Everything below this
-                 card (cover style, palettes, fonts, etc.) still applies to
-                 both layouts - this only changes how the content after the
-                 cover is presented. VIP Cinematic lives on its own separate
-                 page/link (Dashboard > VIP Cinematic) rather than as a
-                 layoutStyle option here - see VipScenesPanel.vue. -->
             <div>
               <h3 class="text-sm font-semibold text-white mb-3">Page Layout</h3>
               <div class="grid grid-cols-2 gap-3">
@@ -97,7 +88,7 @@
             <!-- Cover Style Selector -->
             <div>
               <h3 class="text-sm font-semibold text-white mb-3">Cover Layout Style</h3>
-              <div class="grid grid-cols-2 gap-3">
+              <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 <button
                   v-for="opt in openingStyles"
                   :key="opt.value"
@@ -110,16 +101,12 @@
                        :style="{ color: form.openingStyle === opt.value ? '#e3b04a' : 'currentColor' }">
                     <UIcon :name="opt.icon" class="w-6 h-6 drop-shadow" />
                   </div>
-                  <span class="text-xs font-medium">{{ opt.label }}</span>
+                  <span class="text-[10px] sm:text-xs font-medium text-center px-1">{{ opt.label }}</span>
                   <UIcon v-if="form.openingStyle === opt.value" name="i-heroicons-check-circle" class="absolute top-2 right-2 w-4 h-4 text-current" />
                 </button>
               </div>
             </div>
 
-            <!-- Modern Dark / Minimal Light palette picker - each of these
-                 two styles is a couple-selectable curated color palette
-                 (real gradient + blob colors, not just a label) rather than
-                 one fixed look. -->
             <Transition name="fade-down">
               <div v-if="form.openingStyle === 'modern-dark'" class="p-5 rounded-xl bg-[#111827] border border-gray-700 space-y-3">
                 <h3 class="text-sm font-semibold text-white">Modern Dark Palette</h3>
@@ -155,9 +142,7 @@
               </div>
             </Transition>
 
-            <!-- Cover Picture Upload - powers the Canva backgrounds AND now
-                 the Wax Seal doors, which can slide open over your own
-                 picture instead of a plain gradient, same as Split Door. -->
+            <!-- Cover Picture Upload -->
             <Transition name="fade-down">
               <div v-if="showOpeningBgUpload" class="p-5 rounded-xl bg-indigo-900/20 border border-indigo-800 space-y-4">
                 <div class="flex items-center gap-3">
@@ -187,18 +172,36 @@
               </div>
             </Transition>
 
-            <!-- Cover Text Overlay - lets a couple with a fully custom-
-                 designed background image (typography already baked in,
-                 e.g. from Canva) hide the site's own title/guest-name/tap
-                 text so their image shows in full instead of being cropped
-                 and dimmed underneath it, or just shift that text left/right
-                 out of the way of their design if they still want it shown. -->
+            <!-- Remove Dark Overlay Toggle -->
+            <Transition name="fade-down">
+              <div v-if="showOpeningBgUpload" class="p-5 rounded-xl bg-gold-400/5 border border-gold-400/30 space-y-4 mt-4">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <h3 class="text-sm font-semibold text-gold-300 mb-1">Remove Dark Shadow / Gradient</h3>
+                    <p class="text-xs text-gray-400 max-w-[320px]">Turn this on to disable the automatic dark gradient over your image, keeping your pastel colors bright and clean.</p>
+                  </div>
+                  <button
+                    type="button"
+                    @click="form.openingRemoveOverlay = !form.openingRemoveOverlay"
+                    class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#e3b04a] focus:ring-offset-2 focus:ring-offset-[#111827]"
+                    :class="form.openingRemoveOverlay ? 'bg-[#e3b04a]' : 'bg-gray-700'"
+                  >
+                    <span
+                      aria-hidden="true"
+                      class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                      :class="form.openingRemoveOverlay ? 'translate-x-5' : 'translate-x-0'"
+                    />
+                  </button>
+                </div>
+              </div>
+            </Transition>
+
             <Transition name="fade-down">
               <div v-if="showOpeningBgUpload" class="p-5 rounded-xl bg-gold-400/5 border border-gold-400/30 space-y-4">
                 <div class="flex items-center justify-between">
                   <div>
                     <h3 class="text-sm font-semibold text-gold-300 mb-1">Use Image As-Is</h3>
-                    <p class="text-xs text-gray-400 max-w-[320px]">Turn this on to completely hide our title/guest-name/tap text on this screen and show your uploaded image in full, uncropped and undimmed. Perfect if you designed everything (including the text) directly in Canva.</p>
+                    <p class="text-xs text-gray-400 max-w-[320px]">Turn this on to completely hide our title/guest-name/tap text on this screen and show your uploaded image in full, uncropped and undimmed. Perfect if you designed everything directly in Canva.</p>
                   </div>
                   <button
                     type="button"
@@ -228,13 +231,11 @@
                       {{ opt.label }}
                     </button>
                   </div>
-                  <p class="text-[11px] text-gray-500 mt-1.5">Shifts the title, guest name and tap-to-open text so they sit clear of your image's own focal point, instead of always dead-center.</p>
                 </div>
               </div>
             </Transition>
 
-            <!-- Background Music - plays once a guest taps the envelope open,
-                 same moment MusicToggle appears on the real page. -->
+            <!-- Background Music -->
             <div class="pt-6 border-t border-gray-800">
               <h3 class="text-sm font-semibold text-white mb-1">Background Music</h3>
               <p class="text-xs text-gray-400 mb-4">Plays as soon as a guest opens the envelope. Leave empty for a silent opening.</p>
@@ -249,8 +250,6 @@
               <UFormField label="Or paste a song link — YouTube, YouTube Music, or a direct audio URL" class="mt-3">
                 <UInput v-model="form.audioSrc" placeholder="https://music.youtube.com/watch?v=... or https://.../song.mp3" class="w-full" />
               </UFormField>
-              <p class="text-xs text-gray-500 mt-2">A YouTube or YouTube Music link plays through YouTube's own player in the background — no downloading needed. It won't work if the video's owner has disabled embedding elsewhere.</p>
-              <p v-if="!cloudinaryConfigured" class="text-xs text-amber-400/80 mt-2">Image/audio uploads aren't configured on this deployment - paste a link instead.</p>
             </div>
 
             <!-- Language Translation Presets -->
@@ -275,11 +274,11 @@
 
                 <UFormField label="Guest Greeting">
                   <UInput v-model="form.openingGreeting" placeholder="e.g. Menjemput {guestName} sekeluarga" size="lg" class="w-full" />
-                  <template #help><span class="text-xs text-gray-500">Use <code class="text-gold-300">{guestName}</code> anywhere in the sentence - text before and after it both work, e.g. "Menjemput {guestName} sekeluarga". Each of the three parts - before, the name, and after - can have its own font below, so e.g. "Menjemput" and "sekeluarga" don't have to match.</span></template>
+                  <template #help><span class="text-xs text-gray-500">Use <code class="text-gold-300">{guestName}</code> anywhere in the sentence.</span></template>
                 </UFormField>
+                
                 <UFormField label="Guest Name Style">
-                  <template #help><span class="text-xs text-gray-500">How the guest's name is set off from the background - pick a built-in shape, or upload your own frame/ribbon/box design.</span></template>
-                  <div class="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                  <div class="grid grid-cols-3 sm:grid-cols-6 gap-2 mt-2">
                     <button
                       v-for="opt in guestNameBoxOptions"
                       :key="opt.value"
@@ -305,7 +304,7 @@
                       </div>
                       <div>
                         <p class="text-sm font-semibold text-white">Upload your own design</p>
-                        <p class="text-xs text-gray-400">A frame, ribbon, or box graphic to sit behind the guest's name - a transparent PNG works best.</p>
+                        <p class="text-xs text-gray-400">A frame, ribbon, or box graphic to sit behind the guest's name.</p>
                       </div>
                     </div>
                     <div class="flex items-center gap-4">
@@ -325,26 +324,20 @@
                   </div>
                 </Transition>
 
-                <!-- Guest Name Animation - its own section, scoped only to
-                     the guest-name box above (doesn't touch the title,
-                     background, or anything else on the opening screen).
-                     An optional "unroll" reveal, like a scroll or
-                     parchment opening to show the name - off by default,
-                     a couple has to opt in. Works with whichever shape is
-                     picked above, including Plain. -->
+                <!-- Guest Name Animation -->
                 <div class="p-4 rounded-xl bg-[#111827] border border-gray-700 flex items-center justify-between gap-4">
                   <div class="min-w-0">
                     <p class="text-sm font-semibold text-white flex items-center gap-2">
                       <UIcon name="i-heroicons-sparkles" class="w-4 h-4 text-gold-300 shrink-0" />
                       Guest Name Animation
                     </p>
-                    <p class="text-xs text-gray-400 mt-1">Let the guest's name unroll into view like a scroll, instead of appearing all at once. Works with whichever shape you picked above.</p>
+                    <p class="text-xs text-gray-400 mt-1">Let the guest's name unroll into view like a scroll.</p>
                   </div>
                   <USwitch v-model="form.openingGuestNameAnimate" size="lg" />
                 </div>
 
                 <button type="button" class="text-xs text-gold-300 hover:text-gold-200 flex items-center gap-1" @click="showGreetingStyle = !showGreetingStyle">
-                  <UIcon :name="showGreetingStyle ? 'i-heroicons-chevron-down' : 'i-heroicons-chevron-right'" class="w-3.5 h-3.5" /> Customize font for the text before the name (e.g. "Menjemput")
+                  <UIcon :name="showGreetingStyle ? 'i-heroicons-chevron-down' : 'i-heroicons-chevron-right'" class="w-3.5 h-3.5" /> Customize font for the text before the name
                 </button>
                 <div v-if="showGreetingStyle" class="p-4 rounded-xl bg-[#111827] border border-gray-700 space-y-4">
                   <TextStyleFields prefix="openingGreeting" :form="form" :font-select-items="fontSelectItems" />
@@ -358,7 +351,7 @@
                 </div>
 
                 <button type="button" class="text-xs text-gold-300 hover:text-gold-200 flex items-center gap-1" @click="showGreetingAfterStyle = !showGreetingAfterStyle">
-                  <UIcon :name="showGreetingAfterStyle ? 'i-heroicons-chevron-down' : 'i-heroicons-chevron-right'" class="w-3.5 h-3.5" /> Customize font for the text after the name (e.g. "sekeluarga")
+                  <UIcon :name="showGreetingAfterStyle ? 'i-heroicons-chevron-down' : 'i-heroicons-chevron-right'" class="w-3.5 h-3.5" /> Customize font for the text after the name
                 </button>
                 <div v-if="showGreetingAfterStyle" class="p-4 rounded-xl bg-[#111827] border border-gray-700 space-y-4">
                   <TextStyleFields prefix="openingGreetingAfter" :form="form" :font-select-items="fontSelectItems" />
@@ -392,21 +385,11 @@
           <!-- Smartphone Mockup Wrapper -->
           <div class="phone-bezel w-full max-w-[360px] shadow-2xl shrink-0">
             <div class="phone-notch"></div>
-            <!-- The actual Envelope preview component -->
             <div class="phone-screen hide-scrollbar relative bg-[#04101f]" :style="styleVars">
-              <!-- Pass "Guest Name" as dummy text so you can see the auto-filling -->
               <EnvelopeIntro v-model:opened="previewOpened" guest-name="Guest Name" :content="form" />
-              <!-- Show something behind it so opening it looks natural -->
               <div v-if="previewOpened" class="absolute inset-0 flex items-center justify-center text-white/50 text-sm italic">
                 (Inner card revealed)
               </div>
-              <!-- Same spot/trigger as the real page, but deliberately NOT
-                   autoplay: this preview shares the same page-wide audio
-                   player as the actual live site, so an autoplaying toggle
-                   here meant every tap of "preview the animation" while
-                   editing also started playing music unprompted. Tapping
-                   the icon still lets you manually check how a track
-                   sounds. -->
               <div v-if="previewOpened && form.audioSrc" class="absolute top-4 right-4 z-30">
                 <MusicToggle :src="form.audioSrc" />
               </div>
@@ -421,13 +404,8 @@
 
 <script setup lang="ts">
 import { createDefaultContent, type WeddingContent } from '~/composables/useWeddingTypes'
-
 import type { TextPreset } from '~/composables/useThemes'
 
-// This is the real Opening Design editor, shared by /dashboard/opening and
-// the /admin/wedding/[id]/opening admin page. overrideWeddingId is only
-// ever set by the admin page; couples hitting their own dashboard never
-// pass it, so useMyWedding() falls back to its normal own-wedding lookup.
 const props = defineProps<{ overrideWeddingId?: string | null }>()
 const { wedding, loading, saving, updateContent } = useMyWedding(toRef(props, 'overrideWeddingId'))
 const { isConfigured: cloudinaryConfigured, uploadImage, uploadAudio } = useCloudinary()
@@ -452,6 +430,7 @@ const guestNameBoxOptions: { value: WeddingContent['openingGuestNameBox']; label
 ]
 const guestNameBoxInput = ref<HTMLInputElement | null>(null)
 const guestNameBoxUploading = ref(false)
+
 async function handleGuestNameBoxSelect(event: Event) {
   const file = (event.target as HTMLInputElement).files?.[0]
   if (!file || !wedding.value) return
@@ -467,6 +446,7 @@ async function handleGuestNameBoxSelect(event: Event) {
   }
   if (guestNameBoxInput.value) guestNameBoxInput.value.value = ''
 }
+
 const showGreetingAfterStyle = ref(false)
 const showActionStyle = ref(false)
 const toast = useToast()
@@ -497,10 +477,6 @@ async function handleAudioSelect(event: Event) {
   if (audioInput.value) audioInput.value.value = ''
 }
 
-// The cover picture upload panel now powers every style except Classic,
-// Modern Dark and Minimal Light: the two Canva backgrounds (required),
-// Wax Seal (optional - falls back to a gradient panel), and the four
-// Slide styles (optional - falls back to a gradient background).
 const slideStyles = ['slide-up', 'slide-down', 'slide-left', 'slide-right']
 const showOpeningBgUpload = computed(() =>
   form.openingStyle.includes('custom') || form.openingStyle === 'wax-seal' || slideStyles.includes(form.openingStyle)
@@ -510,7 +486,7 @@ const openingBgPanelCopy = computed(() => {
   if (form.openingStyle === 'wax-seal') {
     return {
       title: 'Wax Seal Door Picture (optional)',
-      description: 'Upload a vertical photo (1080x1920) to show behind the wax seal as it cracks open - the doors slide over it just like Split Door. Leave empty to use the default gradient panels.'
+      description: 'Upload a vertical photo (1080x1920) to show behind the wax seal as it cracks open.'
     }
   }
   if (form.openingStyle === 'custom-split') {
@@ -522,7 +498,7 @@ const openingBgPanelCopy = computed(() => {
   if (slideStyles.includes(form.openingStyle)) {
     return {
       title: 'Slide Cover Picture (optional)',
-      description: 'Upload a vertical photo (1080x1920) to use as the cover - it travels off-screen with the rest of the cover when tapped. Leave empty to use the default gradient.'
+      description: 'Upload a vertical photo (1080x1920) to use as the cover.'
     }
   }
   return {
@@ -531,7 +507,6 @@ const openingBgPanelCopy = computed(() => {
   }
 })
 
-// Dynamically inject custom Google Font stylesheet into the editor for live preview
 useHead({
   link: computed(() => {
     if (form.customFontUrl && !form.customFontUrl.includes('fonts.google.com/specimen/')) {
@@ -565,7 +540,7 @@ watch(
     initialized = true
     Object.assign(form, value.content)
     
-    // Fallbacks for older DB entries
+    // Fallbacks
     if (!form.layoutStyle) form.layoutStyle = 'classic'
     if (!form.openingStyle) form.openingStyle = 'classic'
     if (!form.openingTitle) form.openingTitle = "You're Invited"
@@ -573,6 +548,7 @@ watch(
     if (!form.openingActionText) form.openingActionText = 'Tap to open'
     if (!form.openingGuestNameBox) form.openingGuestNameBox = 'none'
     if (!form.openingTextAlign) form.openingTextAlign = 'center'
+    if (form.openingRemoveOverlay === undefined) form.openingRemoveOverlay = false
   },
   { immediate: true }
 )
@@ -604,11 +580,6 @@ useSeoMeta({ title: 'Opening Design — WeddingCard' })
 </script>
 
 <style scoped>
-/* Small style-swatch previews for the Guest Name Style picker above - each
-   one is a scaled-down version of the actual shape in EnvelopeIntro.vue
-   (.guest-name-shape-*), not just a color/border tweak, so the swatch a
-   couple clicks looks like what they'll actually get on the opening
-   screen. */
 .gn-preview { white-space: nowrap; }
 .gn-preview-arch { background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 50% 50% 2px 2px / 85% 85% 2px 2px; padding-top: 3px; padding-bottom: 1px; }
 .gn-preview-pill { background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 999px; padding-top: 2px; padding-bottom: 2px; }
@@ -619,124 +590,28 @@ useSeoMeta({ title: 'Opening Design — WeddingCard' })
   padding-top: 3px; padding-bottom: 3px;
 }
 
-/* Form Panels */
-.form-panel {
-  border-radius: 1.25rem;
-  padding: 1.75rem;
-  background: #111827; 
-  border: 1px solid #374151; 
-  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5);
-}
+.form-panel { border-radius: 1.25rem; padding: 1.75rem; background: #111827; border: 1px solid #374151; box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5); }
+.panel-header { margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid #374151; }
 
-.panel-header {
-  margin-bottom: 1.5rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid #374151;
-}
+.ornament-card { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1rem 0.5rem; border-radius: 1rem; background: #1F2937; border: 1px solid #374151; color: #9CA3AF; transition: all 0.3s ease; }
+.ornament-card:hover { background: #374151; border-color: rgba(212, 160, 23, 0.4); color: white; }
+.ornament-card-active { background: rgba(212, 160, 23, 0.1); border-color: var(--color-gold-400); color: #f3ddaa; }
 
-/* Ornament Cards */
-.ornament-card {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem 0.5rem;
-  border-radius: 1rem;
-  background: #1F2937;
-  border: 1px solid #374151;
-  color: #9CA3AF;
-  transition: all 0.3s ease;
-}
+.palette-swatch { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; border-radius: 0.75rem; background: #1F2937; border: 1px solid #374151; color: #9CA3AF; transition: all 0.2s ease; }
+.palette-swatch:hover { border-color: rgba(212, 160, 23, 0.4); color: white; }
+.palette-swatch-active { background: rgba(212, 160, 23, 0.1); border-color: var(--color-gold-400); color: #f3ddaa; }
+.palette-swatch-dot { width: 1rem; height: 1rem; border-radius: 50%; border: 1px solid rgba(255, 255, 255, 0.25); flex-shrink: 0; }
 
-.ornament-card:hover {
-  background: #374151; 
-  border-color: rgba(212, 160, 23, 0.4);
-  color: white;
-}
+.phone-bezel { position: relative; height: 720px; background: #000; border: 12px solid #1e293b; border-radius: 2.5rem; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), inset 0 0 0 2px rgba(255, 255, 255, 0.05); overflow: hidden; transform: translateZ(0); }
+.phone-notch { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 40%; height: 24px; background: #1e293b; border-bottom-left-radius: 14px; border-bottom-right-radius: 14px; z-index: 50; box-shadow: inset 0 -1px 1px rgba(255,255,255,0.05); }
+.phone-screen { width: 100%; height: 100%; overflow-y: auto; overflow-x: hidden; }
 
-.ornament-card-active {
-  background: rgba(212, 160, 23, 0.1);
-  border-color: var(--color-gold-400);
-  color: #f3ddaa;
-}
-
-/* Modern Dark / Minimal Light palette swatches */
-.palette-swatch {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  border-radius: 0.75rem;
-  background: #1F2937;
-  border: 1px solid #374151;
-  color: #9CA3AF;
-  transition: all 0.2s ease;
-}
-.palette-swatch:hover {
-  border-color: rgba(212, 160, 23, 0.4);
-  color: white;
-}
-.palette-swatch-active {
-  background: rgba(212, 160, 23, 0.1);
-  border-color: var(--color-gold-400);
-  color: #f3ddaa;
-}
-.palette-swatch-dot {
-  width: 1rem;
-  height: 1rem;
-  border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  flex-shrink: 0;
-}
-
-/* Smartphone Bezel */
-.phone-bezel {
-  position: relative;
-  height: 720px; 
-  background: #000;
-  border: 12px solid #1e293b;
-  border-radius: 2.5rem;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), inset 0 0 0 2px rgba(255, 255, 255, 0.05);
-  overflow: hidden;
-  transform: translateZ(0);
-}
-
-.phone-notch {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 40%;
-  height: 24px;
-  background: #1e293b;
-  border-bottom-left-radius: 14px;
-  border-bottom-right-radius: 14px;
-  z-index: 50;
-  box-shadow: inset 0 -1px 1px rgba(255,255,255,0.05);
-}
-
-.phone-screen {
-  width: 100%;
-  height: 100%;
-  overflow-y: auto;
-  overflow-x: hidden;
-}
-
-.fade-down-enter-active, .fade-down-leave-active {
-  transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.fade-down-enter-from, .fade-down-leave-to {
-  opacity: 0;
-  transform: translateY(-10px);
-}
+.fade-down-enter-active, .fade-down-leave-active { transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+.fade-down-enter-from, .fade-down-leave-to { opacity: 0; transform: translateY(-10px); }
 
 .hide-scrollbar::-webkit-scrollbar { display: none; }
 .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 .custom-scrollbar::-webkit-scrollbar { width: 6px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: #374151; 
-  border-radius: 10px;
-}
+.custom-scrollbar::-webkit-scrollbar-thumb { background-color: #374151; border-radius: 10px; }
 </style>
