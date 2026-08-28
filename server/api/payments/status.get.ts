@@ -56,8 +56,9 @@ export default defineEventHandler(async (event) => {
 
   // Reconcile against ToyyibPay while the bill isn't settled locally yet.
   const effectiveBillCode = billCode || String(payment.billCode ?? '')
+  let transactions: Array<Record<string, unknown>> = []
   if (status !== 'paid' && effectiveBillCode) {
-    const transactions = await getToyyibBillTransactions(effectiveBillCode)
+    transactions = await getToyyibBillTransactions(effectiveBillCode)
     const paidTransaction = transactions.find((t) => Number(t.billpaymentStatus) === 1)
     if (paidTransaction) {
       await settleSuccessfulPayment(weddingId, paymentId, {

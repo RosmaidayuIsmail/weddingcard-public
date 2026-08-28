@@ -108,12 +108,17 @@ export async function getToyyibBillTransactions(billCode: string): Promise<Array
   form.set('billCode', billCode)
 
   try {
-    const parsed = await $fetch<unknown>(`${cfg.baseUrl}/index.php/api/getBillTransactions`, {
+    // ToyyibPay prefixes its JSON with stray tabs/spaces. ofetch's auto-parse
+    // (destr) treats a leading tab as "not JSON" and returns the raw string,
+    // so fetch as text and JSON.parse manually (which trims whitespace).
+    const responseText = await $fetch(`${cfg.baseUrl}/index.php/api/getBillTransactions`, {
       method: 'POST',
       body: form.toString(),
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      responseType: 'text',
       timeout: 15000
     })
+    const parsed = JSON.parse(responseText)
     return Array.isArray(parsed) ? (parsed as Array<Record<string, unknown>>) : []
   } catch {
     return []
