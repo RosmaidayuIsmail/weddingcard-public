@@ -49,14 +49,8 @@
         :class="wedding.content.hideSystemText ? 'object-contain' : 'object-cover scale-105'"
         @load="coverPhotoLoaded = true"
       >
-      <!-- --overlay-tint (see useThemes.ts's Theme.overlayTintOpacity) defaults
-           to 0.4 for every theme except Matcha Strawberry, which sets a much
-           lighter value - its own palette (and its couples' photos) is
-           already pastel/light, so the old fixed 0.4 was mixing into a flat
-           grey wash instead of protecting text over real photo colors. -->
-      <!-- BUG FIX: We only apply this dark safety overlay if the user is NOT using a full custom Canva image. 
-           This prevents the beautiful pastel pinks from turning muddy brown! -->
-      <div v-if="!wedding.content.hideSystemText" class="absolute inset-0" :style="{ backgroundColor: `rgba(0, 0, 0, var(--overlay-tint, 0.4))` }"></div>
+      <!-- BUG FIX: Removed the dark `rgba(0, 0, 0, 0.4)` overlay tint that was making 
+           the pastel pinks look muddy. The background will now look clean and bright! -->
       
       <!-- This bottom fade used to always render, even with hideSystemText
            on - so a couple's fully custom, edge-to-edge design (baked-in
@@ -105,7 +99,7 @@
           <UIcon v-else-if="wedding.content.innerTopIcon === 'rings'" name="i-heroicons-lifebuoy" :style="{ color: 'var(--theme-accent)', width: `${2 * ((wedding.content.iconSize ?? 100) / 100)}rem`, height: `${2 * ((wedding.content.iconSize ?? 100) / 100)}rem` }" />
           <UIcon v-else-if="wedding.content.innerTopIcon === 'heart'" name="i-heroicons-heart" :style="{ color: 'var(--theme-accent)', width: `${2 * ((wedding.content.iconSize ?? 100) / 100)}rem`, height: `${2 * ((wedding.content.iconSize ?? 100) / 100)}rem` }" />
           <img v-else-if="wedding.content.innerTopIcon === 'custom' && wedding.content.customIconUrl" :src="wedding.content.customIconUrl" alt="" class="object-contain drop-shadow" :style="{ width: `${7 * ((wedding.content.iconSize ?? 100) / 100)}rem`, height: 'auto', maxWidth: '90vw', maxHeight: `${7 * ((wedding.content.iconSize ?? 100) / 100)}rem` }">
-          <p v-if="wedding.content.iconSubtitle" class="mt-3 text-xs sm:text-sm text-[color-mix(in_srgb,var(--theme-ink)_60%,transparent)] italic overlay-text-shadow">{{ wedding.content.iconSubtitle }}</p>
+          <p v-if="wedding.content.iconSubtitle" class="mt-3 text-xs sm:text-sm text-[color-mix(in_srgb,var(--theme-ink)_60%,transparent)] italic">{{ wedding.content.iconSubtitle }}</p>
         </div>
 
         <!-- 2. Greeting -->
@@ -113,7 +107,7 @@
           class="absolute w-full max-w-3xl text-center px-4 flex flex-col items-center transition-all duration-700 animate-in fade-in zoom-in delay-150"
           :style="{ left: `${wedding.content.greetingX ?? 50}%`, top: `${wedding.content.greetingY ?? 25}%`, transform: 'translate(-50%, -50%)' }"
         >
-          <h1 class="text-sm sm:text-base tracking-[0.35em] uppercase overlay-text-shadow" :style="{ color: 'var(--theme-accent)', fontWeight: 'var(--theme-text-weight)' }">
+          <h1 class="text-sm sm:text-base tracking-[0.35em] uppercase" :style="{ color: 'var(--theme-accent)', fontWeight: 'var(--theme-text-weight)' }">
             {{ wedding.content.innerGreeting || "You're Invited" }}
           </h1>
         </div>
@@ -123,7 +117,7 @@
           class="absolute w-full max-w-3xl text-center px-4 flex flex-col items-center transition-all duration-700 animate-in fade-in zoom-in delay-300"
           :style="{ left: `${wedding.content.introX ?? 50}%`, top: `${wedding.content.introY ?? 32}%`, transform: 'translate(-50%, -50%)' }"
         >
-          <p class="text-base sm:text-lg text-[color-mix(in_srgb,var(--theme-ink)_80%,transparent)] italic overlay-text-shadow" :style="{ fontWeight: 'var(--theme-text-weight)' }">
+          <p class="text-base sm:text-lg text-[color-mix(in_srgb,var(--theme-ink)_80%,transparent)] italic" :style="{ fontWeight: 'var(--theme-text-weight)' }">
             {{ wedding.content.innerIntro || "To the wedding celebration of" }}
           </p>
         </div>
@@ -140,7 +134,7 @@
             <span>{{ wedding.content.groomName }}</span>
           </div>
           
-          <!-- ADDED: Diagonal Layout -->
+          <!-- Diagonal Layout -->
           <div v-else-if="wedding.content.namesLayout === 'diagonal'" class="flex flex-col font-heading drop-shadow-2xl w-full max-w-xs mx-auto" :style="{ color: wedding.content.nameColor || 'var(--theme-ink)', fontFamily: 'var(--theme-heading-font)', fontSize: `clamp(${2.5 * ((wedding.content.nameSize ?? 100) / 100)}rem, ${5 * ((wedding.content.nameSize ?? 100) / 100)}vw, ${3.5 * ((wedding.content.nameSize ?? 100) / 100)}rem)`, lineHeight: '1.1' }">
             <span class="self-start text-left ml-4 sm:-ml-8">{{ wedding.content.brideName }}</span>
             <span class="text-[0.5em] opacity-80 leading-none self-center my-2" style="color: var(--theme-accent);">&amp;</span>
@@ -158,7 +152,7 @@
           class="absolute w-full max-w-3xl text-center px-4 flex flex-col items-center transition-all duration-700 animate-in fade-in zoom-in delay-500"
           :style="{ left: `${wedding.content.dateX ?? 50}%`, top: `${wedding.content.dateY ?? 70}%`, transform: 'translate(-50%, -50%)' }"
         >
-          <p class="text-sm sm:text-base font-medium text-[color-mix(in_srgb,var(--theme-ink)_90%,transparent)] overlay-text-shadow">
+          <p class="text-sm sm:text-base font-medium text-[color-mix(in_srgb,var(--theme-ink)_90%,transparent)]">
             {{ wedding.content.dateLabel }}
           </p>
         </div>
@@ -168,7 +162,7 @@
           class="absolute w-full max-w-md text-center px-4 flex flex-col items-center transition-all duration-700 animate-in fade-in zoom-in delay-500"
           :style="{ left: `${wedding.content.venueX ?? 50}%`, top: `${wedding.content.venueY ?? 78}%`, transform: 'translate(-50%, -50%)' }"
         >
-          <p v-if="wedding.content.venueAddress" class="text-xs sm:text-sm text-[color-mix(in_srgb,var(--theme-ink)_80%,transparent)] italic overlay-text-shadow" :style="{ fontWeight: 'var(--theme-text-weight)' }">
+          <p v-if="wedding.content.venueAddress" class="text-xs sm:text-sm text-[color-mix(in_srgb,var(--theme-ink)_80%,transparent)] italic" :style="{ fontWeight: 'var(--theme-text-weight)' }">
             {{ wedding.content.venueAddress }}
           </p>
         </div>
@@ -183,11 +177,6 @@
     <!-- FOOTER: normal document flow, always directly below the hero canvas -
          never overlaps anything above since it's a separate layout region,
          not absolutely positioned on top of it. -->
-    <!-- Fades toward the theme's own --theme-bg-to (not a literal black) so
-         this transition blends into whatever the page's own background
-         gradient already ends on - near-invisible on the dark themes since
-         their bg-to is already near-black, but no longer a jarring
-         light-pink-to-black seam on a light theme like Matcha Strawberry. -->
     <div v-if="opened" class="relative z-20 flex flex-col items-center pb-16 pt-12 px-6 bg-gradient-to-b from-transparent to-[color-mix(in_srgb,var(--theme-bg-to)_65%,transparent)] animate-in fade-in duration-700">
       <div v-if="wedding.content.dateISO" class="mb-8">
         <CountdownTimer :target="wedding.content.dateISO" />
@@ -206,9 +195,7 @@
           {{ wedding.content.btnDetails || 'View Details' }}
         </UButton>
         <!-- accent-btn: previously color="primary", a fixed brand gold from
-             app.config.ts - forces the couple's own theme accent instead,
-             same fix already applied to the RSVP page's Continue/Confirm
-             buttons (see rsvp.vue's .accent-btn). -->
+             app.config.ts - forces the couple's own theme accent instead. -->
         <UButton v-if="wedding.content.rsvpEnabled !== false" :to="rsvpLink" size="xl" color="neutral" class="accent-btn w-full sm:w-auto font-semibold rounded-full px-10 shadow-[0_0_30px_-5px_var(--theme-accent)] hover:scale-105 transition-transform animate-glow">
           {{ wedding.content.btnRsvp || 'RSVP Now' }}
         </UButton>
@@ -308,25 +295,11 @@ watch(
 </script>
 
 <style scoped>
-/* Stronger, multi-layer shadow (same idea as EnvelopeIntro's titleShadow)
-   for the hero-overlay text (icon subtitle/intro/date/venue) - the old
-   drop-shadow-md utility is a very faint blur, which only ever worked
-   because the black/40 tint underneath was doing the real contrast work.
-   Now that the tint is much lighter for light themes like Matcha
-   Strawberry (see --overlay-tint), the text needs to carry its own
-   legibility instead of leaning on a dark wash over the whole photo.
-   These elements were also hardcoded to text-white/*, which read as a
-   washed-out near-invisible haze on light themes (their light background/
-   photo tints have nothing for white text to contrast against) - now
-   ink-aware via --theme-ink like every other adaptive element on this
-   page, so it's dark text on light themes and white text on dark ones.
-   The shadow itself now follows --overlay-shadow (useThemes.ts) instead
-   of a fixed dark stack - a heavy black shadow behind now-dark ink text
-   (Matcha Strawberry etc.) just read as a thick, muddy bold outline
-   instead of helping legibility, so those themes get a soft light glow
-   instead, same idea as white text getting a dark shadow. */
+/* BUG FIX: Safely disabled the glowing text shadow that was conflicting with 
+   the dark font. The text is now allowed to sit naturally on the background 
+   without any messy white/gray blurring behind it! */
 .overlay-text-shadow {
-  text-shadow: var(--overlay-shadow, 0 2px 12px rgba(0, 0, 0, 0.6), 0 2px 5px rgba(0, 0, 0, 0.75), 0 1px 2px rgba(0, 0, 0, 0.9));
+  text-shadow: none;
 }
 
 /* Same fix as rsvp.vue's .accent-btn: UButton's color="primary" is a fixed
