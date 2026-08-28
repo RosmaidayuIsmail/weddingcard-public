@@ -19,8 +19,8 @@
 
       <div
         class="relative flex-1 backdrop-blur-xl border rounded-[1.5rem] shadow-xl p-5 flex flex-col justify-center transition-all duration-300 overflow-y-auto hide-scrollbar"
-        :class="cardStyleResolved === 'dark' ? 'classic-inner-card' : 'classic-inner-card-theme'"
-        :style="{ borderColor: 'var(--theme-accent-soft)', '--card-text': cardTextColorResolved }"
+        :class="cardStyleResolved === 'dark' ? 'classic-inner-card' : (cardStyleResolved === 'glass' ? 'classic-inner-card-glass' : 'classic-inner-card-theme')"
+        :style="{ borderColor: cardStyleResolved === 'glass' ? 'transparent' : 'var(--theme-accent-soft)', '--card-text': cardTextColorResolved }"
       >
          <Transition :name="direction" mode="out-in">
            <div :key="currentSlide" class="space-y-3 text-center w-full px-1 py-2">
@@ -166,9 +166,13 @@ const styleVars = computed(() =>
 // Same cardStyle resolution as the real Inner Card page
 // (app/pages/w/[slug]/details.vue) and the RSVP page - see
 // useThemes.ts's resolveCardStyle for the full reasoning.
-const cardStyleResolved = computed(() => resolveCardStyle(props.themeId, props.content.cardStyle))
+const cardStyleResolved = computed(() => {
+  if (props.content.cardStyle === 'glass') return 'glass'
+  return resolveCardStyle(props.themeId, props.content.cardStyle)
+})
+
 const cardTextColorResolved = computed(() =>
-  props.content.cardTextColor || (cardStyleResolved.value === 'dark' ? '#ffffff' : 'var(--theme-ink)')
+  props.content.cardTextColor || (cardStyleResolved.value === 'dark' || cardStyleResolved.value === 'glass' ? '#ffffff' : 'var(--theme-ink)')
 )
 
 const qrCodeUrl = computed(
@@ -206,10 +210,9 @@ function prev() {
 </script>
 
 <style scoped>
-/* Two looks, mirroring the real Inner Card page's .classic-inner-card/
-   .classic-inner-card-theme in app/pages/w/[slug]/details.vue and the RSVP
-   card's same pattern in app/pages/w/[slug]/rsvp.vue - see that file's
-   detailed comment for the full reasoning. Every descendant above reads
+/* Three looks, mirroring the real Inner Card page's options in 
+   app/pages/w/[slug]/details.vue and the RSVP card's pattern in 
+   app/pages/w/[slug]/rsvp.vue. Every descendant above reads
    its color from --card-text via color-mix(), set inline via
    cardTextColorResolved in the script setup. */
 .classic-inner-card {
@@ -228,6 +231,15 @@ function prev() {
     color-mix(in srgb, var(--theme-bg-to, #142a45) 88%, var(--theme-ink, #000) 12%) 100%
   );
   color: var(--card-text, var(--theme-ink, #fff));
+}
+
+.classic-inner-card-glass {
+  background: rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(16px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.3) !important;
+  color: var(--card-text, #ffffff) !important;
 }
 
 .slide-next-enter-active,

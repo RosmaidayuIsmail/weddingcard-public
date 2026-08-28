@@ -108,7 +108,6 @@
                 >
                   Stacked
                 </button>
-                <!-- ADDED: Diagonal Layout Button -->
                 <button 
                   type="button" 
                   @click="form.namesLayout = 'diagonal'" 
@@ -444,7 +443,7 @@
             </div>
           </div>
 
-          <!-- Photo & Canvas Overrides -->
+          <!-- Photo & Canvas Overrides (Inner Card) -->
           <div v-if="activeSection === 'photo'" class="space-y-6 form-panel animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div class="panel-header">
               <h2 class="text-lg font-semibold text-white">Hero Photo (Inner Card)</h2>
@@ -454,6 +453,63 @@
                 This is separate from your envelope/cover screen's background — that one lives on the
                 <NuxtLink to="/dashboard/opening" class="underline hover:text-indigo-200">Opening Design</NuxtLink> page.
               </p>
+            </div>
+
+            <!-- Card Appearance Block -->
+            <div class="p-5 rounded-xl border border-gray-700 bg-gray-900/50 mb-6 shadow-inner">
+              <div class="flex items-center justify-between mb-4 border-b border-gray-700 pb-3">
+                <div>
+                  <h3 class="text-sm font-semibold text-white">Card Appearance</h3>
+                  <p class="text-xs text-gray-500 mt-1">Controls the look of this Inner Card and your RSVP card.</p>
+                </div>
+              </div>
+
+              <div class="space-y-4">
+                <div>
+                  <p class="text-xs text-gray-400 mb-2">Card Background</p>
+                  <div v-if="isCardStyleLocked" class="p-3 rounded-lg border border-gray-700 bg-gray-900/40 text-xs text-gray-400">
+                    This theme always uses its own light, theme-colored card for the best contrast with its palette - there's nothing to choose here.
+                  </div>
+                  <div v-else class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <button
+                      type="button"
+                      class="p-3 rounded-lg border text-left transition-colors"
+                      :class="!form.cardStyle || form.cardStyle === 'theme' ? 'border-gold-400 bg-gold-400/10 text-gold-200' : 'border-gray-700 text-gray-400 hover:border-gray-600'"
+                      @click="form.cardStyle = 'theme'"
+                    >
+                      <span class="block text-xs font-semibold mb-0.5">Follow Theme</span>
+                      <span class="block text-[11px] opacity-75">Tints to your theme's colors</span>
+                    </button>
+                    <button
+                      type="button"
+                      class="p-3 rounded-lg border text-left transition-colors"
+                      :class="form.cardStyle === 'dark' ? 'border-gold-400 bg-gold-400/10 text-gold-200' : 'border-gray-700 text-gray-400 hover:border-gray-600'"
+                      @click="form.cardStyle = 'dark'"
+                    >
+                      <span class="block text-xs font-semibold mb-0.5">Dark Card</span>
+                      <span class="block text-[11px] opacity-75">Always a dark card</span>
+                    </button>
+                    <button
+                      type="button"
+                      class="p-3 rounded-lg border text-left transition-colors"
+                      :class="form.cardStyle === 'glass' ? 'border-gold-400 bg-gold-400/10 text-gold-200' : 'border-gray-700 text-gray-400 hover:border-gray-600'"
+                      @click="form.cardStyle = 'glass'"
+                    >
+                      <span class="block text-xs font-semibold mb-0.5">Transparent</span>
+                      <span class="block text-[11px] opacity-75">Blurry glass effect</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <p class="text-xs text-gray-400 mb-2">Card Text Color <span class="text-gray-600">(blank = automatic)</span></p>
+                  <div class="flex items-center gap-2">
+                    <input v-model="form.cardTextColor" type="color" class="w-9 h-9 rounded-lg border border-gray-700 bg-transparent cursor-pointer shrink-0">
+                    <UInput v-model="form.cardTextColor" placeholder="Automatic" size="md" class="flex-1" />
+                    <UButton v-if="form.cardTextColor" size="xs" variant="ghost" color="neutral" icon="i-heroicons-x-mark" @click="form.cardTextColor = ''" />
+                  </div>
+                </div>
+              </div>
             </div>
 
             <!-- Hide System Text Toggle -->
@@ -994,6 +1050,12 @@ const monogramUploading = ref(false)
 const useCustomMonogramFont = ref(false)
 
 const adminCanvaTemplate = ref('')
+
+// Check if the current theme locks the card style (so we can hide the picker)
+const isCardStyleLocked = computed(() => {
+  const theme = getTheme(selectedThemeId.value)
+  return theme ? theme.lockCardStyle === true : false
+})
 
 // FIXED: Defined options array here as a standard ref for the Dropdown
 const shareTokens = ['{guestName}', '{brideName}', '{groomName}', '{date}', '{link}']
