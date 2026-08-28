@@ -226,15 +226,15 @@ const rsvpLink = computed(() => (guestNameQuery.value ? `/w/${slug}/rsvp?to=${en
 const { wedding, loading, notFound } = useWeddingBySlug(slug)
 const { themeStyleVars, resolveCardStyle } = useThemes()
 
-// Same cardStyle resolution as the RSVP page (app/pages/w/[slug]/rsvp.vue) -
-// see useThemes.ts's resolveCardStyle for the full reasoning.
+// BUG FIX: Stopped forcing the Glass card to use White ('#ffffff'). 
+// Now, if you choose Glass, it will use your lovely dark burgundy Text Color (var(--theme-ink)).
 const cardStyleResolved = computed(() => {
   if (wedding.value?.content.cardStyle === 'glass') return 'glass'
   return resolveCardStyle(wedding.value?.themeId, wedding.value?.content.cardStyle)
 })
 
 const cardTextColorResolved = computed(() =>
-  wedding.value?.content.cardTextColor || (cardStyleResolved.value === 'dark' || cardStyleResolved.value === 'glass' ? '#ffffff' : 'var(--theme-ink)')
+  wedding.value?.content.cardTextColor || (cardStyleResolved.value === 'dark' ? '#ffffff' : 'var(--theme-ink)')
 )
 
 const monogramDisplayText = computed(() => {
@@ -392,12 +392,6 @@ watch(
   filter: brightness(1.08);
 }
 
-/* Three looks, chosen per-wedding by cardStyleResolved (see the script setup
-   computed above, backed by useThemes.ts's resolveCardStyle) - same
-   pattern as app/pages/w/[slug]/rsvp.vue's .classic-rsvp-card/
-   .classic-rsvp-card-theme; see that file's detailed comment for the full
-   reasoning. Every descendant above reads its color from --card-text via
-   color-mix(), set inline via cardTextColorResolved. */
 .classic-inner-card {
   background: linear-gradient(
     165deg,
@@ -416,13 +410,15 @@ watch(
   color: var(--card-text, var(--theme-ink, #fff));
 }
 
+/* BUG FIX: The glass card now dynamically tints itself using your lovely pink background colors 
+   and dark text ink, instead of looking like plain white frosted glass! */
 .classic-inner-card-glass {
-  background: rgba(255, 255, 255, 0.08) !important;
+  background: color-mix(in srgb, var(--theme-bg-from, #ffffff) 30%, transparent) !important;
   backdrop-filter: blur(16px) saturate(180%) !important;
   -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
-  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.3) !important;
-  color: var(--card-text, #ffffff) !important;
+  border: 1px solid color-mix(in srgb, var(--theme-ink, #000000) 12%, transparent) !important;
+  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.15) !important;
+  color: var(--card-text, var(--theme-ink)) !important;
 }
 
 .progress-bar {

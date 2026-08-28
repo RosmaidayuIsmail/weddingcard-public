@@ -288,7 +288,7 @@ const cardStyleResolved = computed(() => {
 // element below) - a manual override wins, otherwise white for a dark
 // card or the theme's own ink for a theme-tinted card.
 const cardTextColorResolved = computed(() =>
-  wedding.value?.content.cardTextColor || (cardStyleResolved.value === 'dark' || cardStyleResolved.value === 'glass' ? '#ffffff' : 'var(--theme-ink)')
+  wedding.value?.content.cardTextColor || (cardStyleResolved.value === 'dark' ? '#ffffff' : 'var(--theme-ink)')
 )
 
 // Nuxt UI's own form fields (UInput/UInputNumber/UTextarea below) don't
