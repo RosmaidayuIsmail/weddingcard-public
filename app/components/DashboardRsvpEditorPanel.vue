@@ -376,7 +376,7 @@
                   <div
                     class="rounded-[1.5rem] border backdrop-blur-xl shadow-xl px-4 py-6 flex-1"
                     :class="cardStyleResolved === 'dark' ? 'classic-rsvp-card' : (cardStyleResolved === 'glass' ? 'classic-rsvp-card-glass' : 'classic-rsvp-card-theme')"
-                    :style="{ borderColor: 'var(--theme-accent-soft)', '--card-text': cardTextColorResolved }"
+                    :style="{ borderColor: cardStyleResolved === 'glass' ? 'transparent' : 'var(--theme-accent-soft)', '--card-text': cardTextColorResolved }"
                   >
 
                     <template v-if="previewStep < 3">
@@ -760,12 +760,21 @@ useSeoMeta({ title: 'RSVP Editor — WeddingCard' })
 }
 
 .classic-rsvp-card-glass {
+  /* Fallback background for older browsers */
+  background: rgba(255, 255, 255, 0.1) !important;
+  /* Modern glass background highly transparent and tinted by the theme's ink color */
   background: linear-gradient(
-    165deg,
-    color-mix(in srgb, var(--theme-bg-via, #ffffff) 25%, transparent) 0%,
-    color-mix(in srgb, var(--theme-bg-to, #000000) 10%, transparent) 100%
-  );
-  color: var(--card-text, var(--theme-ink, #fff));
+    135deg,
+    color-mix(in srgb, var(--theme-ink, #ffffff) 10%, transparent) 0%,
+    color-mix(in srgb, var(--theme-ink, #ffffff) 3%, transparent) 100%
+  ) !important;
+  /* Essential glass properties forced over Tailwind defaults */
+  backdrop-filter: blur(20px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(160%) !important;
+  
+  color: var(--card-text, var(--theme-ink, #fff)) !important;
+  border: 1px solid color-mix(in srgb, var(--theme-ink, #ffffff) 20%, transparent) !important;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.15) !important;
 }
 
 .preview-step-dot {
