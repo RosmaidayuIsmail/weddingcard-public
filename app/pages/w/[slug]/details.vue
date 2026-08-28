@@ -67,8 +67,8 @@
       <div
         ref="cardRef"
         class="relative backdrop-blur-xl border rounded-[2rem] shadow-2xl p-8 sm:p-10 min-h-[600px] sm:min-h-[640px] flex flex-col justify-center touch-pan-y transition-all duration-500 hover:shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
-        :class="cardStyleResolved === 'dark' ? 'classic-inner-card' : 'classic-inner-card-theme'"
-        :style="{ borderColor: 'var(--theme-accent-soft)', '--card-text': cardTextColorResolved }"
+        :class="cardStyleResolved === 'dark' ? 'classic-inner-card' : (cardStyleResolved === 'glass' ? 'classic-inner-card-glass' : 'classic-inner-card-theme')"
+        :style="{ borderColor: cardStyleResolved === 'glass' ? 'transparent' : 'var(--theme-accent-soft)', '--card-text': cardTextColorResolved }"
         @mouseenter="paused = true"
         @mouseleave="paused = false"
       >
@@ -228,9 +228,13 @@ const { themeStyleVars, resolveCardStyle } = useThemes()
 
 // Same cardStyle resolution as the RSVP page (app/pages/w/[slug]/rsvp.vue) -
 // see useThemes.ts's resolveCardStyle for the full reasoning.
-const cardStyleResolved = computed(() => resolveCardStyle(wedding.value?.themeId, wedding.value?.content.cardStyle))
+const cardStyleResolved = computed(() => {
+  if (wedding.value?.content.cardStyle === 'glass') return 'glass'
+  return resolveCardStyle(wedding.value?.themeId, wedding.value?.content.cardStyle)
+})
+
 const cardTextColorResolved = computed(() =>
-  wedding.value?.content.cardTextColor || (cardStyleResolved.value === 'dark' ? '#ffffff' : 'var(--theme-ink)')
+  wedding.value?.content.cardTextColor || (cardStyleResolved.value === 'dark' || cardStyleResolved.value === 'glass' ? '#ffffff' : 'var(--theme-ink)')
 )
 
 const monogramDisplayText = computed(() => {
@@ -388,7 +392,7 @@ watch(
   filter: brightness(1.08);
 }
 
-/* Two looks, chosen per-wedding by cardStyleResolved (see the script setup
+/* Three looks, chosen per-wedding by cardStyleResolved (see the script setup
    computed above, backed by useThemes.ts's resolveCardStyle) - same
    pattern as app/pages/w/[slug]/rsvp.vue's .classic-rsvp-card/
    .classic-rsvp-card-theme; see that file's detailed comment for the full
@@ -410,6 +414,15 @@ watch(
     color-mix(in srgb, var(--theme-bg-to, #142a45) 88%, var(--theme-ink, #000) 12%) 100%
   );
   color: var(--card-text, var(--theme-ink, #fff));
+}
+
+.classic-inner-card-glass {
+  background: rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(16px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.3) !important;
+  color: var(--card-text, #ffffff) !important;
 }
 
 .progress-bar {
