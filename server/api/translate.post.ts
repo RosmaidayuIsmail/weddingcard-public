@@ -41,6 +41,17 @@ async function googleTranslate(text: string, target: string): Promise<string> {
   return segments.map((seg: unknown[]) => (Array.isArray(seg) ? String(seg[0] ?? '') : '')).join('')
 }
 
+async function myMemoryTranslate(text: string, target: string): Promise<string> {
+  // Keyless, no signup. Used as a fallback when Google's gtx endpoint is
+  // unreachable from the host (e.g. blocked on some serverless networks).
+  const source = 'en'
+  const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${source}|${encodeURIComponent(target)}`
+  const res = await fetch(url)
+  if (!res.ok) throw new Error(`MyMemory translate failed: ${res.status}`)
+  const data = await res.json()
+  return data?.responseData?.translatedText ?? ''
+}
+
 async function papagoTranslate(text: string, target: string): Promise<string> {
   const config = useRuntimeConfig()
   const clientId = (config as { papagoClientId?: string }).papagoClientId || process.env.PAPAGO_CLIENT_ID
@@ -77,8 +88,9 @@ export default defineEventHandler(async (event) => {
   const hit = cacheGet(cacheKey)
   if (hit) return { translatedText: hit, provider: 'cache' }
 
-  const attempts: Array<{ name: 'google' | 'papago'; fn: () => Promise<string> }> = []
+  const attempts: Array<{ name: 'google' | 'mymemory' | 'papago'; fn: () => Promise<string> }> = []
   if (provider !== 'papago') attempts.push({ name: 'google', fn: () => googleTranslate(masked, targetLang) })
+  if (provider !== 'papago' && provider !== 'google') attempts.push({ name: 'mymemory', fn: () => myMemoryTranslate(masked, targetLang) })
   if (provider !== 'google') attempts.push({ name: 'papago', fn: () => papagoTranslate(masked, targetLang) })
 
   for (const attempt of attempts) {

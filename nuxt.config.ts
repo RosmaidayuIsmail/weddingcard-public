@@ -56,6 +56,9 @@ export default defineNuxtConfig({
     // Stringified Firebase service-account JSON (Firebase Admin SDK), used by
     // the payments API routes to verify ID tokens and write plan upgrades.
     firebaseServiceAccountJson: process.env.NUXT_FIREBASE_SERVICE_ACCOUNT_JSON || '',
+    // Optional Papago (Naver) translation keys for the RSVP translation assist.
+    papagoClientId: process.env.PAPAGO_CLIENT_ID || '',
+    papagoClientSecret: process.env.PAPAGO_CLIENT_SECRET || '',
 
     public: {
       siteUrl: process.env.NUXT_PUBLIC_SITE_URL || '',
