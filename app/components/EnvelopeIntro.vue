@@ -1,8 +1,5 @@
 <template>
-  <Transition 
-    :name="transitionName" 
-    :duration="transitionName === 'envelope-classic' ? 1500 : (transitionName === '3d-envelope' ? 2400 : (transitionName === '3d-book' ? 1400 : undefined))"
-  >
+  <Transition :name="transitionName" :duration="transitionName === 'envelope-classic' ? 1500 : undefined">
     <div
       v-if="!opened"
       class="envelope-overlay"
@@ -44,51 +41,6 @@
         <div class="relative w-1/2 h-full overflow-hidden door-right z-10">
           <img :src="optimizedImageUrl(content.openingBgUrl, 1400)" loading="eager" fetchpriority="high" class="absolute top-0 right-0 w-[200%] h-full max-w-none object-cover" />
           <div class="absolute inset-0 border-l border-white/20 shadow-[-5px_0_15px_rgba(0,0,0,0.4)]" :style="{ backgroundColor: `rgba(0, 0, 0, var(--overlay-tint, 0.4))` }"></div>
-        </div>
-      </div>
-
-      <!-- NEW: 3D Book Layout -->
-      <div v-else-if="content.openingStyle === '3d-book'" class="absolute inset-0 z-0 flex perspective-1500 overflow-hidden">
-        <template v-if="content.openingBgUrl">
-          <div class="relative w-1/2 h-full door-left book-left origin-left z-10">
-            <img :src="optimizedImageUrl(content.openingBgUrl, 1400)" loading="eager" fetchpriority="high" class="absolute top-0 left-0 w-[200%] h-full max-w-none object-cover" />
-            <div class="absolute inset-0 border-r border-white/20 shadow-[5px_0_15px_rgba(0,0,0,0.4)]" :style="{ backgroundColor: `rgba(0, 0, 0, var(--overlay-tint, 0.3))` }"></div>
-          </div>
-          <div class="relative w-1/2 h-full door-right book-right origin-right z-10">
-            <img :src="optimizedImageUrl(content.openingBgUrl, 1400)" loading="eager" fetchpriority="high" class="absolute top-0 right-0 w-[200%] h-full max-w-none object-cover" />
-            <div class="absolute inset-0 border-l border-white/20 shadow-[-5px_0_15px_rgba(0,0,0,0.4)]" :style="{ backgroundColor: `rgba(0, 0, 0, var(--overlay-tint, 0.3))` }"></div>
-          </div>
-        </template>
-        <template v-else>
-          <div class="relative w-1/2 h-full book-left origin-left border-r border-white/20 shadow-[5px_0_15px_rgba(0,0,0,0.4)] z-10" :style="{ background: `linear-gradient(160deg, var(--theme-bg-from, #0d2a4a), var(--theme-bg-via, #142a45))` }"></div>
-          <div class="relative w-1/2 h-full book-right origin-right border-l border-white/20 shadow-[-5px_0_15px_rgba(0,0,0,0.4)] z-10" :style="{ background: `linear-gradient(200deg, var(--theme-bg-from, #0d2a4a), var(--theme-bg-via, #142a45))` }"></div>
-        </template>
-      </div>
-
-      <!-- NEW: 3D Envelope Layout -->
-      <div v-else-if="content.openingStyle === '3d-envelope'" class="absolute inset-0 z-0 flex items-center justify-center perspective-1500 px-4">
-        <div class="relative w-full max-w-lg aspect-[4/3] env-3d-body">
-          <!-- Back inside cover -->
-          <div class="absolute inset-0 rounded-xl shadow-2xl" :style="{ background: 'var(--theme-bg-to, #04101f)' }"></div>
-          
-          <!-- Letter popping out -->
-          <div class="absolute inset-2 bg-white rounded-lg overflow-hidden env-3d-letter shadow-[0_5px_15px_rgba(0,0,0,0.5)] border border-gray-200">
-             <img v-if="content.openingBgUrl" :src="optimizedImageUrl(content.openingBgUrl, 800)" class="w-full h-full object-cover opacity-90" />
-             <div v-else class="w-full h-full" :style="{ background: 'var(--theme-bg-from, #0d2a4a)' }"></div>
-          </div>
-          
-          <!-- Bottom Flap -->
-          <div class="absolute inset-0 z-10 pointer-events-none drop-shadow-2xl" :style="{ background: 'var(--theme-bg-via, #142a45)', clipPath: 'polygon(0 0, 50% 55%, 100% 0, 100% 100%, 0 100%)' }"></div>
-          <div class="absolute inset-0 z-10 pointer-events-none opacity-30 shadow-[inset_0_-20px_20px_rgba(0,0,0,1)] rounded-xl"></div>
-          
-          <!-- Top Flap (Flips open in 3D) -->
-          <div class="absolute top-0 left-0 w-full h-[65%] origin-top env-3d-top-flap z-20 pointer-events-none">
-            <div class="w-full h-full drop-shadow-xl" :style="{ background: 'var(--theme-bg-via, #142a45)', clipPath: 'polygon(0 0, 100% 0, 50% 100%)' }"></div>
-            <!-- Dynamic Initial Seal -->
-            <div class="absolute bottom-2 left-1/2 -translate-x-1/2 w-12 h-12 rounded-full flex items-center justify-center text-sm font-serif font-bold shadow-lg" :style="{ background: 'var(--theme-accent, #d4a017)', color: 'var(--theme-on-accent, #1f1400)' }">
-               {{ sealInitials }}
-            </div>
-          </div>
         </div>
       </div>
 
@@ -314,7 +266,7 @@
           <p v-if="greetingParts.after" class="relative text-sm sm:text-base uppercase tracking-[0.15em] opacity-90" :style="[textStyleBase, titleShadow, greetingAfterStyle]">{{ greetingParts.after }}</p>
         </div>
 
-        <button v-if="!content.openingHideText" class="mt-8 flex flex-col items-center gap-2 group focus:outline-none z-30 relative">
+        <button v-if="!content.openingHideText" class="mt-8 flex flex-col items-center gap-2 group focus:outline-none">
           <span class="text-sm tracking-[0.25em] uppercase font-bold transition-all group-hover:scale-105" :style="[textStyleBase, titleShadow, actionStyle]">
             {{ content.openingActionText || "Tap to open" }}
           </span>
@@ -389,11 +341,6 @@ const transitionName = computed(() => {
   if (props.content.openingStyle === 'slide-down') return 'slide-down-open'
   if (props.content.openingStyle === 'slide-left') return 'slide-left-open'
   if (props.content.openingStyle === 'slide-right') return 'slide-right-open'
-  
-  // NEW 3D STYLES
-  if (props.content.openingStyle === '3d-envelope') return '3d-envelope'
-  if (props.content.openingStyle === '3d-book') return '3d-book'
-
   return 'envelope-fade'
 })
 
@@ -689,7 +636,10 @@ const guestBoxStyle = computed(() => {
 /* The couple's own uploaded backdrop image - sized as a fixed-ratio box so
    an arbitrary uploaded image (any aspect ratio) still reads as one
    deliberate frame rather than stretching oddly, with the greeting text
-    laid on top. */
+   laid on top (see the .guest-name-box-custom-bg z-order note in the
+   template: it comes first in DOM, and every text line above it is
+   `relative` too, so normal stacking order alone puts the text on top -
+   no z-index needed). */
 .guest-name-box-custom { position: relative; width: 260px; aspect-ratio: 1.6; justify-content: center; }
 .guest-name-box-custom-bg {
   position: absolute;
@@ -725,7 +675,10 @@ const guestBoxStyle = computed(() => {
 }
 
 /* The emerging "letter" - cream paper (not envelope-colored) so it visibly
-   reads as a separate piece of paper coming out of the envelope. */
+   reads as a separate piece of paper coming out of the envelope, rather
+   than a same-color panel just fading in in place. Starts low/small (near
+   the flap's tip, i.e. the envelope's real opening) and hidden, then
+   classic-letter-emerge below carries it sliding up and out. */
 .envelope-inner-card {
   position: absolute;
   left: 50%;
@@ -748,6 +701,10 @@ const guestBoxStyle = computed(() => {
 }
 
 .envelope-letter-icon {
+  /* Fixed size (the w-7 h-7 Tailwind classes on the element itself), not a
+     percentage - a percentage width with height:auto on an icon component
+     with no intrinsic aspect-ratio computes to 0 height, which is why this
+     was invisible before: the card rendered but the heart on it never did. */
   color: var(--theme-accent, #e3b04a);
   opacity: 0.9;
   flex-shrink: 0;
@@ -761,6 +718,11 @@ const guestBoxStyle = computed(() => {
 }
 
 .envelope-letter-lines span {
+  /* Fixed height, not a percentage - .envelope-letter-lines has no explicit
+     height of its own (it's sized by its content), and a percentage height
+     against an auto-height container resolves to 0 per the CSS spec. That
+     made both "text lines" render as invisible 0px-tall bars, which is why
+     the letter card looked completely blank instead of like a written note. */
   display: block;
   height: 6px;
   border-radius: 999px;
@@ -787,7 +749,9 @@ const guestBoxStyle = computed(() => {
   transform-origin: 50% 13%;
 }
 
-/* Staged open sequence: flap hinges open first, then the card emerges */
+/* Staged open sequence: flap hinges open first, then the card emerges and
+   grows on top, then the whole body fades - each delay lets the previous
+   step read clearly instead of everything happening at once. */
 .envelope-classic-leave-active .envelope-classic-wrap {
   animation: none;
 }
@@ -796,6 +760,10 @@ const guestBoxStyle = computed(() => {
   transition: transform 0.65s cubic-bezier(0.65, 0, 0.35, 1);
 }
 .envelope-classic-leave-active .envelope-inner-card {
+  /* animation, not transition: "both" so it holds the 0% keyframe's
+     opacity:0 for the full animation-delay before starting, instead of
+     jumping to the last static opacity:1 declared here (a transition-based
+     version popped the letter in early, before the flap had even opened). */
   animation: classic-letter-emerge 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.3s both;
 }
 @keyframes classic-letter-emerge {
@@ -815,7 +783,9 @@ const guestBoxStyle = computed(() => {
   opacity: 0;
 }
 
-/* Wax Seal details */
+/* Wax Seal: a hand-pressed wax blob (irregular border-radius, not a plain
+   circle) split into two clipped halves along a jagged seam so it can
+   visibly crack apart on open, rather than just shrinking away. */
 .wax-seal {
   position: relative;
   width: 104px;
@@ -823,10 +793,29 @@ const guestBoxStyle = computed(() => {
   transform: rotate(-3deg);
   filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.5));
 }
-.wax-seal-piece { position: absolute; inset: 0; }
-.wax-seal-piece-1 { clip-path: polygon(50% 0%, 100% 0%, 100% 50%, 100% 75%, 88% 78%, 68% 62%, 50% 50%, 46% 30%, 52% 8%); }
-.wax-seal-piece-2 { clip-path: polygon(100% 75%, 100% 100%, 50% 100%, 10% 95%, 12% 85%, 30% 64%, 50% 50%, 68% 62%, 88% 78%); }
-.wax-seal-piece-3 { clip-path: polygon(10% 95%, 0% 100%, 0% 50%, 0% 0%, 50% 0%, 52% 8%, 46% 30%, 50% 50%, 30% 64%, 12% 85%); }
+
+.wax-seal-piece {
+  position: absolute;
+  inset: 0;
+}
+
+/* Three pieces share the exact same jagged radial cracks (all meeting at
+   the center), so together (closed state) they read as one unbroken seal -
+   only on open do they separate along those cracks. A clean two-piece
+   mirror split read too much like a cracked egg; three irregular,
+   non-symmetric pieces read as genuinely broken wax. Coordinates match the
+   .wax-seal-crack paths below 1:1. */
+.wax-seal-piece-1 {
+  clip-path: polygon(50% 0%, 100% 0%, 100% 50%, 100% 75%, 88% 78%, 68% 62%, 50% 50%, 46% 30%, 52% 8%);
+}
+
+.wax-seal-piece-2 {
+  clip-path: polygon(100% 75%, 100% 100%, 50% 100%, 10% 95%, 12% 85%, 30% 64%, 50% 50%, 68% 62%, 88% 78%);
+}
+
+.wax-seal-piece-3 {
+  clip-path: polygon(10% 95%, 0% 100%, 0% 50%, 0% 0%, 50% 0%, 52% 8%, 46% 30%, 50% 50%, 30% 64%, 12% 85%);
+}
 
 .wax-seal-blob {
   position: absolute;
@@ -838,6 +827,7 @@ const guestBoxStyle = computed(() => {
     0 2px 4px rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(0, 0, 0, 0.25);
 }
+
 .wax-seal-ring {
   position: absolute;
   inset: 24%;
@@ -845,6 +835,9 @@ const guestBoxStyle = computed(() => {
   border: 1px dashed rgba(0, 0, 0, 0.25);
   pointer-events: none;
 }
+
+/* Hairline crack across the seal - invisible at rest, flashed briefly the
+   moment the seal "breaks" (see .wax-crack-flash below). */
 .wax-seal-crack {
   position: absolute;
   inset: 0;
@@ -857,6 +850,7 @@ const guestBoxStyle = computed(() => {
   stroke-linecap: round;
   stroke-linejoin: round;
 }
+
 .wax-seal-initials {
   position: absolute;
   inset: 0;
@@ -870,6 +864,9 @@ const guestBoxStyle = computed(() => {
   color: rgba(0, 0, 0, 0.55);
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.25);
 }
+
+/* Tiny wax crumbs that fly off at the moment the seal breaks, for a bit of
+   extra brittleness/texture beyond the three pieces themselves. */
 .wax-crumb {
   position: absolute;
   width: 4px;
@@ -881,8 +878,18 @@ const guestBoxStyle = computed(() => {
   top: 50%;
 }
 
-.split-door-leave-active .wax-seal { animation: wax-seal-press-crack 0.36s ease; }
-.split-door-leave-active .wax-seal-crack { animation: wax-crack-flash 0.4s ease forwards; }
+/* Open sequence: the seal is pressed (a quick squash, as if being cracked
+   open) then shakes and cracks, then splits into three irregular pieces
+   that fly apart in different directions/rotations and fade - along with a
+   few crumbs - while the doors behind it (see .wax-seal-doors below) get a
+   short beat before sliding open, so it reads as "the seal is pressed and
+   breaks, then the doors swing open" rather than everything at once. */
+.split-door-leave-active .wax-seal {
+  animation: wax-seal-press-crack 0.36s ease;
+}
+.split-door-leave-active .wax-seal-crack {
+  animation: wax-crack-flash 0.4s ease forwards;
+}
 .split-door-leave-active .wax-seal-piece-1 {
   transition: transform 0.46s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s, opacity 0.32s ease 0.3s;
   transform: translate(20px, -22px) rotate(38deg);
@@ -898,11 +905,23 @@ const guestBoxStyle = computed(() => {
   transform: translate(-24px, -10px) rotate(-40deg);
   opacity: 0;
 }
-.split-door-leave-active .wax-seal-initials { transition: opacity 0.22s ease 0.08s; opacity: 0; }
+.split-door-leave-active .wax-seal-initials {
+  transition: opacity 0.22s ease 0.08s;
+  opacity: 0;
+}
 .split-door-leave-active .wax-crumb {
+  /* animation-delay comes from each crumb's own inline style (--delay),
+     staggered per-element in the template - nth-of-type isn't safe to use
+     here since the wax-seal-piece divs above share the same tag name. */
   animation: wax-crumb-fly 0.55s ease-out forwards;
   animation-delay: var(--delay, 0s);
 }
+
+/* Wax-seal doors specifically (not Split Door) wait for the seal to fully
+   crack and scatter (press-crack finishes ~0.36s in, the flying pieces
+   finish fading ~0.6-0.7s in) before they start sliding, so it reads as a
+   real sequence - press, crack, shatter, THEN the doors swing open - rather
+   than the doors already moving while the seal is still mid-break. */
 .split-door-leave-active .wax-seal-doors .door-left,
 .split-door-leave-active .wax-seal-doors .door-right {
   transition-delay: 0.55s;
@@ -915,12 +934,14 @@ const guestBoxStyle = computed(() => {
   80% { transform: rotate(2deg) scale(0.98); }
   100% { transform: rotate(-3deg) scale(1); }
 }
+
 @keyframes wax-crack-flash {
   0% { opacity: 0; }
   20% { opacity: 1; }
   55% { opacity: 0.8; }
   100% { opacity: 0; }
 }
+
 @keyframes wax-crumb-fly {
   0% { opacity: 0; transform: translate(0, 0) scale(1); }
   15% { opacity: 1; }
@@ -936,19 +957,36 @@ const guestBoxStyle = computed(() => {
   transform: scale(1.1) translateY(-20px);
 }
 
-/* 2. Slide Open Animations */
+/* 3. Slide Open Animations (new, additive - each slides the whole cover
+   off screen in its named direction, revealing the card underneath) */
 .slide-up-open-leave-active,
 .slide-down-open-leave-active,
 .slide-left-open-leave-active,
 .slide-right-open-leave-active {
   transition: transform 0.65s cubic-bezier(0.65, 0, 0.35, 1), opacity 0.5s ease;
 }
-.slide-up-open-leave-to { transform: translateY(-100%); opacity: 0.4; }
-.slide-down-open-leave-to { transform: translateY(100%); opacity: 0.4; }
-.slide-left-open-leave-to { transform: translateX(-100%); opacity: 0.4; }
-.slide-right-open-leave-to { transform: translateX(100%); opacity: 0.4; }
 
-/* 3. Grand Split Door Animation (also used by Wax Seal) */
+.slide-up-open-leave-to {
+  transform: translateY(-100%);
+  opacity: 0.4;
+}
+
+.slide-down-open-leave-to {
+  transform: translateY(100%);
+  opacity: 0.4;
+}
+
+.slide-left-open-leave-to {
+  transform: translateX(-100%);
+  opacity: 0.4;
+}
+
+.slide-right-open-leave-to {
+  transform: translateX(100%);
+  opacity: 0.4;
+}
+
+/* 2. Grand Split Door Animation (also used by Wax Seal) */
 .split-door-leave-active {
   transition: opacity 1.35s ease;
 }
@@ -965,89 +1003,88 @@ const guestBoxStyle = computed(() => {
   transform: scale(1.08);
   transition: opacity 0.4s ease 0.45s, transform 0.9s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-.split-door-leave-to { opacity: 0; }
+.split-door-leave-to {
+  opacity: 0;
+}
 
+/* Wax Seal only (Split Door keeps the rules above - a full-bleed photo or
+   solid door panel stays visually opaque as it slides, so it never showed
+   this problem). Wax Seal's own base opacity used to start fading from the
+   very first frame with no delay at all, which meant the title text and
+   "Tap to open" button were only ever partially transparent - just see-
+   through enough that the guest-detail page's own text, already fading in
+   underneath, was visible AT THE SAME TIME. Two blocks of real text
+   overlapping mid-transition is what actually read as "corrupted" rather
+   than a controlled reveal. The fix mirrors Classic Envelope's already-
+   working pattern: stay fully opaque (blocking whatever's behind
+   completely) while the seal cracks and scatters, THEN dissolve everything
+   - background, doors, title, button - together in one clean pass, so
+   there's never a moment where both layers of text are legible at once. */
 .split-door-leave-active.style-wax-seal {
+  /* Vue only removes this element from the DOM once ITS OWN transition ends
+     (child transitionend events don't count) - so this has to outlast the
+     doors' full 0.55s-delay + 1.2s-duration slide (1.75s) below, or the
+     doors would visibly snap away mid-slide instead of finishing. */
   transition: opacity 1.2s ease 0.6s;
 }
 .split-door-leave-active.style-wax-seal .content-container {
   transition: opacity 0.25s ease 0.6s, transform 0.9s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* --- NEW 3D ANIMATIONS --- */
-
-.perspective-1500 { perspective: 1500px; }
-.origin-left { transform-origin: left center; }
-.origin-right { transform-origin: right center; }
-.origin-top { transform-origin: top center; }
-
-/* 3D BOOK: Swings open beautifully like French doors or a hardcover book */
-.3d-book-leave-active {
-  transition: opacity 1.35s ease;
-}
-.3d-book-leave-active .book-left {
-  transform: rotateY(-110deg);
-  transition: transform 1.2s cubic-bezier(0.65, 0, 0.15, 1);
-  transform-style: preserve-3d;
-}
-.3d-book-leave-active .book-right {
-  transform: rotateY(110deg);
-  transition: transform 1.2s cubic-bezier(0.65, 0, 0.15, 1);
-  transform-style: preserve-3d;
-}
-.3d-book-leave-active .content-container {
-  opacity: 0;
-  transform: scale(1.08);
-  transition: opacity 0.4s ease, transform 0.9s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-.3d-book-leave-to { opacity: 0; }
-
-/* 3D ENVELOPE: Top flap folds up backward, card rises, whole thing drops away */
-.env-3d-top-flap {
-  transform-style: preserve-3d;
-  backface-visibility: hidden;
-}
-
-.3d-envelope-leave-active {
-  transition: opacity 0.8s ease 1.6s;
-}
-.3d-envelope-leave-active .env-3d-top-flap {
-  transform: rotateX(180deg);
-  transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-.3d-envelope-leave-active .env-3d-letter {
-  transform: translateY(-40%);
-  transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.5s;
-}
-.3d-envelope-leave-active .env-3d-body {
-  transform: translateY(100vh);
-  transition: transform 0.8s cubic-bezier(0.65, 0, 0.15, 1) 1.1s;
-}
-.3d-envelope-leave-active .content-container {
-  opacity: 0;
-  transform: scale(1.08);
-  transition: opacity 0.4s ease, transform 0.9s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-.3d-envelope-leave-to { opacity: 0; }
-
-
 /* --- Confetti Burst Background Animation --- */
-.confetti-burst-leave-active { transition: opacity 0.7s ease 0.5s; }
-.confetti-burst-leave-active .content-container { animation: content-pop-away 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
-.confetti-burst-leave-active .confetti-burst-bg { animation: burst-flash-expand 0.8s ease forwards; }
-.confetti-burst-leave-to { opacity: 0; }
+/* ==========================================================================
+   Confetti Burst: Multi-stage open animation
+   1. Content pops and vanishes
+   2. Background flashes and expands
+   3. Entire overlay fades out
+   ========================================================================== */
 
+/* The main overlay transition - waits for the "pop" to finish before fading out */
+.confetti-burst-leave-active {
+  transition: opacity 0.7s ease 0.5s; 
+}
+
+/* Stage 1: The text and button "pop" towards the user, then shrink and fade */
+.confetti-burst-leave-active .content-container {
+  animation: content-pop-away 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Stage 2: The background flashes and expands outward */
+.confetti-burst-leave-active .confetti-burst-bg {
+  animation: burst-flash-expand 0.8s ease forwards;
+}
+
+/* Stage 3: The whole overlay disappears */
+.confetti-burst-leave-to {
+  opacity: 0;
+}
+
+/* Keyframes for the sequence */
 @keyframes content-pop-away {
   0% { transform: scale(1); opacity: 1; }
   40% { transform: scale(1.1); opacity: 1; }
   100% { transform: scale(0.85); opacity: 0; }
 }
+
 @keyframes burst-flash-expand {
-  0% { transform: scale(1); filter: brightness(1); }
-  30% { transform: scale(1.05); filter: brightness(1.4); }
-  100% { transform: scale(1.15); filter: brightness(1); opacity: 0; }
+  0% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  30% {
+    transform: scale(1.05);
+    filter: brightness(1.4); /* Flashes brighter */
+  }
+  100% {
+    transform: scale(1.15);
+    filter: brightness(1);
+    opacity: 0;
+  }
 }
 
+/* Ambient confetti - falls gently the whole time the envelope is closed
+   (previously .confetti-particle had no base CSS at all, so nothing was
+   ever visible despite the style's name). */
 .confetti-particle {
   position: absolute;
   top: -8%;
@@ -1080,6 +1117,9 @@ const guestBoxStyle = computed(() => {
 .cd-11 { animation-delay: 1.9s; }
 .cd-12 { animation-delay: 2.3s; }
 
+/* Burst particles - invisible until the tap, then pop from a center point
+   and fan outward, on top of (not replacing) the ambient particles above,
+   so nothing "teleports" mid-fall when the burst starts. */
 .confetti-burst-particle {
   position: absolute;
   left: 50%;
@@ -1100,7 +1140,13 @@ const guestBoxStyle = computed(() => {
   100% { transform: translate(-50%, -50%) translate(var(--bx), var(--by)) rotate(var(--brot)) scale(1); opacity: 0; }
 }
 
-.modern-dark-bg { background: linear-gradient(160deg, var(--md-from), var(--md-via) 55%, var(--md-to)); }
+/* Modern Dark: layered gradient + slowly-drifting blurred blobs (colors
+   from the couple's chosen palette, set as CSS vars on the wrapper), a
+   faint dot-grain texture, and a thin frame - previously just a flat
+   two-blob gradient. */
+.modern-dark-bg {
+  background: linear-gradient(160deg, var(--md-from), var(--md-via) 55%, var(--md-to));
+}
 .modern-dark-bg .md-blob {
   position: absolute;
   border-radius: 50%;
@@ -1130,7 +1176,12 @@ const guestBoxStyle = computed(() => {
   background-size: 3px 3px;
 }
 
-.minimal-light-bg { background: linear-gradient(160deg, var(--ml-from), var(--ml-via) 55%, var(--ml-to)); }
+/* Minimal Light: same idea as Modern Dark but airy/pastel - a
+   couple-selectable palette, softly drifting blobs, and a delicate dashed
+   ring for a touch of polish beyond a flat gradient. */
+.minimal-light-bg {
+  background: linear-gradient(160deg, var(--ml-from), var(--ml-via) 55%, var(--ml-to));
+}
 .minimal-light-bg .ml-blob {
   position: absolute;
   border-radius: 50%;
@@ -1154,7 +1205,9 @@ const guestBoxStyle = computed(() => {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .envelope-classic-wrap { animation: none; }
+  .envelope-classic-wrap {
+    animation: none;
+  }
   .envelope-classic-leave-active .envelope-flap-svg,
   .envelope-classic-leave-active .envelope-inner-card,
   .envelope-classic-leave-active .envelope-body-svg,
@@ -1166,7 +1219,9 @@ const guestBoxStyle = computed(() => {
   }
 
   .split-door-leave-active .wax-seal,
-  .split-door-leave-active .wax-seal-crack { animation: none; }
+  .split-door-leave-active .wax-seal-crack {
+    animation: none;
+  }
   .split-door-leave-active .wax-seal-piece-1,
   .split-door-leave-active .wax-seal-piece-2,
   .split-door-leave-active .wax-seal-piece-3,
@@ -1183,22 +1238,7 @@ const guestBoxStyle = computed(() => {
     transition-delay: 0s;
   }
 
-  /* Disable 3D Animations */
-  .3d-book-leave-active .book-left,
-  .3d-book-leave-active .book-right,
-  .3d-book-leave-active .content-container,
-  .3d-book-leave-active,
-  .3d-envelope-leave-active .env-3d-top-flap,
-  .3d-envelope-leave-active .env-3d-letter,
-  .3d-envelope-leave-active .env-3d-body,
-  .3d-envelope-leave-active .content-container,
-  .3d-envelope-leave-active {
-    animation: none;
-    transition-duration: 0.2s;
-    transition-delay: 0s;
-    transform: none;
-  }
-
+  /* ADDED: Disable Confetti pop and flash */
   .confetti-burst-leave-active .content-container,
   .confetti-burst-leave-active .confetti-burst-bg,
   .confetti-burst-leave-active .confetti-burst-particle {
@@ -1212,7 +1252,9 @@ const guestBoxStyle = computed(() => {
   }
   .confetti-particle,
   .modern-dark-bg .md-blob,
-  .minimal-light-bg .ml-blob { animation: none; }
+  .minimal-light-bg .ml-blob {
+    animation: none;
+  }
 
   .guest-name-box-animated {
     animation: none;
@@ -1221,7 +1263,10 @@ const guestBoxStyle = computed(() => {
   }
 }
 
-.cfg-bg { background: linear-gradient(160deg, var(--cfg-from) 0%, var(--cfg-via) 55%, var(--cfg-to) 100%); }
+/* ---- Admin-authored opening styles (config-driven) ---- */
+.cfg-bg {
+  background: linear-gradient(160deg, var(--cfg-from) 0%, var(--cfg-via) 55%, var(--cfg-to) 100%);
+}
 .cfg-blob {
   position: absolute;
   width: 60%;
@@ -1247,6 +1292,10 @@ const guestBoxStyle = computed(() => {
   opacity: 0.85;
   animation: cfg-fall 3s linear infinite;
 }
-@keyframes cfg-fall { to { transform: translateY(120vh) rotate(360deg); } }
-@media (prefers-reduced-motion: reduce) { .cfg-blob, .cfg-confetti { animation: none; } }
+@keyframes cfg-fall {
+  to { transform: translateY(120vh) rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cfg-blob, .cfg-confetti { animation: none; }
+}
 </style>
