@@ -54,7 +54,10 @@
            lighter value - its own palette (and its couples' photos) is
            already pastel/light, so the old fixed 0.4 was mixing into a flat
            grey wash instead of protecting text over real photo colors. -->
+      <!-- BUG FIX: We only apply this dark safety overlay if the user is NOT using a full custom Canva image. 
+           This prevents the beautiful pastel pinks from turning muddy brown! -->
       <div v-if="!wedding.content.hideSystemText" class="absolute inset-0" :style="{ backgroundColor: `rgba(0, 0, 0, var(--overlay-tint, 0.4))` }"></div>
+      
       <!-- This bottom fade used to always render, even with hideSystemText
            on - so a couple's fully custom, edge-to-edge design (baked-in
            typography, no room for a dimmed band) still got its bottom third
