@@ -74,7 +74,7 @@
                 <div v-if="isCardStyleLocked" class="p-3 rounded-lg border border-gray-700 bg-gray-900/40 text-xs text-gray-400">
                   This theme always uses its own light, theme-colored card for the best contrast with its palette - there's nothing to choose here.
                 </div>
-                <div v-else class="grid sm:grid-cols-2 gap-2">
+                <div v-else class="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <button
                     type="button"
                     class="p-3 rounded-lg border text-left transition-colors"
@@ -92,6 +92,15 @@
                   >
                     <span class="block text-xs font-semibold mb-0.5">Dark Card</span>
                     <span class="block text-[11px] opacity-75">Always a fixed dark card with light text, regardless of theme</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="p-3 rounded-lg border text-left transition-colors"
+                    :class="form.cardStyle === 'glass' ? 'border-gold-400 bg-gold-400/10 text-gold-200' : 'border-gray-700 text-gray-400 hover:border-gray-600'"
+                    @click="form.cardStyle = 'glass'"
+                  >
+                    <span class="block text-xs font-semibold mb-0.5">Transparent</span>
+                    <span class="block text-[11px] opacity-75">A blurry glass effect that lets the background beautifully shine through</span>
                   </button>
                 </div>
               </div>
@@ -366,7 +375,7 @@
 
                   <div
                     class="rounded-[1.5rem] border backdrop-blur-xl shadow-xl px-4 py-6 flex-1"
-                    :class="cardStyleResolved === 'dark' ? 'classic-rsvp-card' : 'classic-rsvp-card-theme'"
+                    :class="cardStyleResolved === 'dark' ? 'classic-rsvp-card' : (cardStyleResolved === 'glass' ? 'classic-rsvp-card-glass' : 'classic-rsvp-card-theme')"
                     :style="{ borderColor: 'var(--theme-accent-soft)', '--card-text': cardTextColorResolved }"
                   >
 
@@ -514,7 +523,11 @@ const toast = useToast()
 // this preview edits the SAME wedding's content, so it needs to mirror
 // whichever look (dark card vs theme-tinted card) the real RSVP page will
 // actually render, not just always assume dark.
-const cardStyleResolved = computed(() => resolveCardStyle(wedding.value?.themeId, form.cardStyle))
+const cardStyleResolved = computed(() => {
+  if (form.cardStyle === 'glass') return 'glass'
+  return resolveCardStyle(wedding.value?.themeId, form.cardStyle)
+})
+
 const cardTextColorResolved = computed(() =>
   form.cardTextColor || (cardStyleResolved.value === 'dark' ? '#ffffff' : 'var(--theme-ink)')
 )
@@ -724,12 +737,10 @@ useSeoMeta({ title: 'RSVP Editor — WeddingCard' })
   border: 1px solid color-mix(in srgb, var(--theme-ink, #fff) 12%, transparent);
 }
 
-/* Two looks for this preview card, mirroring the real page's
-   .classic-rsvp-card/.classic-rsvp-card-theme in app/pages/w/[slug]/rsvp.vue
-   - see that file's detailed comment for the full reasoning. Every
-   descendant below (step dots, option cards, the summary box, nav buttons)
+/* Three looks for this preview card, mirroring the real page's variations.
+   Every descendant below (step dots, option cards, the summary box, nav buttons)
    reads its color/border/background from --card-text via color-mix(), set
-   inline on whichever of these two classes is applied. */
+   inline on whichever of these three classes is applied. */
 .classic-rsvp-card {
   background: linear-gradient(
     165deg,
@@ -744,6 +755,15 @@ useSeoMeta({ title: 'RSVP Editor — WeddingCard' })
     165deg,
     color-mix(in srgb, var(--theme-bg-via, #0b1c30) 92%, var(--theme-ink, #000) 8%) 0%,
     color-mix(in srgb, var(--theme-bg-to, #142a45) 88%, var(--theme-ink, #000) 12%) 100%
+  );
+  color: var(--card-text, var(--theme-ink, #fff));
+}
+
+.classic-rsvp-card-glass {
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--theme-bg-via, #ffffff) 25%, transparent) 0%,
+    color-mix(in srgb, var(--theme-bg-to, #000000) 10%, transparent) 100%
   );
   color: var(--card-text, var(--theme-ink, #fff));
 }
