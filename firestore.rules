@@ -83,7 +83,17 @@ service cloud.firestore {
 
     match /users/{uid} {
       allow read: if isSignedIn() && (request.auth.uid == uid || isSuperAdmin());
-      allow create: if isSignedIn() && request.auth.uid == uid;
+      // Public self-signup is closed (WeddingCard is now invitation-only -
+      // only the superadmin creates accounts/weddings). This still allows a
+      // brand-new Firebase Auth user to create their OWN first-time profile
+      // doc (so an existing/legacy 'couple' or 'vip' login keeps working
+      // exactly as before), but it can never be created with role
+      // 'superadmin', and a 'vip' profile can never be created already
+      // 'approved' - closing the privilege-escalation hole even for someone
+      // who bypasses the UI and calls the Firebase Auth SDK directly.
+      allow create: if isSignedIn() && request.auth.uid == uid &&
+        request.resource.data.role in ['couple', 'vip'] &&
+        (!('vipApprovalStatus' in request.resource.data) || request.resource.data.vipApprovalStatus != 'approved');
       // A superadmin can update any profile (needed to approve/decline a
       // VIP request - see AdminVipApprovals.vue). Otherwise, a user can
       // only update their own profile, can't grant themselves the
@@ -113,7 +123,12 @@ service cloud.firestore {
 
     match /weddings/{weddingId} {
       allow read: if resource.data.status == 'published' || isOwner(resource.data) || isSuperAdmin();
-      allow create: if isSignedIn() && request.resource.data.ownerUid == request.auth.uid;
+      // WeddingCard is invitation-only now: every new wedding is created by
+      // the superadmin (Admin > Weddings & Sync > "+ New Wedding"), never by
+      // a couple signing up and creating their own. Existing weddings a
+      // couple already owns are untouched - this only closes the door on
+      // creating brand-new ones outside the admin panel.
+      allow create: if isSuperAdmin();
       // Owners can update their own wedding freely EXCEPT the billing fields:
       // plan/paymentStatus may only change via a superadmin (admin panel) or
       // the Firebase Admin SDK on the server (ToyyibPay payment settlement).

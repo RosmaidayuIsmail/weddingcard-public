@@ -55,7 +55,10 @@
         </div>
       </div>
   
-      <UInput v-model="search" icon="i-heroicons-magnifying-glass" placeholder="Search by names or link name..." size="lg" class="max-w-sm" />
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <UInput v-model="search" icon="i-heroicons-magnifying-glass" placeholder="Search by names or link name..." size="lg" class="max-w-sm" />
+        <UButton color="primary" icon="i-heroicons-plus" @click="openNewWeddingModal">New Wedding</UButton>
+      </div>
   
       <div v-if="loading" class="text-center text-white/50 py-16">Loading...</div>
       <div v-else-if="filteredWeddings.length === 0" class="empty-state">
@@ -84,6 +87,36 @@
         </div>
       </div>
     </div>
+
+    <!-- Sign-up is closed platform-wide now (see firestore.rules:
+         weddings/create requires isSuperAdmin()) - this is the only way a
+         new wedding gets created. The customer never signs up or logs in;
+         everything is built and managed for them here. -->
+    <UModal v-model:open="newWeddingModalOpen" title="Create a new wedding">
+      <template #body>
+        <div class="space-y-4">
+          <p class="text-sm text-white/60">
+            Creates a fresh wedding, ready to open straight in the editor. The customer never needs an account - you set everything up for them here.
+          </p>
+          <UFormField label="Bride's name">
+            <UInput v-model="newWeddingForm.brideName" placeholder="e.g. Aisyah" size="lg" class="w-full" />
+          </UFormField>
+          <UFormField label="Groom's name">
+            <UInput v-model="newWeddingForm.groomName" placeholder="e.g. Danial" size="lg" class="w-full" />
+          </UFormField>
+          <UFormField label="Link name (their invitation URL - /w/...)">
+            <UInput v-model="newWeddingForm.slug" placeholder="e.g. aisyah-danial" size="lg" class="w-full" />
+          </UFormField>
+          <p v-if="newWeddingError" class="text-sm text-red-400">{{ newWeddingError }}</p>
+        </div>
+      </template>
+      <template #footer>
+        <div class="flex justify-end gap-2 w-full">
+          <UButton variant="ghost" color="neutral" @click="newWeddingModalOpen = false">Cancel</UButton>
+          <UButton color="primary" :loading="creatingWedding" @click="submitNewWedding">Create wedding</UButton>
+        </div>
+      </template>
+    </UModal>
   </template>
   
   <script setup lang="ts">
@@ -94,6 +127,8 @@
   const toast = useToast()
   const { previewMissingCount, applyPlatformDefaultsToExistingWeddings } = useAdminMigrations()
   const { currentUser } = useAuthState()
+  const { createWedding } = useMyWedding()
+  const router = useRouter()
 
   const weddings = ref<WeddingDoc[]>([])
   const loading = ref(true)
@@ -134,6 +169,38 @@
     }
   }
   
+  const newWeddingModalOpen = ref(false)
+  const newWeddingForm = reactive({ brideName: '', groomName: '', slug: '' })
+  const newWeddingError = ref('')
+  const creatingWedding = ref(false)
+
+  function openNewWeddingModal() {
+    newWeddingForm.brideName = ''
+    newWeddingForm.groomName = ''
+    newWeddingForm.slug = ''
+    newWeddingError.value = ''
+    newWeddingModalOpen.value = true
+  }
+
+  async function submitNewWedding() {
+    newWeddingError.value = ''
+    if (!newWeddingForm.brideName.trim() || !newWeddingForm.groomName.trim() || !newWeddingForm.slug.trim()) {
+      newWeddingError.value = 'Please fill in both names and a link name.'
+      return
+    }
+    creatingWedding.value = true
+    try {
+      const id = await createWedding(newWeddingForm.slug, newWeddingForm.brideName.trim(), newWeddingForm.groomName.trim())
+      newWeddingModalOpen.value = false
+      toast.add({ title: 'Wedding created', description: `${newWeddingForm.brideName} & ${newWeddingForm.groomName} is ready to edit.`, color: 'success' })
+      await router.push(`/admin/wedding/${id}`)
+    } catch (error: unknown) {
+      newWeddingError.value = error instanceof Error ? error.message : 'Could not create the wedding.'
+    } finally {
+      creatingWedding.value = false
+    }
+  }
+
   async function loadWeddings() {
     if (!isConfigured || !db) {
       loading.value = false

@@ -46,9 +46,7 @@
           </UButton>
         </div>
 
-        <p class="text-center text-sm text-white/60 mt-6">
-          New here? <NuxtLink to="/signup" class="text-gold-300 hover:underline">Create your wedding card</NuxtLink>
-        </p>
+
       </div>
     </div>
   </div>

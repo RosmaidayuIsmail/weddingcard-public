@@ -10,40 +10,24 @@
         </NuxtLink>
       </div>
 
-      <div class="rounded-2xl border border-gold-400/20 bg-ink-900/60 backdrop-blur p-6 shadow-xl">
-        <h1 class="text-xl font-display font-bold text-center text-gold-100 mb-1">Create your wedding card</h1>
-        <p class="text-center text-sm text-white/60 mb-5">Free to start — upgrade any time.</p>
-
-        <UAlert
-          v-if="!isConfigured"
-          icon="i-heroicons-exclamation-triangle"
-          color="warning"
-          variant="soft"
-          title="Firebase isn't configured yet"
-          description="Add your Firebase credentials to .env to enable sign-up."
-          class="mb-4"
-        />
-
-        <div class="space-y-4">
-          <UFormField label="Your name(s)">
-            <UInput v-model="displayName" placeholder="e.g. Aisyah & Danial" size="lg" class="w-full" />
-          </UFormField>
-          <UFormField label="Email">
-            <UInput v-model="email" type="email" placeholder="you@example.com" size="lg" class="w-full" />
-          </UFormField>
-          <UFormField label="Password">
-            <UInput v-model="password" type="password" placeholder="At least 6 characters" size="lg" class="w-full" @keydown.enter="handleSignup" />
-          </UFormField>
-
-          <p v-if="errorMessage" class="text-sm text-red-400">{{ errorMessage }}</p>
-
-          <UButton block size="lg" color="primary" class="font-semibold" :loading="loading" @click="handleSignup">
-            Create account
-          </UButton>
-        </div>
-
-        <p class="text-center text-sm text-white/60 mt-6">
-          Already have a card? <NuxtLink to="/login" class="text-gold-300 hover:underline">Log in</NuxtLink>
+      <!-- Self-service sign-up is closed - WeddingCard is invitation-only
+           now, every wedding is created by the admin (see firestore.rules:
+           weddings/create requires isSuperAdmin()). This replaces the old
+           account-creation form rather than deleting the route outright, so
+           an old bookmark or shared link lands somewhere friendly instead
+           of a dead form or a raw 404. -->
+      <div class="rounded-2xl border border-gold-400/20 bg-ink-900/60 backdrop-blur p-6 shadow-xl text-center space-y-4">
+        <UIcon name="i-heroicons-envelope-open" class="w-8 h-8 mx-auto text-gold-300" />
+        <h1 class="text-xl font-display font-bold text-gold-100">By invitation only</h1>
+        <p class="text-sm text-white/60 leading-relaxed">
+          WeddingCard isn't self-service right now - every invitation is set up personally.
+          Reach out and we'll get yours created for you.
+        </p>
+        <UButton to="/" block size="lg" variant="soft" color="neutral" class="font-medium">
+          Back to home
+        </UButton>
+        <p class="text-center text-sm text-white/60 pt-2">
+          Already have an account? <NuxtLink to="/login" class="text-gold-300 hover:underline">Log in</NuxtLink>
         </p>
       </div>
     </div>
@@ -51,36 +35,5 @@
 </template>
 
 <script setup lang="ts">
-const { signUp, isConfigured } = useAuth()
-
-const displayName = ref('')
-const email = ref('')
-const password = ref('')
-const loading = ref(false)
-const errorMessage = ref('')
-
-async function handleSignup() {
-  errorMessage.value = ''
-
-  if (!email.value || password.value.length < 6) {
-    errorMessage.value = 'Please enter a valid email and a password with at least 6 characters.'
-    return
-  }
-
-  loading.value = true
-  try {
-    await signUp(email.value, password.value, displayName.value)
-    await navigateTo('/dashboard')
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : ''
-    errorMessage.value = message.includes('email-already-in-use')
-      ? 'An account already exists with that email.'
-      : 'Could not create your account. Please try again.'
-    console.error(error)
-  } finally {
-    loading.value = false
-  }
-}
-
-useSeoMeta({ title: 'Create your wedding card \u2014 WeddingCard' })
+useSeoMeta({ title: 'By invitation only \u2014 WeddingCard' })
 </script>

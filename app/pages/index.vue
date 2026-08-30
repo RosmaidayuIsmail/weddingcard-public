@@ -12,9 +12,8 @@
           <span class="font-display font-bold text-xl tracking-wide bg-clip-text text-transparent bg-gradient-to-r from-gold-100 to-gold-400">WeddingCard</span>
         </div>
         <div class="flex items-center gap-3">
-          <UButton to="/login" variant="ghost" color="neutral" class="hidden sm:flex text-white/80 hover:text-white font-medium text-base">Log in</UButton>
-          <UButton to="/signup" color="primary" class="font-semibold shadow-lg shadow-gold-500/20 hover:shadow-gold-500/40 transition-shadow rounded-full px-6 py-2">
-            Get Started
+          <UButton to="/login" color="primary" class="font-semibold shadow-lg shadow-gold-500/20 hover:shadow-gold-500/40 transition-shadow rounded-full px-6 py-2">
+            Log In
           </UButton>
         </div>
       </div>
@@ -40,10 +39,7 @@
       </p>
       
       <div class="animate-fade-up delay-3 flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
-        <UButton to="/signup" size="xl" color="primary" class="w-full sm:w-auto font-semibold text-base px-8 py-4 rounded-full shadow-[0_0_40px_-10px_rgba(212,160,23,0.5)] hover:scale-105 transition-transform duration-300">
-          Create Your Card — It's Free
-        </UButton>
-        <UButton to="/login" size="xl" variant="soft" color="neutral" class="w-full sm:w-auto font-medium text-base px-8 py-4 rounded-full bg-white/5 hover:bg-white/10 backdrop-blur-md border border-white/10 transition-colors">
+        <UButton to="/login" size="xl" color="primary" class="w-full sm:w-auto font-semibold text-base px-8 py-4 rounded-full shadow-[0_0_40px_-10px_rgba(212,160,23,0.5)] hover:scale-105 transition-transform duration-300">
           Log In
         </UButton>
       </div>
@@ -138,8 +134,8 @@
         <div class="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-px bg-gradient-to-r from-transparent via-gold-400 to-transparent opacity-50"></div>
         <h2 class="font-display text-4xl sm:text-5xl font-bold text-white mb-6 leading-tight">Begin your forever,<br/> beautifully.</h2>
         <p class="text-white/60 text-lg mb-10 max-w-xl mx-auto">Join couples who have transformed how they invite and manage their guests. Set up your card in minutes.</p>
-        <UButton to="/signup" size="xl" color="primary" class="font-semibold text-base px-10 py-5 rounded-full shadow-[0_0_40px_-10px_rgba(212,160,23,0.5)] hover:scale-105 transition-transform duration-300">
-          Start Designing Now
+        <UButton to="/login" size="xl" color="primary" class="font-semibold text-base px-10 py-5 rounded-full shadow-[0_0_40px_-10px_rgba(212,160,23,0.5)] hover:scale-105 transition-transform duration-300">
+          Log In
         </UButton>
       </div>
       </ScrollReveal>
