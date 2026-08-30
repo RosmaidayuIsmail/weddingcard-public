@@ -72,6 +72,28 @@ export default defineEventHandler(async (event) => {
       updatedAt: new Date().toISOString()
     })
 
+    // Backfill immediately: without this, a freshly connected folder stays
+    // empty until either the couple clicks "Sync now" or the next guest
+    // RSVPs, which reads as broken ("I connected and nothing showed up").
+    // Connecting should feel like it *did* something right away. A failure
+    // here never undoes the connection itself - syncGuestListToDrive()
+    // already swallows its own errors, and "Sync now" is always there as a
+    // manual retry.
+    try {
+      if (stateData.weddingId === ADMIN_DRIVE_CONNECTION_ID) {
+        // The admin's connection is account-wide, not tied to one wedding -
+        // backfill every existing wedding's guest list into "RSVP Lists"
+        // at once, so weddings that were already running before she
+        // connected show up immediately too.
+        const weddingsSnap = await db.collection('weddings').get()
+        await Promise.all(weddingsSnap.docs.map((d) => syncGuestListToDrive(d.id)))
+      } else {
+        await syncGuestListToDrive(stateData.weddingId)
+      }
+    } catch (error) {
+      console.error('Initial Drive sync after connect failed', error)
+    }
+
     return returnTo('connected')
   } catch (error) {
     console.error('Google Drive connect failed', error)

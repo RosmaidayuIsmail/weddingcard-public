@@ -63,7 +63,7 @@
              text/background here made it wash out to near-invisible on
              those. Theme-ink-based coloring keeps it legible on every
              theme, same as the title just below. -->
-        <UButton :to="backHref" variant="ghost" color="neutral" size="sm" icon="i-heroicons-arrow-left" aria-label="Back to Cover" class="rounded-full backdrop-blur-sm px-4 border transition-colors text-[color-mix(in_srgb,var(--theme-ink)_70%,transparent)] hover:text-[var(--theme-ink)] bg-[color-mix(in_srgb,var(--theme-ink)_6%,transparent)] border-[color-mix(in_srgb,var(--theme-ink)_12%,transparent)]">
+        <UButton :to="backHref" variant="ghost" color="neutral" size="sm" icon="i-heroicons-arrow-left" aria-label="Back to Cover" class="rounded-full backdrop-blur-sm px-4 border transition-colors text-[color-mix(in_srgb,var(--theme-ink)_70%,transparent)] hover:text-[var(--theme-ink)] bg-[color-mix(in_srgb,var(--theme-ink)_6%,transparent)] border-[color-mix(in_srgb,var(--theme-ink)_12%,transparent)] active:bg-[color-mix(in_srgb,var(--theme-ink)_10%,transparent)]! active:text-[var(--theme-ink)]!">
           {{ wedding.content.rsvpReturnButton || 'Return to Invitation' }}
         </UButton>
       </div>
@@ -214,7 +214,7 @@
           </div>
 
           <div class="flex items-center justify-between mt-12 pt-6 border-t border-[color-mix(in_srgb,var(--card-text)_10%,transparent)] relative z-20">
-            <UButton v-if="currentStep > 0" variant="ghost" color="neutral" icon="i-heroicons-arrow-left" class="text-[var(--card-text)] hover:bg-[color-mix(in_srgb,var(--card-text)_10%,transparent)] rounded-full px-4" @click="goBack">{{ wedding.content.rsvpBackButton || 'Back' }}</UButton>
+            <UButton v-if="currentStep > 0" variant="ghost" color="neutral" icon="i-heroicons-arrow-left" class="text-[var(--card-text)] hover:bg-[color-mix(in_srgb,var(--card-text)_10%,transparent)] active:bg-[color-mix(in_srgb,var(--card-text)_10%,transparent)]! rounded-full px-4" @click="goBack">{{ wedding.content.rsvpBackButton || 'Back' }}</UButton>
             <div v-else></div>
             
             <UButton v-if="currentStep < steps.length - 1" trailing-icon="i-heroicons-arrow-right" class="rounded-full px-8 shadow-md accent-btn" size="lg" @click="goNext">{{ wedding.content.rsvpContinueButton || 'Continue' }}</UButton>
@@ -320,11 +320,14 @@ const cardUiVars = computed(() => ({
 // dropped onto the plain classic page with no way back into the cinematic
 // one - see the bug report this fixes.
 const isVip = computed(() => !!wedding.value?.vipEnabled)
+const isPreviewRecording = computed(() => route.query.preview === '1')
 const backHref = computed(() => {
-  const toParam = typeof route.query.to === 'string' && route.query.to
-    ? `?to=${encodeURIComponent(route.query.to)}`
-    : ''
-  return isVip.value ? `/w/${slug}/vip${toParam}` : `/w/${slug}${toParam}`
+  const params = new URLSearchParams()
+  if (typeof route.query.to === 'string' && route.query.to) params.set('to', route.query.to)
+  if (isPreviewRecording.value) params.set('preview', '1')
+  const qs = params.toString()
+  const suffix = qs ? `?${qs}` : ''
+  return isVip.value ? `/w/${slug}/vip${suffix}` : `/w/${slug}${suffix}`
 })
 
 const styleVars = computed(() =>
@@ -455,34 +458,41 @@ async function submitForm() {
   try {
     const submittedAt = new Date().toISOString()
 
-    await addDoc(collection(db, 'weddings', wedding.value.id, 'guests'), {
-      name: state.name.trim(),
-      tier: 'general',
-      phone: '',
-      attending: state.attending,
-      guestCount: state.attending === 'Yes' ? state.guestCount : 0,
-      specialSeating: state.attending === 'Yes' ? state.specialSeating : false,
-      dietary: state.attending === 'Yes' ? state.dietary.trim() : '',
-      doa: state.doa.trim(),
-      submittedAt
-    })
-
-    if (state.doa.trim()) {
-      await addDoc(collection(db, 'weddings', wedding.value.id, 'wishes'), {
+    if (isPreviewRecording.value) {
+      // Marketing dry-run (see admin/wedding/[id]/record.vue) - skip every
+      // real write so recording a demo can never plant a fake guest/wish,
+      // but still fall through to the normal success UI below so the
+      // "thank you" screen looks identical in the recorded video.
+    } else {
+      await addDoc(collection(db, 'weddings', wedding.value.id, 'guests'), {
         name: state.name.trim(),
+        tier: 'general',
+        phone: '',
+        attending: state.attending,
+        guestCount: state.attending === 'Yes' ? state.guestCount : 0,
+        specialSeating: state.attending === 'Yes' ? state.specialSeating : false,
+        dietary: state.attending === 'Yes' ? state.dietary.trim() : '',
         doa: state.doa.trim(),
         submittedAt
       })
-    }
 
-    // Fire-and-forget: push the fresh guest list into any connected Google
-    // Drive folders (this couple's own, plus the admin's shared "RSVP
-    // Lists" folder - see server/utils/guest-sync.ts) right away, so they
-    // auto-update whenever a guest RSVPs instead of needing a manual
-    // "Save to Drive" click. Deliberately not awaited and errors are
-    // swallowed - a Drive hiccup must never affect this guest's own
-    // already-successful submission.
-    $fetch('/api/drive/sync', { method: 'POST', body: { weddingId: wedding.value.id } }).catch(() => {})
+      if (state.doa.trim()) {
+        await addDoc(collection(db, 'weddings', wedding.value.id, 'wishes'), {
+          name: state.name.trim(),
+          doa: state.doa.trim(),
+          submittedAt
+        })
+      }
+
+      // Fire-and-forget: push the fresh guest list into any connected Google
+      // Drive folders (this couple's own, plus the admin's shared "RSVP
+      // Lists" folder - see server/utils/guest-sync.ts) right away, so they
+      // auto-update whenever a guest RSVPs instead of needing a manual
+      // "Save to Drive" click. Deliberately not awaited and errors are
+      // swallowed - a Drive hiccup must never affect this guest's own
+      // already-successful submission.
+      $fetch('/api/drive/sync', { method: 'POST', body: { weddingId: wedding.value.id } }).catch(() => {})
+    }
 
     lastSubmittedName.value = state.name.trim()
     lastAttending.value = state.attending as 'Yes' | 'No'

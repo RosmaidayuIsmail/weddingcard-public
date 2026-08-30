@@ -159,11 +159,19 @@ const previewReloadKey = ref(0)
 const frameEl = ref<HTMLIFrameElement | null>(null)
 const previewLoaded = ref(false)
 
+// preview=1 tells the real guest-facing pages (rsvp.vue in particular)
+// that this load is a marketing recording, not an actual guest visit - see
+// its submitForm(): without this flag, finishing the RSVP flow inside this
+// iframe to demo the "thank you" screen for the video would silently write
+// a real guest row (name = whatever was typed above, e.g. a caption like
+// "Congratulations! Herry & Arissa") into the couple's live guest list.
 const previewUrl = computed(() => {
   if (!wedding.value) return 'about:blank'
   const base = `/w/${wedding.value.slug}`
   const name = previewGuestName.value.trim()
-  return name ? `${base}?to=${encodeURIComponent(name)}` : base
+  const params = new URLSearchParams({ preview: '1' })
+  if (name) params.set('to', name)
+  return `${base}?${params.toString()}`
 })
 
 function reloadPreview() {

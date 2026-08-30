@@ -199,9 +199,20 @@ const guestName = computed(() => {
   const raw = route.query.to
   return typeof raw === 'string' ? raw : ''
 })
+// Carried over from the promo-video recording tool (admin/wedding/[id]/record.vue)
+// so it survives cover -> details -> rsvp navigation, not just the first
+// load - see rsvp.vue's submitForm() for what it actually guards.
+const isPreviewRecording = computed(() => route.query.preview === '1')
+function withQuery(path: string) {
+  const params = new URLSearchParams()
+  if (guestName.value) params.set('to', guestName.value)
+  if (isPreviewRecording.value) params.set('preview', '1')
+  const qs = params.toString()
+  return qs ? `${path}?${qs}` : path
+}
 
-const detailsLink = computed(() => (guestName.value ? `/w/${slug}/details?to=${encodeURIComponent(guestName.value)}` : `/w/${slug}/details`))
-const rsvpLink = computed(() => (guestName.value ? `/w/${slug}/rsvp?to=${encodeURIComponent(guestName.value)}` : `/w/${slug}/rsvp`))
+const detailsLink = computed(() => withQuery(`/w/${slug}/details`))
+const rsvpLink = computed(() => withQuery(`/w/${slug}/rsvp`))
 
 const opened = ref(false)
 

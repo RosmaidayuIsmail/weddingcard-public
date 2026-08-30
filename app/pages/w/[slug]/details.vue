@@ -45,7 +45,7 @@
           size="md"
           icon="i-heroicons-arrow-left"
           aria-label="Back to Cover"
-          class="rounded-full backdrop-blur-sm text-[color-mix(in_srgb,var(--theme-ink)_75%,transparent)] hover:text-[var(--theme-ink)] bg-[color-mix(in_srgb,var(--theme-ink)_8%,transparent)] border border-[color-mix(in_srgb,var(--theme-ink)_15%,transparent)]"
+          class="rounded-full backdrop-blur-sm text-[color-mix(in_srgb,var(--theme-ink)_75%,transparent)] hover:text-[var(--theme-ink)] bg-[color-mix(in_srgb,var(--theme-ink)_8%,transparent)] border border-[color-mix(in_srgb,var(--theme-ink)_15%,transparent)] active:bg-[color-mix(in_srgb,var(--theme-ink)_12%,transparent)]! active:text-[var(--theme-ink)]!"
         />
         <!-- accent-btn: was color="primary" (fixed brand gold) - now follows
              the couple's own theme accent, same fix as rsvp.vue's
@@ -134,9 +134,18 @@ const guestNameQuery = computed(() => {
   const raw = route.query.to
   return typeof raw === 'string' ? raw : ''
 })
+// See index.vue's isPreviewRecording / withQuery for why this exists.
+const isPreviewRecording = computed(() => route.query.preview === '1')
+function withQuery(path: string) {
+  const params = new URLSearchParams()
+  if (guestNameQuery.value) params.set('to', guestNameQuery.value)
+  if (isPreviewRecording.value) params.set('preview', '1')
+  const qs = params.toString()
+  return qs ? `${path}?${qs}` : path
+}
 
-const coverLink = computed(() => (guestNameQuery.value ? `/w/${slug}?to=${encodeURIComponent(guestNameQuery.value)}` : `/w/${slug}`))
-const rsvpLink = computed(() => (guestNameQuery.value ? `/w/${slug}/rsvp?to=${encodeURIComponent(guestNameQuery.value)}` : `/w/${slug}/rsvp`))
+const coverLink = computed(() => withQuery(`/w/${slug}`))
+const rsvpLink = computed(() => withQuery(`/w/${slug}/rsvp`))
 
 const { wedding, loading, notFound } = useWeddingBySlug(slug)
 const { themeStyleVars, resolveCardStyle } = useThemes()
