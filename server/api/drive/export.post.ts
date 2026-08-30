@@ -1,14 +1,15 @@
 import { z } from 'zod'
-import type { ExportableGuest } from '../../utils/guest-export'
 
 const bodySchema = z.object({ weddingId: z.string().min(1) })
 
 /**
- * "Save to Drive" button next to Export CSV / Print-PDF on the Guest List
- * page. Builds a fresh CSV + PDF snapshot of the current guest list
- * server-side (so it always reflects the live Firestore data, not whatever
- * the browser happened to have cached) and uploads both into the couple's
- * own connected Drive folder.
+ * "Save to Drive" button next to Export CSV / Print-PDF / Export Excel on
+ * the Guest List page. Delegates to the same syncGuestListToDrive() routine
+ * the RSVP-triggered auto-sync uses (server/api/drive/sync.post.ts), so a
+ * manual click and an automatic RSVP both upsert the exact same three fixed
+ * filenames (guests.csv/.pdf/.xlsx) into the couple's folder - and, if the
+ * admin has her own Drive connected, into her "RSVP Lists" folder too -
+ * instead of creating a new timestamped file each time.
  */
 export default defineEventHandler(async (event) => {
   const { uid } = await requireAuth(event)
@@ -25,27 +26,17 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 403, statusMessage: 'You can only export your own wedding.' })
   }
 
-  const guestsSnap = await db.collection(`weddings/${weddingId}/guests`).get()
-  const guests = guestsSnap.docs.map((d) => d.data() as ExportableGuest)
-
-  const content = wedding?.content as Record<string, unknown> | undefined
-  const coupleTitle = [content?.brideName, content?.groomName].filter(Boolean).join(' & ') || String(wedding?.slug || 'Wedding')
-
-  const { accessToken, connection } = await getValidAccessToken(weddingId)
-  const folderId = connection.folderId || (await ensureAppFolder(accessToken, `WeddingCard Exports - ${wedding?.slug || weddingId}`)).folderId
-
-  const stamp = new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-')
-  const csv = buildGuestCSV(guests)
-  const pdfBytes = await buildGuestPDF(guests, `${coupleTitle} - Guest List`)
-
-  const [csvResult, pdfResult] = await Promise.all([
-    uploadFileToFolder(accessToken, folderId, `guests-${stamp}.csv`, 'text/csv', csv),
-    uploadFileToFolder(accessToken, folderId, `guests-${stamp}.pdf`, 'application/pdf', pdfBytes)
-  ])
+  // Manual clicks never respect the "stop after the wedding date" cutoff -
+  // that only applies to the automatic RSVP-triggered sync.
+  const result = await syncGuestListToDrive(weddingId)
+  if (!result.weddingSynced || !result.weddingLinks) {
+    throw createError({ statusCode: 409, statusMessage: 'Google Drive is not connected for this wedding yet.' })
+  }
 
   return {
-    csvLink: csvResult.webViewLink,
-    pdfLink: pdfResult.webViewLink,
-    folderLink: connection.folderLink || ''
+    csvLink: result.weddingLinks.csvLink,
+    pdfLink: result.weddingLinks.pdfLink,
+    xlsxLink: result.weddingLinks.xlsxLink,
+    folderLink: result.weddingLinks.folderLink
   }
 })

@@ -211,8 +211,12 @@ onKeyStroke('ArrowLeft', () => flipPrev())
 }
 
 .book-page-inner {
+  /* Matches the classic slideshow: content sits vertically centered in the
+     page, not pinned to the top. overflow-y stays auto as a safety net for
+     the rare section whose content is taller than the fixed page height -
+     it'll simply scroll from wherever the centered block starts rather
+     than clip. */
   overflow-y: auto;
-  justify-content: flex-start;
 }
 
 .cover-hint {

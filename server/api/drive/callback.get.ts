@@ -1,33 +1,40 @@
 /**
- * Step 2 of "Connect Google Drive" - Google redirects the couple's browser
- * here (a plain GET, no Authorization header) after they approve consent.
- * We look up the `state` token minted by auth-url.get.ts to find which
- * wedding this belongs to, exchange the code for tokens, create/find this
- * app's export folder in their Drive, save the connection, then bounce the
- * browser back to the Guest List page.
+ * Step 2 of "Connect Google Drive" - Google redirects the browser here (a
+ * plain GET, no Authorization header) after consent is approved. We look up
+ * the `state` token minted by auth-url.get.ts (per-wedding) or
+ * admin/drive/auth-url.get.ts (the admin's own single connection) to find
+ * which connection this belongs to, exchange the code for tokens, create or
+ * find the right Drive folder, save the connection, then bounce the browser
+ * back to the right page.
+ *
+ * The admin's own connection reuses this exact route (stateData.weddingId
+ * is set to ADMIN_DRIVE_CONNECTION_ID = 'admin' for that flow) rather than
+ * needing a second Google OAuth redirect URI registered in Cloud Console -
+ * it's just a different Firestore doc id and a different destination
+ * folder/redirect.
  */
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
   const code = String(query.code || '')
   const state = String(query.state || '')
   const siteUrl = ((useRuntimeConfig().public.siteUrl as string) || '').replace(/\/$/, '')
-  const returnTo = (message: string) => sendRedirect(event, `${siteUrl}/dashboard/guests?drive=${message}`)
+
+  const db = getAdminDb()
+  const stateRef = state ? db.doc(`driveOAuthStates/${state}`) : null
+  const stateSnap = stateRef ? await stateRef.get() : null
+  const isAdminConnection = stateSnap?.exists && (stateSnap.data() as { weddingId?: string })?.weddingId === ADMIN_DRIVE_CONNECTION_ID
+  const returnTo = (message: string) =>
+    sendRedirect(event, `${siteUrl}${isAdminConnection ? '/admin' : '/dashboard/guests'}?drive=${message}`)
 
   if (query.error) {
     return returnTo('cancelled')
   }
-  if (!code || !state) {
+  if (!code || !state || !stateSnap?.exists) {
     return returnTo('error')
   }
 
-  const db = getAdminDb()
-  const stateRef = db.doc(`driveOAuthStates/${state}`)
-  const stateSnap = await stateRef.get()
-  if (!stateSnap.exists) {
-    return returnTo('error')
-  }
   const stateData = stateSnap.data() as { weddingId: string; ownerUid: string; createdAt: number }
-  await stateRef.delete()
+  await stateRef!.delete()
 
   // 15 minute window to complete the consent flow.
   if (Date.now() - stateData.createdAt > 15 * 60 * 1000) {
@@ -38,10 +45,18 @@ export default defineEventHandler(async (event) => {
     const { accessToken, refreshToken, expiresIn } = await exchangeCodeForTokens(code)
     const driveEmail = await fetchGoogleEmail(accessToken)
 
-    const weddingSnap = await db.doc(`weddings/${stateData.weddingId}`).get()
-    const wedding = weddingSnap.data() as Record<string, unknown> | undefined
-    const slug = String(wedding?.slug || stateData.weddingId)
-    const { folderId, folderLink } = await ensureAppFolder(accessToken, `WeddingCard Exports - ${slug}`)
+    let folderId: string
+    let folderLink: string
+    if (stateData.weddingId === ADMIN_DRIVE_CONNECTION_ID) {
+      // The admin's single wide connection - one fixed top-level folder,
+      // not tied to any one wedding's slug.
+      ;({ folderId, folderLink } = await ensureAppFolder(accessToken, RSVP_LISTS_FOLDER_NAME))
+    } else {
+      const weddingSnap = await db.doc(`weddings/${stateData.weddingId}`).get()
+      const wedding = weddingSnap.data() as Record<string, unknown> | undefined
+      const slug = String(wedding?.slug || stateData.weddingId)
+      ;({ folderId, folderLink } = await ensureAppFolder(accessToken, `WeddingCard Exports - ${slug}`))
+    }
 
     await driveConnectionRef(stateData.weddingId).set({
       weddingId: stateData.weddingId,

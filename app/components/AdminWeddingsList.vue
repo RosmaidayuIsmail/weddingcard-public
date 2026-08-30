@@ -1,5 +1,31 @@
 <template>
     <div class="space-y-6">
+      <!-- Admin's own, single, wide Google Drive connection - separate from
+           any couple's own per-wedding connection. Every wedding's guest
+           list (legacy self-serve accounts and ones created here in Admin
+           alike) auto-syncs into a "RSVP Lists" folder in THIS Drive, one
+           subfolder per wedding, any time a guest RSVPs. See
+           useAdminGoogleDrive.ts and server/utils/guest-sync.ts. -->
+      <div class="form-card space-y-3">
+        <div class="flex flex-wrap items-center gap-3">
+          <UIcon name="i-heroicons-cloud-arrow-up" class="w-5 h-5 text-gold-300 shrink-0" />
+          <div class="min-w-[220px]">
+            <h2 class="font-display text-lg">RSVP Lists (your Google Drive)</h2>
+            <p class="text-xs text-white/50 mt-0.5">
+              <template v-if="adminDriveConnected">
+                Connected as <span class="text-white/80">{{ adminDriveEmail }}</span> - every wedding's guest list auto-syncs into your "RSVP Lists" folder whenever a guest RSVPs.
+              </template>
+              <template v-else>Connect your own Google Drive to automatically collect every wedding's guest list - new and existing - into one "RSVP Lists" folder here, updated whenever a guest RSVPs.</template>
+            </p>
+          </div>
+          <div class="ml-auto flex flex-wrap gap-2">
+            <UButton v-if="adminDriveFolderLink" :to="adminDriveFolderLink" target="_blank" external size="sm" color="neutral" variant="ghost" icon="i-heroicons-arrow-top-right-on-square" class="rounded-full px-4">Open folder</UButton>
+            <UButton v-if="adminDriveConnected" size="sm" color="error" variant="ghost" class="rounded-full px-4" @click="disconnectAdminDrive">Disconnect</UButton>
+            <UButton v-else size="sm" color="neutral" variant="soft" icon="i-heroicons-link" class="rounded-full px-4" :loading="adminDriveConnecting" @click="connectAdminDrive">Connect Google Drive</UButton>
+          </div>
+        </div>
+      </div>
+
       <div class="form-card space-y-4">
         <div class="flex items-center gap-2">
           <UIcon name="i-heroicons-arrow-path-rounded-square" class="w-5 h-5 text-gold-300" />
@@ -129,6 +155,38 @@
   const { currentUser } = useAuthState()
   const { createWedding } = useMyWedding()
   const router = useRouter()
+
+  // --- Admin's own Google Drive connection (see useAdminGoogleDrive.ts) ---
+  const {
+    connected: adminDriveConnected,
+    driveEmail: adminDriveEmail,
+    folderLink: adminDriveFolderLink,
+    connecting: adminDriveConnecting,
+    refreshStatus: refreshAdminDriveStatus,
+    connect: connectAdminDrive,
+    disconnect: disconnectAdminDrive
+  } = useAdminGoogleDrive()
+
+  onMounted(() => {
+    refreshAdminDriveStatus()
+
+    // After Google redirects back from the OAuth consent screen (see
+    // server/api/drive/callback.get.ts), show what happened and clean the
+    // ?drive= query param off the URL so a page refresh doesn't re-show it.
+    const route = useRoute()
+    const status = route.query.drive as string | undefined
+    if (!status) return
+    const messages: Record<string, { title: string; color: 'success' | 'error' | 'neutral' }> = {
+      connected: { title: 'Google Drive connected', color: 'success' },
+      error: { title: 'Could not connect Google Drive', color: 'error' },
+      cancelled: { title: 'Google Drive connection cancelled', color: 'neutral' },
+      expired: { title: 'That connection attempt expired - please try again', color: 'error' }
+    }
+    const info = messages[status]
+    if (info) toast.add({ title: info.title, color: info.color })
+    refreshAdminDriveStatus()
+    router.replace({ query: { ...route.query, drive: undefined } })
+  })
 
   const weddings = ref<WeddingDoc[]>([])
   const loading = ref(true)

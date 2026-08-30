@@ -1,4 +1,5 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage, type RGB } from 'pdf-lib'
+import { Workbook } from 'exceljs'
 
 /**
  * Minimal shape of a guest row needed to build an export - deliberately not
@@ -124,7 +125,12 @@ export async function buildGuestPDF(guests: ExportableGuest[], title: string): P
   ]
 
   const pages: PDFPage[] = []
-  let page: PDFPage = pdf.addPage([PAGE_WIDTH, PAGE_HEIGHT])
+  // Deliberately not eagerly created here - drawFirstPageHeader() below calls
+  // addPage() itself to create the actual (and only) first page. Eagerly
+  // calling pdf.addPage() at declaration time used to create an orphaned
+  // blank page that nothing ever drew on, which is why RSVP data used to
+  // start appearing on page 2 with page 1 left blank.
+  let page!: PDFPage
   let y = PAGE_HEIGHT
 
   function addPage() {
@@ -263,4 +269,163 @@ export async function buildGuestPDF(guests: ExportableGuest[], title: string): P
   })
 
   return pdf.save()
+}
+
+// --- XLSX design: mirrors the PDF's visual language (gold header band,
+// summary stat row, zebra-striped table, colored tier/status cells) but as
+// a real, editable spreadsheet - opens straight into Google Sheets/Excel
+// with usable column widths instead of the plain CSV dump. ---
+
+const XLSX_GOLD = 'FF9E7517'
+const XLSX_GOLD_SOFT = 'FFF7F0DA'
+const XLSX_INK = 'FF212124'
+const XLSX_SUBTLE = 'FF808085'
+const XLSX_GREEN = 'FF29804D'
+const XLSX_RED = 'FFB83D38'
+const XLSX_ROW_ALT = 'FFFAF9F6'
+const XLSX_WHITE = 'FFFFFFFF'
+
+/**
+ * Builds a styled, ready-to-open guest-list workbook with exceljs - same
+ * data as buildGuestCSV()/buildGuestPDF() above, but laid out as a real
+ * spreadsheet: a title band, a summary-stats row, a frozen header row, and
+ * zebra-striped/colour-coded data rows. Used by the "Export Excel" button
+ * and the Google Drive auto-sync (server/utils/guest-sync.ts).
+ */
+export async function buildGuestXLSX(guests: ExportableGuest[], title: string): Promise<Buffer> {
+  const workbook = new Workbook()
+  workbook.creator = 'WeddingCard'
+  workbook.created = new Date()
+
+  const sheet = workbook.addWorksheet('Guest List', {
+    views: [{ state: 'frozen', ySplit: 5 }]
+  })
+
+  const columns: Array<{ header: string; width: number }> = [
+    { header: 'Name', width: 26 },
+    { header: 'Tier', width: 12 },
+    { header: 'Phone', width: 16 },
+    { header: 'Email', width: 26 },
+    { header: 'Attending', width: 14 },
+    { header: 'Guests', width: 10 },
+    { header: 'Special Seating', width: 16 },
+    { header: 'Dietary Needs', width: 22 },
+    { header: 'Blessings', width: 34 },
+    { header: 'Table', width: 12 },
+    { header: 'Submitted At', width: 20 }
+  ]
+  sheet.columns = columns.map((c) => ({ width: c.width }))
+
+  const attending = guests.filter((g) => g.attending === 'Yes')
+  const declined = guests.filter((g) => g.attending === 'No')
+  const pending = guests.filter((g) => !g.attending)
+  const totalHeads = attending.reduce((sum, g) => sum + (g.guestCount || 0), 0)
+  const generatedLabel = `Generated ${new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}`
+
+  const lastCol = columns.length
+
+  // Row 1: title band, merged across every column.
+  sheet.mergeCells(1, 1, 1, lastCol)
+  const titleCell = sheet.getCell(1, 1)
+  titleCell.value = title || 'Guest List'
+  titleCell.font = { name: 'Georgia', size: 18, bold: true, color: { argb: XLSX_WHITE } }
+  titleCell.alignment = { vertical: 'middle', horizontal: 'center' }
+  sheet.getRow(1).height = 30
+  for (let c = 1; c <= lastCol; c++) {
+    sheet.getCell(1, c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: XLSX_GOLD } }
+  }
+
+  // Row 2: generated-on / guest-count meta line.
+  sheet.mergeCells(2, 1, 2, lastCol)
+  const metaCell = sheet.getCell(2, 1)
+  metaCell.value = `${generatedLabel}  ·  ${guests.length} guest${guests.length === 1 ? '' : 's'} invited`
+  metaCell.font = { size: 10, italic: true, color: { argb: XLSX_SUBTLE } }
+  metaCell.alignment = { vertical: 'middle', horizontal: 'center' }
+
+  // Row 3: summary stats, one labeled cell per stat, evenly spanning columns.
+  const stats: Array<{ label: string; value: string; color: string }> = [
+    { label: 'Attending', value: String(attending.length), color: XLSX_GREEN },
+    { label: 'Total Guests', value: String(totalHeads), color: XLSX_GOLD },
+    { label: 'Declined', value: String(declined.length), color: XLSX_RED },
+    { label: 'No Response', value: String(pending.length), color: XLSX_SUBTLE }
+  ]
+  const statRow = sheet.getRow(3)
+  statRow.height = 20
+  const span = Math.max(1, Math.floor(lastCol / stats.length))
+  stats.forEach((stat, i) => {
+    const startCol = i * span + 1
+    const endCol = i === stats.length - 1 ? lastCol : startCol + span - 1
+    if (endCol > startCol) sheet.mergeCells(3, startCol, 3, endCol)
+    const cell = sheet.getCell(3, startCol)
+    cell.value = `${stat.label}: ${stat.value}`
+    cell.font = { size: 10, bold: true, color: { argb: stat.color } }
+    cell.alignment = { vertical: 'middle', horizontal: 'center' }
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: XLSX_GOLD_SOFT } }
+  })
+
+  // Row 4 stays blank as breathing room between the summary and the table.
+  sheet.getRow(4).height = 6
+
+  // Row 5: real header row for the data table.
+  const headerRow = sheet.getRow(5)
+  columns.forEach((c, i) => {
+    const cell = headerRow.getCell(i + 1)
+    cell.value = c.header
+    cell.font = { bold: true, size: 10, color: { argb: XLSX_GOLD } }
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: XLSX_GOLD_SOFT } }
+    cell.alignment = { vertical: 'middle', horizontal: i === 0 ? 'left' : 'center' }
+    cell.border = { bottom: { style: 'thin', color: { argb: XLSX_GOLD } } }
+  })
+  headerRow.height = 20
+
+  // Data rows, starting at row 6, zebra-striped with colour-coded tier/status.
+  guests.forEach((guest, index) => {
+    const row = sheet.getRow(6 + index)
+    const values = [
+      guest.name || 'Unnamed guest',
+      guest.tier === 'vip' ? 'VIP' : 'General',
+      guest.phone || '',
+      guest.email || '',
+      guest.attending === 'Yes' ? 'Attending' : guest.attending === 'No' ? 'Declined' : 'No response yet',
+      guest.attending === 'Yes' ? (guest.guestCount ?? 0) : '—',
+      guest.specialSeating ? 'Yes' : 'No',
+      guest.dietary || '',
+      (guest.doa || '').replace(/\n/g, ' '),
+      guest.tableAssignment || '—',
+      guest.submittedAt || ''
+    ]
+    values.forEach((v, i) => {
+      const cell = row.getCell(i + 1)
+      cell.value = v as string | number
+      cell.font = { size: 10, color: { argb: XLSX_INK }, bold: i === 0 }
+      cell.alignment = { vertical: 'middle', horizontal: i === 0 || i === 3 || i === 7 || i === 8 ? 'left' : 'center' }
+      if (index % 2 === 1) {
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: XLSX_ROW_ALT } }
+      }
+    })
+    const tierCell = row.getCell(2)
+    tierCell.font = { size: 9, bold: true, color: { argb: guest.tier === 'vip' ? XLSX_GOLD : XLSX_SUBTLE } }
+    const statusCell = row.getCell(5)
+    statusCell.font = {
+      size: 10,
+      color: { argb: guest.attending === 'Yes' ? XLSX_GREEN : guest.attending === 'No' ? XLSX_RED : XLSX_SUBTLE }
+    }
+    row.eachCell({ includeEmpty: true }, (cell) => {
+      cell.border = { bottom: { style: 'hair', color: { argb: 'FFE0E0DD' } } }
+    })
+    row.commit()
+  })
+
+  if (guests.length === 0) {
+    sheet.mergeCells(6, 1, 6, lastCol)
+    const emptyCell = sheet.getCell(6, 1)
+    emptyCell.value = 'No guests yet.'
+    emptyCell.font = { italic: true, size: 10, color: { argb: XLSX_SUBTLE } }
+    emptyCell.alignment = { vertical: 'middle', horizontal: 'center' }
+  }
+
+  sheet.autoFilter = { from: { row: 5, column: 1 }, to: { row: 5, column: lastCol } }
+
+  const arrayBuffer = await workbook.xlsx.writeBuffer()
+  return Buffer.from(arrayBuffer)
 }

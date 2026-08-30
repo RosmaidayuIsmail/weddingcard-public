@@ -76,14 +76,14 @@
             <h3 class="font-semibold text-white/90">Google Drive backup</h3>
             <p class="text-xs text-white/50 mt-0.5">
               <template v-if="driveConnected">
-                Connected as <span class="text-white/80">{{ driveEmail }}</span> - exports are saved to your own Drive.
+                Connected as <span class="text-white/80">{{ driveEmail }}</span> - guests.csv/.pdf/.xlsx auto-update here every time someone RSVPs, until your wedding date.
               </template>
-              <template v-else>Connect your own Google Drive to automatically save CSV/PDF exports there.</template>
+              <template v-else>Connect your own Google Drive - guests.csv/.pdf/.xlsx will auto-update there every time someone RSVPs, until your wedding date.</template>
             </p>
           </div>
           <div class="ml-auto flex flex-wrap gap-2">
             <UButton v-if="driveFolderLink" :to="driveFolderLink" target="_blank" external size="sm" color="neutral" variant="ghost" icon="i-heroicons-arrow-top-right-on-square" class="rounded-full px-4">Open folder</UButton>
-            <UButton v-if="driveConnected" size="sm" color="primary" variant="soft" icon="i-heroicons-cloud-arrow-up" class="rounded-full px-4" :loading="driveExporting" @click="exportToDrive">Save to Drive</UButton>
+            <UButton v-if="driveConnected" size="sm" color="primary" variant="soft" icon="i-heroicons-cloud-arrow-up" class="rounded-full px-4" :loading="driveExporting" @click="exportToDrive">Sync now</UButton>
             <UButton v-if="driveConnected" size="sm" color="error" variant="ghost" class="rounded-full px-4" @click="disconnectDrive">Disconnect</UButton>
             <UButton v-else size="sm" color="neutral" variant="soft" icon="i-heroicons-link" class="rounded-full px-4" :loading="driveConnecting" @click="connectDrive">Connect Google Drive</UButton>
           </div>
@@ -109,6 +109,7 @@
             <UButton size="sm" color="neutral" variant="soft" icon="i-heroicons-arrow-up-tray" class="rounded-full px-4" @click="importOpen = true">Import CSV</UButton>
             <UButton size="sm" color="neutral" variant="soft" icon="i-heroicons-printer" class="rounded-full px-4 hover:bg-white/10 border-white/10" @click="printList">Print / PDF</UButton>
             <UButton size="sm" color="primary" variant="soft" icon="i-heroicons-arrow-down-tray" class="rounded-full px-4" @click="exportCSV()">Export CSV</UButton>
+            <UButton size="sm" color="primary" variant="soft" icon="i-heroicons-table-cells" class="rounded-full px-4" :loading="exportingExcel" @click="exportExcel">Export Excel</UButton>
           </div>
         </div>
         <UInput v-model="searchQuery" placeholder="Search guests by name or phone..." icon="i-heroicons-magnifying-glass" size="lg" class="w-full sm:max-w-sm" />
@@ -313,6 +314,7 @@ const {
 
 const { guestListSettings } = useThemes()
 const toast = useToast()
+const { serverFetch } = useServerFetch()
 const config = useRuntimeConfig()
 const siteUrl = computed(() => config.public.siteUrl || (import.meta.client ? window.location.origin : ''))
 
@@ -347,6 +349,31 @@ async function handleAdd() {
     newGuest.tier = 'general'
   } finally {
     adding.value = false
+  }
+}
+
+// --- Export Excel (server/api/guests/export-excel.post.ts) ---
+const exportingExcel = ref(false)
+async function exportExcel() {
+  if (!wedding.value) return
+  exportingExcel.value = true
+  try {
+    const blob = await serverFetch<Blob>('/api/guests/export-excel', {
+      method: 'POST',
+      body: { weddingId: wedding.value.id },
+      responseType: 'blob'
+    })
+    const url = URL.createObjectURL(blob as Blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'guests.xlsx'
+    link.click()
+    URL.revokeObjectURL(url)
+  } catch (error) {
+    console.error(error)
+    toast.add({ title: 'Could not export the Excel file', color: 'error' })
+  } finally {
+    exportingExcel.value = false
   }
 }
 

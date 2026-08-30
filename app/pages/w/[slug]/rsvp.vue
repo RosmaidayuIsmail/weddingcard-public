@@ -475,6 +475,15 @@ async function submitForm() {
       })
     }
 
+    // Fire-and-forget: push the fresh guest list into any connected Google
+    // Drive folders (this couple's own, plus the admin's shared "RSVP
+    // Lists" folder - see server/utils/guest-sync.ts) right away, so they
+    // auto-update whenever a guest RSVPs instead of needing a manual
+    // "Save to Drive" click. Deliberately not awaited and errors are
+    // swallowed - a Drive hiccup must never affect this guest's own
+    // already-successful submission.
+    $fetch('/api/drive/sync', { method: 'POST', body: { weddingId: wedding.value.id } }).catch(() => {})
+
     lastSubmittedName.value = state.name.trim()
     lastAttending.value = state.attending as 'Yes' | 'No'
     submitted.value = true

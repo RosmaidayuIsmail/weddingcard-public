@@ -21,6 +21,19 @@ const USERINFO_URL = 'https://www.googleapis.com/oauth2/v3/userinfo'
 const DRIVE_FILES_URL = 'https://www.googleapis.com/drive/v3/files'
 const DRIVE_UPLOAD_URL = 'https://www.googleapis.com/upload/drive/v3/files'
 
+// Fixed connection-id used for the ADMIN's own, single, wide Google Drive
+// connection (as opposed to a per-wedding one keyed by weddingId) - reuses
+// the exact same driveConnections/{id} document shape and OAuth callback
+// route by simply passing this constant wherever a weddingId would go, so
+// no new Firestore collection or Google OAuth redirect URI is needed. See
+// server/utils/guest-sync.ts and server/api/admin/drive/*.
+export const ADMIN_DRIVE_CONNECTION_ID = 'admin'
+
+// Top-level folder name (in the admin's own connected Drive) that every
+// wedding's guest-list exports sync into, one subfolder per wedding - see
+// server/utils/guest-sync.ts.
+export const RSVP_LISTS_FOLDER_NAME = 'RSVP Lists'
+
 export interface DriveConnectionDoc {
   weddingId: string
   ownerUid: string
@@ -189,10 +202,11 @@ export async function ensureAppFolder(accessToken: string, folderName: string): 
 }
 
 /**
- * Uploads (or overwrites, by re-uploading under the same name - Drive
- * allows duplicate names, so each export lands as its own timestamped file
- * rather than clobbering the last one) a file into the given folder using a
- * simple multipart request, avoiding any dependency on the googleapis SDK.
+ * Always CREATES a new file in the given folder via a simple multipart
+ * request (avoiding any dependency on the googleapis SDK). Drive allows
+ * duplicate names, so calling this repeatedly piles up a new file each
+ * time - most callers want upsertFileInFolder() below instead, which keeps
+ * exactly one file per name by updating it in place.
  */
 export async function uploadFileToFolder(
   accessToken: string,
@@ -225,6 +239,84 @@ export async function uploadFileToFolder(
   }
   const data = await res.json() as { id: string; webViewLink?: string }
   return { fileId: data.id, webViewLink: data.webViewLink || `https://drive.google.com/file/d/${data.id}/view` }
+}
+
+/**
+ * Like uploadFileToFolder(), but keeps exactly ONE file per name inside the
+ * folder: if a file with this exact name already exists there, its content
+ * is updated in place (same fileId, same Drive link) instead of creating a
+ * new one. This is what makes the Drive folder "auto-update" rather than
+ * piling up a new timestamped export every time a guest RSVPs.
+ */
+export async function upsertFileInFolder(
+  accessToken: string,
+  folderId: string,
+  filename: string,
+  mimeType: string,
+  content: Uint8Array | string
+): Promise<{ fileId: string; webViewLink: string }> {
+  const q = encodeURIComponent(`name = '${filename.replace(/'/g, "\\'")}' and '${folderId}' in parents and trashed = false`)
+  const searchRes = await fetch(`${DRIVE_FILES_URL}?q=${q}&fields=files(id,webViewLink)&spaces=drive`, {
+    headers: { Authorization: `Bearer ${accessToken}` }
+  })
+
+  let existingFileId = ''
+  if (searchRes.ok) {
+    const data = await searchRes.json() as { files?: Array<{ id: string; webViewLink?: string }> }
+    if (data.files && data.files.length > 0) existingFileId = data.files[0]!.id
+  }
+
+  if (!existingFileId) {
+    return uploadFileToFolder(accessToken, folderId, filename, mimeType, content)
+  }
+
+  const bodyContent = typeof content === 'string' ? Buffer.from(content, 'utf8') : Buffer.from(content)
+  const res = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${existingFileId}?uploadType=media&fields=id,webViewLink`, {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': mimeType },
+    body: bodyContent
+  })
+  if (!res.ok) {
+    throw createError({ statusCode: 502, statusMessage: `Could not update the Google Drive file: ${await res.text()}` })
+  }
+  const data = await res.json() as { id: string; webViewLink?: string }
+  return { fileId: data.id, webViewLink: data.webViewLink || `https://drive.google.com/file/d/${data.id}/view` }
+}
+
+/**
+ * Finds (or creates) a subfolder by name inside a given parent folder - used
+ * to give each wedding its own "{Bride} & {Groom} (slug)" subfolder inside
+ * the admin's single top-level "RSVP Lists" folder.
+ */
+export async function ensureSubfolder(
+  accessToken: string,
+  parentFolderId: string,
+  subfolderName: string
+): Promise<{ folderId: string; folderLink: string }> {
+  const q = encodeURIComponent(
+    `name = '${subfolderName.replace(/'/g, "\\'")}' and '${parentFolderId}' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false`
+  )
+  const searchRes = await fetch(`${DRIVE_FILES_URL}?q=${q}&fields=files(id,webViewLink)&spaces=drive`, {
+    headers: { Authorization: `Bearer ${accessToken}` }
+  })
+  if (searchRes.ok) {
+    const data = await searchRes.json() as { files?: Array<{ id: string; webViewLink?: string }> }
+    if (data.files && data.files.length > 0) {
+      const found = data.files[0]!
+      return { folderId: found.id, folderLink: found.webViewLink || `https://drive.google.com/drive/folders/${found.id}` }
+    }
+  }
+
+  const createRes = await fetch(`${DRIVE_FILES_URL}?fields=id,webViewLink`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: subfolderName, mimeType: 'application/vnd.google-apps.folder', parents: [parentFolderId] })
+  })
+  if (!createRes.ok) {
+    throw createError({ statusCode: 502, statusMessage: `Could not create the Google Drive subfolder: ${await createRes.text()}` })
+  }
+  const created = await createRes.json() as { id: string; webViewLink?: string }
+  return { folderId: created.id, folderLink: created.webViewLink || `https://drive.google.com/drive/folders/${created.id}` }
 }
 
 export async function revokeDriveConnection(weddingId: string): Promise<void> {

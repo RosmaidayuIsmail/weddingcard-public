@@ -1,9 +1,16 @@
 /**
- * Client-side controller for the "Connect Google Drive" panel on the Guest
+ * Client-side controller for the "Google Drive backup" panel on the Guest
  * List page (DashboardGuestsPanel.vue). Talks to the /api/drive/* server
- * routes - see server/utils/google-drive.ts for how the actual OAuth/Drive
- * calls work. Each couple connects their OWN Google Drive; nothing here
- * ever sees a refresh token, only connection status and share links.
+ * routes - see server/utils/google-drive.ts and server/utils/guest-sync.ts
+ * for how the actual OAuth/Drive/auto-sync calls work. Each couple connects
+ * their OWN Google Drive; nothing here ever sees a refresh token, only
+ * connection status and share links.
+ *
+ * Once connected, guests.csv/.pdf/.xlsx in that Drive folder auto-update
+ * every time a guest submits their RSVP (see app/pages/w/[slug]/rsvp.vue),
+ * up until the wedding's own date passes. exportToDrive() below is a manual
+ * "sync now" - useful right after connecting, or to force a refresh - and
+ * always works regardless of the date.
  */
 export function useGoogleDrive(weddingIdSource: () => string | undefined) {
   const { serverFetch } = useServerFetch()
@@ -69,18 +76,18 @@ export function useGoogleDrive(weddingIdSource: () => string | undefined) {
     if (!weddingId) return null
     exporting.value = true
     try {
-      const result = await serverFetch<{ csvLink: string; pdfLink: string; folderLink: string }>(
+      const result = await serverFetch<{ csvLink: string; pdfLink: string; xlsxLink: string; folderLink: string }>(
         '/api/drive/export',
         { method: 'POST', body: { weddingId } }
       )
       if (result.folderLink) folderLink.value = result.folderLink
-      toast.add({ title: 'Saved to Google Drive', description: 'Your CSV and PDF exports were uploaded to your connected Drive.', color: 'success' })
+      toast.add({ title: 'Synced to Google Drive', description: 'Your CSV, PDF and Excel exports were refreshed in your connected Drive.', color: 'success' })
       return result
     } catch (error: unknown) {
       console.error(error)
       const message = (error as { data?: { statusMessage?: string } })?.data?.statusMessage || ''
       toast.add({
-        title: message.includes('not connected') ? 'Connect Google Drive first' : 'Could not save to Google Drive',
+        title: message.includes('not connected') ? 'Connect Google Drive first' : 'Could not sync to Google Drive',
         color: 'error'
       })
       return null
