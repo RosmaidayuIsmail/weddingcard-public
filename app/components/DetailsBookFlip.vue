@@ -43,7 +43,19 @@
         </div>
 
         <div v-for="page in pages" :key="page.key" class="book-page book-content-page" :class="cardStyleClass" :style="{ borderColor: 'var(--theme-accent-soft)', '--card-text': cardTextColor }">
-          <div class="book-page-inner">
+          <!-- --card-text set again here, one level in, not just on the
+               outer .book-page above: page-flip's loadFromHTML (see this
+               component's onMounted) takes exactly the elements matched by
+               `.book-page` and wraps/rebuilds around each one, so the
+               .book-page element itself is what the library manipulates -
+               its own inline style is what's at risk of not surviving,
+               while everything already inside it (this div and down)
+               travels as preserved content either way. The cover page
+               below already puts --card-text here (on .book-cover-inner,
+               not the outer .book-page.book-cover) for the same reason,
+               which is why the cover was never reported broken while this
+               content-page text was - this makes both paths consistent. -->
+          <div class="book-page-inner" :style="{ '--card-text': cardTextColor }">
             <DetailsSlideContent
               :slide-key="page.key"
               :content="content"
