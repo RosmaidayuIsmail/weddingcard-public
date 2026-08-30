@@ -1,47 +1,65 @@
 <template>
   <div class="book-flip-wrap">
-    <div v-show="!bookReady" class="book-loading">
-      <UIcon name="i-heroicons-arrow-path" class="w-6 h-6 animate-spin" style="color: var(--theme-accent)" />
-    </div>
-
-    <!-- Cover page: a closed-book splash, shown alone (showCover) until
-         tapped - the couple's names/monogram standing in for a printed
-         cover, styled to match the wedding's own theme instead of a
-         generic book texture. -->
-    <div v-show="bookReady" ref="bookEl" class="book-container">
-      <div class="book-page book-cover" @click="openBook">
-        <div class="book-cover-inner" :class="cardStyleClass" :style="{ borderColor: 'var(--theme-accent-soft)', '--card-text': cardTextColor }">
-          <div v-if="monogramEnabled" class="mb-4">
-            <img v-if="monogramType === 'upload' && monogramImageUrl" :src="monogramImageUrl" alt="Monogram" class="w-14 h-14 object-contain mx-auto opacity-90">
-            <span v-else class="text-3xl" :style="{ fontFamily: monogramFontFamily, color: 'var(--theme-accent)' }">{{ monogramDisplayText }}</span>
+    <!-- book-stage holds both the (always-laid-out) book and the loading
+         spinner as a plain overlay, so PageFlip never has to measure a
+         hidden/display:none container. Hiding the book via display:none
+         (which v-show used to do) makes offsetWidth/offsetHeight read 0 at
+         the moment PageFlip constructs itself and calls loadFromHTML - it
+         then bakes that zero-sized rect into its internal page geometry,
+         which is what caused pages to render stacked/overlapping instead
+         of flipping. Opacity keeps real layout dimensions available from
+         the very first frame. -->
+    <div class="book-stage">
+      <div ref="bookEl" class="book-container" :class="{ 'book-container-loading': !bookReady }">
+        <!-- Cover page: a closed-book splash, shown alone (showCover) until
+             tapped - the couple's names/monogram standing in for a printed
+             cover, styled to match the wedding's own theme instead of a
+             generic book texture. No click handler here on purpose: this
+             element lives inside PageFlip's own wrapper once loadFromHTML
+             reparents it, and PageFlip already binds its own native
+             click-to-flip on every page (disableFlipByClick defaults to
+             false, and we want to keep that - it's the "tap the book to
+             turn the page" gesture). Adding our own @click on top of that
+             double-fired every tap, jumping two pages instead of one and
+             glitching the render mid-flip. -->
+        <div class="book-page book-cover">
+          <div class="book-cover-inner" :class="cardStyleClass" :style="{ borderColor: 'var(--theme-accent-soft)', '--card-text': cardTextColor }">
+            <div v-if="monogramEnabled" class="mb-4">
+              <img v-if="monogramType === 'upload' && monogramImageUrl" :src="monogramImageUrl" alt="Monogram" class="w-14 h-14 object-contain mx-auto opacity-90">
+              <span v-else class="text-3xl" :style="{ fontFamily: monogramFontFamily, color: 'var(--theme-accent)' }">{{ monogramDisplayText }}</span>
+            </div>
+            <UIcon v-else name="i-heroicons-heart" class="w-8 h-8 mx-auto mb-4 opacity-70" :style="{ color: 'var(--theme-accent)' }" />
+            <h2 class="text-3xl leading-tight drop-shadow-lg" :style="{ color: 'var(--card-text)', fontFamily: 'var(--theme-heading-font)' }">
+              {{ brideName }}
+              <span class="block text-[0.55em] opacity-70 my-1" :style="{ color: 'var(--theme-accent)' }">&amp;</span>
+              {{ groomName }}
+            </h2>
+            <div class="h-px w-14 mx-auto my-5" :style="{ background: 'var(--theme-accent)' }"></div>
+            <p class="cover-hint" :style="{ color: 'var(--theme-accent)' }">
+              <UIcon name="i-heroicons-hand-raised" class="w-4 h-4 inline-block mr-1.5 align-[-0.15em]" />
+              Tap to open
+            </p>
           </div>
-          <UIcon v-else name="i-heroicons-heart" class="w-8 h-8 mx-auto mb-4 opacity-70" :style="{ color: 'var(--theme-accent)' }" />
-          <h2 class="text-3xl leading-tight drop-shadow-lg" :style="{ color: 'var(--card-text)', fontFamily: 'var(--theme-heading-font)' }">
-            {{ brideName }}
-            <span class="block text-[0.55em] opacity-70 my-1" :style="{ color: 'var(--theme-accent)' }">&amp;</span>
-            {{ groomName }}
-          </h2>
-          <div class="h-px w-14 mx-auto my-5" :style="{ background: 'var(--theme-accent)' }"></div>
-          <p class="cover-hint" :style="{ color: 'var(--theme-accent)' }">
-            <UIcon name="i-heroicons-hand-raised" class="w-4 h-4 inline-block mr-1.5 align-[-0.15em]" />
-            Tap to open
-          </p>
+        </div>
+
+        <div v-for="page in pages" :key="page.key" class="book-page book-content-page" :class="cardStyleClass" :style="{ borderColor: 'var(--theme-accent-soft)', '--card-text': cardTextColor }">
+          <div class="book-page-inner">
+            <h3 class="book-page-title" :style="{ color: 'var(--theme-accent)' }">{{ page.label }}</h3>
+            <DetailsSlideContent
+              :slide-key="page.key"
+              :content="content"
+              :flow="flow"
+              :menu="menu"
+              :qr-code-url="qrCodeUrl"
+              :monogram-display-text="monogramDisplayText"
+              :monogram-font-family="monogramFontFamily"
+            />
+          </div>
         </div>
       </div>
 
-      <div v-for="page in pages" :key="page.key" class="book-page book-content-page" :class="cardStyleClass" :style="{ borderColor: 'var(--theme-accent-soft)', '--card-text': cardTextColor }">
-        <div class="book-page-inner">
-          <h3 class="book-page-title" :style="{ color: 'var(--theme-accent)' }">{{ page.label }}</h3>
-          <DetailsSlideContent
-            :slide-key="page.key"
-            :content="content"
-            :flow="flow"
-            :menu="menu"
-            :qr-code-url="qrCodeUrl"
-            :monogram-display-text="monogramDisplayText"
-            :monogram-font-family="monogramFontFamily"
-          />
-        </div>
+      <div v-if="!bookReady" class="book-loading">
+        <UIcon name="i-heroicons-arrow-path" class="w-6 h-6 animate-spin" style="color: var(--theme-accent)" />
       </div>
     </div>
 
@@ -128,10 +146,6 @@ onBeforeUnmount(() => {
   pageFlip = null
 })
 
-function openBook() {
-  if (currentPage.value === 0) pageFlip?.flipNext()
-}
-
 function flipNext() {
   pageFlip?.flipNext()
 }
@@ -152,19 +166,31 @@ onKeyStroke('ArrowLeft', () => flipPrev())
   width: 100%;
 }
 
-.book-loading {
-  min-height: 460px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.book-stage {
+  position: relative;
   width: 100%;
+  max-width: 420px;
+  min-height: 560px;
+  margin: 0 auto;
 }
 
 .book-container {
   width: 100%;
-  max-width: 420px;
   height: 560px;
-  margin: 0 auto;
+  transition: opacity 0.2s ease;
+}
+
+.book-container-loading {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.book-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .book-page {
