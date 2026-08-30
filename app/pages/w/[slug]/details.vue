@@ -45,7 +45,7 @@
           size="md"
           icon="i-heroicons-arrow-left"
           aria-label="Back to Cover"
-          class="rounded-full backdrop-blur-sm text-[color-mix(in_srgb,var(--theme-ink)_75%,transparent)] hover:text-[var(--theme-ink)] bg-[color-mix(in_srgb,var(--theme-ink)_8%,transparent)] border border-[color-mix(in_srgb,var(--theme-ink)_15%,transparent)] active:bg-[color-mix(in_srgb,var(--theme-ink)_12%,transparent)]! active:text-[var(--theme-ink)]!"
+          class="rounded-full backdrop-blur-sm text-[color-mix(in_srgb,var(--theme-ink)_75%,transparent)] hover:text-[var(--theme-ink)] bg-[color-mix(in_srgb,var(--theme-ink)_8%,transparent)] border border-[color-mix(in_srgb,var(--theme-ink)_15%,transparent)] hover:bg-[color-mix(in_srgb,var(--theme-ink)_12%,transparent)]! active:bg-[color-mix(in_srgb,var(--theme-ink)_12%,transparent)]! active:text-[var(--theme-ink)]!"
         />
         <!-- accent-btn: was color="primary" (fixed brand gold) - now follows
              the couple's own theme accent, same fix as rsvp.vue's

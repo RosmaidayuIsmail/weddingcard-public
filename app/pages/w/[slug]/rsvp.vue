@@ -63,7 +63,7 @@
              text/background here made it wash out to near-invisible on
              those. Theme-ink-based coloring keeps it legible on every
              theme, same as the title just below. -->
-        <UButton :to="backHref" variant="ghost" color="neutral" size="sm" icon="i-heroicons-arrow-left" aria-label="Back to Cover" class="rounded-full backdrop-blur-sm px-4 border transition-colors text-[color-mix(in_srgb,var(--theme-ink)_70%,transparent)] hover:text-[var(--theme-ink)] bg-[color-mix(in_srgb,var(--theme-ink)_6%,transparent)] border-[color-mix(in_srgb,var(--theme-ink)_12%,transparent)] active:bg-[color-mix(in_srgb,var(--theme-ink)_10%,transparent)]! active:text-[var(--theme-ink)]!">
+        <UButton :to="backHref" variant="ghost" color="neutral" size="sm" icon="i-heroicons-arrow-left" aria-label="Back to Cover" class="rounded-full backdrop-blur-sm px-4 border transition-colors text-[color-mix(in_srgb,var(--theme-ink)_70%,transparent)] hover:text-[var(--theme-ink)] bg-[color-mix(in_srgb,var(--theme-ink)_6%,transparent)] border-[color-mix(in_srgb,var(--theme-ink)_12%,transparent)] hover:bg-[color-mix(in_srgb,var(--theme-ink)_10%,transparent)]! active:bg-[color-mix(in_srgb,var(--theme-ink)_10%,transparent)]! active:text-[var(--theme-ink)]!">
           {{ wedding.content.rsvpReturnButton || 'Return to Invitation' }}
         </UButton>
       </div>
@@ -214,7 +214,7 @@
           </div>
 
           <div class="flex items-center justify-between mt-12 pt-6 border-t border-[color-mix(in_srgb,var(--card-text)_10%,transparent)] relative z-20">
-            <UButton v-if="currentStep > 0" variant="ghost" color="neutral" icon="i-heroicons-arrow-left" class="text-[var(--card-text)] hover:bg-[color-mix(in_srgb,var(--card-text)_10%,transparent)] active:bg-[color-mix(in_srgb,var(--card-text)_10%,transparent)]! rounded-full px-4" @click="goBack">{{ wedding.content.rsvpBackButton || 'Back' }}</UButton>
+            <UButton v-if="currentStep > 0" variant="ghost" color="neutral" icon="i-heroicons-arrow-left" class="text-[var(--card-text)] hover:bg-[color-mix(in_srgb,var(--card-text)_10%,transparent)]! active:bg-[color-mix(in_srgb,var(--card-text)_10%,transparent)]! rounded-full px-4" @click="goBack">{{ wedding.content.rsvpBackButton || 'Back' }}</UButton>
             <div v-else></div>
             
             <UButton v-if="currentStep < steps.length - 1" trailing-icon="i-heroicons-arrow-right" class="rounded-full px-8 shadow-md accent-btn" size="lg" @click="goNext">{{ wedding.content.rsvpContinueButton || 'Continue' }}</UButton>
