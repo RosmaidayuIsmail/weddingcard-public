@@ -552,6 +552,7 @@ interface PlatformCatalog {
   disabledOrnamentStyles: string[]
   disabledPetalStyles: string[]
   disabledTopIcons: string[]
+  disabledDetailsLayoutStyles: string[]
   starterDefaults: StarterDefaults
   dashboardSettings: DashboardSettings
   rsvpPresets: RsvpPreset[]
@@ -694,6 +695,16 @@ export const topIconCatalog: OpeningStyle[] = [
   { label: 'Custom Upload', value: 'custom', icon: 'i-heroicons-arrow-up-tray' }
 ]
 
+// Same "toggle, don't author" pattern as ornamentStyleCatalog/petalStyleCatalog:
+// both templates are real markup/behavior on the guest-facing
+// /w/[slug]/details page (see the `detailsLayoutStyle` branch in
+// details.vue) - admin controls which of these a couple is allowed to pick
+// from in their own Day Flow page (WeddingContent.detailsLayoutStyle).
+export const detailsLayoutStyleCatalog: OpeningStyle[] = [
+  { label: 'Classic Slideshow', value: 'classic', icon: 'i-heroicons-rectangle-stack' },
+  { label: 'Menu Style (Tabs)', value: 'menu', icon: 'i-heroicons-book-open' }
+]
+
 // Merge an admin override partial over a built-in baseline. No override (or an
 // empty one) returns the baseline untouched, so existing behavior is preserved.
 function mergeOverride<T extends object>(base: T, override?: Partial<T>): T {
@@ -721,6 +732,7 @@ export function useThemes() {
   const disabledOrnamentStyles = useState<string[]>('catalog-disabled-ornament-styles', () => [])
   const disabledPetalStyles = useState<string[]>('catalog-disabled-petal-styles', () => [])
   const disabledTopIcons = useState<string[]>('catalog-disabled-top-icons', () => [])
+  const disabledDetailsLayoutStyles = useState<string[]>('catalog-disabled-details-layout-styles', () => [])
   const starterDefaults = useState<StarterDefaults>('catalog-starter-defaults', () => ({ ...defaultStarterDefaults }))
   const dashboardSettings = useState<DashboardSettings>('catalog-dashboard-settings', () => structuredClone(defaultDashboardSettings))
   const customRsvpPresets = useState<RsvpPreset[]>('catalog-rsvp-presets', () => [])
@@ -754,6 +766,7 @@ export function useThemes() {
         disabledOrnamentStyles.value = Array.isArray(data.disabledOrnamentStyles) ? data.disabledOrnamentStyles : []
         disabledPetalStyles.value = Array.isArray(data.disabledPetalStyles) ? data.disabledPetalStyles : []
         disabledTopIcons.value = Array.isArray(data.disabledTopIcons) ? data.disabledTopIcons : []
+        disabledDetailsLayoutStyles.value = Array.isArray(data.disabledDetailsLayoutStyles) ? data.disabledDetailsLayoutStyles : []
         starterDefaults.value = data.starterDefaults ? { ...defaultStarterDefaults, ...data.starterDefaults } : { ...defaultStarterDefaults }
         if (data.dashboardSettings) {
           const savedItems = Array.isArray(data.dashboardSettings.navItems) ? data.dashboardSettings.navItems : []
@@ -861,6 +874,14 @@ export function useThemes() {
       : [...disabledTopIcons.value.filter((v) => v !== styleValue), styleValue]
     await saveCatalogField('disabledTopIcons', next)
     disabledTopIcons.value = next
+  }
+
+  async function setDetailsLayoutStyleEnabled(styleValue: string, enabled: boolean) {
+    const next = enabled
+      ? disabledDetailsLayoutStyles.value.filter((v) => v !== styleValue)
+      : [...disabledDetailsLayoutStyles.value.filter((v) => v !== styleValue), styleValue]
+    await saveCatalogField('disabledDetailsLayoutStyles', next)
+    disabledDetailsLayoutStyles.value = next
   }
 
   async function addDayFlowPreset(preset: FlowPreset) {
@@ -977,6 +998,12 @@ export function useThemes() {
   const enabledOrnamentStyles = computed(() => ornamentStyleCatalog.filter((s) => !disabledOrnamentStyles.value.includes(s.value)))
   const enabledPetalStyles = computed(() => petalStyleCatalog.filter((s) => !disabledPetalStyles.value.includes(s.value)))
   const enabledTopIcons = computed(() => topIconCatalog.filter((s) => !disabledTopIcons.value.includes(s.value)))
+  // Falls back to the full catalog if admin has (accidentally) disabled every
+  // style, so a couple's Day Flow page always has at least one to pick from.
+  const enabledDetailsLayoutStyles = computed(() => {
+    const filtered = detailsLayoutStyleCatalog.filter((s) => !disabledDetailsLayoutStyles.value.includes(s.value))
+    return filtered.length > 0 ? filtered : detailsLayoutStyleCatalog
+  })
   const allDayFlowPresets = computed(() => [
     ...builtInDayFlowPresets.map((p) => mergeOverride(p, dayFlowPresetOverrides.value[p.id])),
     ...customDayFlowPresets.value
@@ -1129,6 +1156,10 @@ export function useThemes() {
     openingStyleConfigs,
     saveOpeningStyleConfig,
     removeOpeningStyleConfig,
-    getOpeningStyleConfig
+    getOpeningStyleConfig,
+    detailsLayoutStyleCatalog,
+    disabledDetailsLayoutStyles,
+    enabledDetailsLayoutStyles,
+    setDetailsLayoutStyleEnabled
   }
 }

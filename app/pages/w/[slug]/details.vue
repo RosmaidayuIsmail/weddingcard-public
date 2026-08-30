@@ -54,12 +54,15 @@
         <div v-else class="w-10" aria-hidden="true" />
       </div>
 
+      <!-- Classic layout: today's one-card-at-a-time auto-advancing
+           slideshow, unchanged. -->
+      <template v-if="layoutMode !== 'menu'">
       <div class="flex gap-1.5 w-full mb-4 px-2">
         <div v-for="(_, index) in slideKeys.length" :key="index" class="h-1.5 flex-1 rounded-full bg-[color-mix(in_srgb,var(--theme-ink)_18%,transparent)] overflow-hidden cursor-pointer" @click="goTo(index)">
-          <div 
+          <div
             class="h-full transition-all duration-300"
-            :class="{ 'progress-bar': currentSlide === index, 'progress-paused': paused, 'w-full': index < currentSlide, 'w-0': index > currentSlide }" 
-            :style="{ background: index <= currentSlide ? 'var(--theme-accent)' : '' }" 
+            :class="{ 'progress-bar': currentSlide === index, 'progress-paused': paused, 'w-full': index < currentSlide, 'w-0': index > currentSlide }"
+            :style="{ background: index <= currentSlide ? 'var(--theme-accent)' : '' }"
           />
         </div>
       </div>
@@ -74,122 +77,15 @@
       >
         <Transition :name="direction" mode="out-in">
           <div :key="currentSlide" class="space-y-6 text-center w-full absolute left-0 px-8 sm:px-10">
-            
-            <template v-if="currentKey === 'story'">
-              <div v-if="wedding.content.detailsTopIcon && wedding.content.detailsTopIcon !== 'none'" class="flex justify-center mb-4 w-full px-2">
-                <p
-                  v-if="wedding.content.detailsTopIcon === 'bismillah'"
-                  class="leading-relaxed"
-                  dir="rtl"
-                  :style="{
-                    color: 'var(--theme-accent)',
-                    fontFamily: `'Amiri', 'Traditional Arabic', serif`,
-                    fontSize: `clamp(1rem, ${3 * ((wedding.content.detailsIconSize ?? 100) / 100)}vw, ${1.6 * ((wedding.content.detailsIconSize ?? 100) / 100)}rem)`
-                  }"
-                >بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</p>
-                <UIcon v-else-if="wedding.content.detailsTopIcon === 'rings'" name="i-heroicons-lifebuoy" :style="{ color: 'var(--theme-accent)', width: `${2.5 * ((wedding.content.detailsIconSize ?? 100) / 100)}rem`, height: `${2.5 * ((wedding.content.detailsIconSize ?? 100) / 100)}rem` }" />
-                <UIcon v-else-if="wedding.content.detailsTopIcon === 'heart'" name="i-heroicons-heart" :style="{ color: 'var(--theme-accent)', width: `${2.5 * ((wedding.content.detailsIconSize ?? 100) / 100)}rem`, height: `${2.5 * ((wedding.content.detailsIconSize ?? 100) / 100)}rem` }" />
-                <img v-else-if="wedding.content.detailsTopIcon === 'custom' && wedding.content.customIconUrl" :src="wedding.content.customIconUrl" alt="" class="object-contain drop-shadow" :style="{ width: `${7 * ((wedding.content.detailsIconSize ?? 100) / 100)}rem`, height: 'auto', maxWidth: '85%', maxHeight: `${7 * ((wedding.content.detailsIconSize ?? 100) / 100)}rem` }">
-              </div>
-              <p v-if="!wedding.content.hideSystemText" class="text-[color-mix(in_srgb,var(--card-text)_90%,transparent)] text-lg leading-relaxed whitespace-pre-line" :style="{ fontWeight: 'var(--theme-text-weight)' }">{{ wedding.content.story }}</p>
-            </template>
-
-            <template v-else-if="currentKey === 'couple'">
-              <div v-if="!wedding.content.hideSystemText">
-                <!-- var(--card-text), not a literal white or
-                     var(--theme-ink) - see cardStyleResolved/
-                     cardTextColorResolved above. wedding.content.nameColor
-                     (the "Name Color" picker on the Theme tab, also used
-                     for the cover page's names) still overrides it when a
-                     couple sets one explicitly. -->
-                <h2 class="text-5xl leading-tight drop-shadow-lg" :style="{ color: wedding.content.nameColor || 'var(--card-text)', fontFamily: 'var(--theme-heading-font)' }">
-                  {{ wedding.content.brideName }} <br/>
-                  <span class="text-[0.6em] opacity-80" :style="{ color: 'var(--theme-accent)' }">&amp;</span> <br/>
-                  {{ wedding.content.groomName }}
-                </h2>
-                <div class="h-px w-16 mx-auto my-4" :style="{ background: 'var(--theme-accent)' }"></div>
-                <p class="text-sm uppercase tracking-widest text-[color-mix(in_srgb,var(--card-text)_60%,transparent)]">{{ wedding.content.coupleDividerLabel || 'Bride & Groom' }}</p>
-                <div v-if="wedding.content.monogramEnabled" class="mt-5 flex justify-center">
-                  <img v-if="wedding.content.monogramType === 'upload' && wedding.content.monogramImageUrl" :src="wedding.content.monogramImageUrl" alt="Monogram" class="w-12 h-12 object-contain opacity-90">
-                  <span v-else class="text-2xl" :style="{ fontFamily: monogramFontFamily, color: 'var(--theme-accent)' }">{{ monogramDisplayText }}</span>
-                </div>
-              </div>
-            </template>
-
-            <template v-else-if="currentKey === 'family'">
-              <div v-if="!wedding.content.hideSystemText">
-                <UIcon v-if="!wedding.content.bridePhotoUrl && !wedding.content.groomPhotoUrl" name="i-heroicons-users" class="w-8 h-8 mx-auto mb-4 opacity-50" :style="{ color: 'var(--theme-accent)' }" />
-                <div v-if="wedding.content.brideFullName || wedding.content.brideParents" class="space-y-1">
-                  <img v-if="wedding.content.bridePhotoUrl" :src="wedding.content.bridePhotoUrl" alt="" class="w-20 h-20 rounded-full object-cover mx-auto mb-3 border-2" :style="{ borderColor: 'var(--theme-accent)' }">
-                  <p class="text-xs uppercase tracking-widest font-semibold mb-2" :style="{ color: 'var(--theme-accent)' }">{{ wedding.content.familyBrideLabel || 'Bride' }}</p>
-                  <p class="font-bold text-lg text-[color-mix(in_srgb,var(--card-text)_90%,transparent)]">{{ wedding.content.brideFullName }}</p>
-                  <p class="text-sm text-[color-mix(in_srgb,var(--card-text)_70%,transparent)]" :style="{ fontWeight: 'var(--theme-text-weight)' }">{{ wedding.content.childOfLabel || 'Child of' }} <br/>{{ wedding.content.brideParents }}</p>
-                </div>
-                <div class="h-px bg-[color-mix(in_srgb,var(--card-text)_10%,transparent)] w-24 mx-auto my-6" />
-                <div v-if="wedding.content.groomFullName || wedding.content.groomParents" class="space-y-1">
-                  <img v-if="wedding.content.groomPhotoUrl" :src="wedding.content.groomPhotoUrl" alt="" class="w-20 h-20 rounded-full object-cover mx-auto mb-3 border-2" :style="{ borderColor: 'var(--theme-accent)' }">
-                  <p class="text-xs uppercase tracking-widest font-semibold mb-2" :style="{ color: 'var(--theme-accent)' }">{{ wedding.content.familyGroomLabel || 'Groom' }}</p>
-                  <p class="font-bold text-lg text-[color-mix(in_srgb,var(--card-text)_90%,transparent)]">{{ wedding.content.groomFullName }}</p>
-                  <p class="text-sm text-[color-mix(in_srgb,var(--card-text)_70%,transparent)]" :style="{ fontWeight: 'var(--theme-text-weight)' }">{{ wedding.content.childOfLabel || 'Child of' }} <br/>{{ wedding.content.groomParents }}</p>
-                </div>
-              </div>
-            </template>
-
-            <template v-else-if="currentKey === 'event'">
-              <div v-if="!wedding.content.hideSystemText">
-                <h2 class="font-display font-semibold text-2xl mb-6" :style="{ color: 'var(--theme-accent)' }">{{ wedding.content.detailsHeading || 'The Details' }}</h2>
-                <div class="space-y-4 text-[color-mix(in_srgb,var(--card-text)_90%,transparent)]">
-                  <div v-if="wedding.content.dateLabel" class="flex flex-col items-center">
-                    <UIcon name="i-heroicons-calendar" class="w-5 h-5 mb-1 opacity-70" />
-                    <p class="font-medium text-lg">{{ wedding.content.dateLabel }}</p>
-                  </div>
-                  <div v-if="wedding.content.timeLabel" class="flex flex-col items-center">
-                    <UIcon name="i-heroicons-clock" class="w-5 h-5 mb-1 opacity-70" />
-                    <p class="font-medium text-lg">{{ wedding.content.timeLabel }}</p>
-                  </div>
-                  <div v-if="wedding.content.venueName" class="flex flex-col items-center pt-2">
-                    <UIcon name="i-heroicons-building-office-2" class="w-5 h-5 mb-1 opacity-70" />
-                    <p class="font-semibold text-lg">{{ wedding.content.venueName }}</p>
-                    <p class="text-sm text-[color-mix(in_srgb,var(--card-text)_60%,transparent)] mt-1 max-w-[250px] mx-auto">{{ wedding.content.venueAddress }}</p>
-                  </div>
-                </div>
-              </div>
-              <div class="flex justify-center pt-6" :class="{ 'pt-12': wedding.content.hideSystemText }">
-                <AddToCalendarButton
-                  :bride-name="wedding.content.brideName"
-                  :groom-name="wedding.content.groomName"
-                  :date-iso="wedding.content.dateISO"
-                  :venue-name="wedding.content.venueName"
-                  :venue-address="wedding.content.venueAddress"
-                  :rsvp-deadline-label="wedding.content.rsvpDeadlineLabel"
-                  :label="wedding.content.calendarButtonLabel"
-                  class="rounded-full shadow-lg"
-                />
-              </div>
-            </template>
-
-            <template v-else-if="currentKey === 'location'">
-              <h2 class="font-display font-semibold text-2xl mb-2" :style="{ color: 'var(--theme-accent)' }">{{ wedding.content.locationHeading || 'Location' }}</h2>
-              <p class="text-sm text-[color-mix(in_srgb,var(--card-text)_60%,transparent)] mb-6">{{ wedding.content.locationSubtitle || 'Scan or tap to open in Maps' }}</p>
-              <div class="flex flex-col items-center gap-6">
-                <div class="p-3 bg-white rounded-2xl shadow-xl">
-                  <img :src="qrCodeUrl" :alt="`QR code linking to the venue on ${wedding.content.locationMapsButtonLabel || 'Google Maps'}`" class="w-36 h-36" loading="lazy">
-                </div>
-                <UButton :to="wedding.content.mapUrl" target="_blank" external icon="i-heroicons-map-pin" color="neutral" class="accent-btn font-semibold rounded-full px-6 shadow-md">
-                  {{ wedding.content.locationMapsButtonLabel || 'Google Maps' }}
-                </UButton>
-              </div>
-            </template>
-
-            <template v-else-if="currentKey === 'gift'">
-              <h2 class="font-display font-semibold text-2xl mb-4" :style="{ color: 'var(--theme-accent)' }">A Gift of Love</h2>
-              <GiftCard :banks="[wedding.content.bank, wedding.content.bank2]" />
-            </template>
-
-            <template v-else-if="currentKey === 'flow'">
-              <h2 class="font-display font-semibold text-2xl mb-6" :style="{ color: 'var(--theme-accent)' }">{{ wedding.content.eventFlowHeading || 'Event Flow' }}</h2>
-              <FlowTimeline :items="wedding.flow" />
-            </template>
+            <DetailsSlideContent
+              :slide-key="currentKey"
+              :content="wedding.content"
+              :flow="wedding.flow"
+              :menu="wedding.menu || []"
+              :qr-code-url="qrCodeUrl"
+              :monogram-display-text="monogramDisplayText"
+              :monogram-font-family="monogramFontFamily"
+            />
           </div>
         </Transition>
 
@@ -205,6 +101,48 @@
           <UIcon name="i-heroicons-chevron-right" class="w-8 h-8" />
         </button>
       </div>
+      </template>
+
+      <!-- Menu-style layout: every section listed as a tappable category up
+           front (like a restaurant menu page's own category tabs -
+           referenced from menate.com.my) instead of an auto-advancing
+           carousel, so a guest can jump straight to what they want. -->
+      <template v-else>
+        <div class="flex flex-wrap gap-2 mb-5 px-1" role="tablist">
+          <button
+            v-for="(key, index) in slideKeys"
+            :key="key"
+            type="button"
+            role="tab"
+            :aria-selected="currentSlide === index"
+            class="menu-tab"
+            :class="{ 'menu-tab-active': currentSlide === index }"
+            @click="goTo(index)"
+          >
+            {{ slideLabel(key) }}
+          </button>
+        </div>
+
+        <div
+          class="relative backdrop-blur-xl border rounded-[2rem] shadow-2xl p-8 sm:p-10 min-h-[460px] flex flex-col justify-center"
+          :class="cardStyleResolved === 'dark' ? 'classic-inner-card' : (cardStyleResolved === 'glass' ? 'classic-inner-card-glass' : 'classic-inner-card-theme')"
+          :style="{ borderColor: cardStyleResolved === 'glass' ? 'transparent' : 'var(--theme-accent-soft)', '--card-text': cardTextColorResolved }"
+        >
+          <Transition name="fade" mode="out-in">
+            <div :key="currentSlide" class="space-y-6 text-center w-full">
+              <DetailsSlideContent
+                :slide-key="currentKey"
+                :content="wedding.content"
+                :flow="wedding.flow"
+                :menu="wedding.menu || []"
+                :qr-code-url="qrCodeUrl"
+                :monogram-display-text="monogramDisplayText"
+                :monogram-font-family="monogramFontFamily"
+              />
+            </div>
+          </Transition>
+        </div>
+      </template>
     </div>
   </div>
 </template>
@@ -290,8 +228,31 @@ const slideKeys = computed(() => {
     keys.push('gift')
   }
   if (wedding.value.flow?.length) keys.push('flow')
+  if (wedding.value.menu?.length) keys.push('menu')
   return keys
 })
+
+// 'classic' (default) is today's auto-advancing slideshow; 'menu' is the
+// tabbed, restaurant-menu-style browsing layout - see WeddingContent.detailsLayoutStyle.
+const layoutMode = computed(() => (wedding.value?.content.detailsLayoutStyle === 'menu' ? 'menu' : 'classic'))
+
+// Friendly tab labels for the Menu-style layout, reusing the couple's own
+// section headings where they've customized one so a tab never disagrees
+// with the heading shown once you tap it.
+function slideLabel(key: string): string {
+  const content = wedding.value?.content
+  switch (key) {
+    case 'story': return 'Our Story'
+    case 'couple': return content?.coupleDividerLabel || 'Bride & Groom'
+    case 'family': return 'Family'
+    case 'event': return content?.detailsHeading || 'The Details'
+    case 'location': return content?.locationHeading || 'Location'
+    case 'gift': return 'Gift'
+    case 'flow': return content?.eventFlowHeading || 'Event Flow'
+    case 'menu': return content?.menuHeading || 'Menu'
+    default: return key
+  }
+}
 
 const currentSlide = ref(0)
 const currentKey = computed(() => slideKeys.value[currentSlide.value] ?? 'story')
@@ -338,7 +299,10 @@ let autoSlideInterval: ReturnType<typeof setInterval> | null = null
 
 function startAutoSlide() {
   autoSlideInterval = setInterval(() => {
-    if (!paused.value) next()
+    // Menu-style layout is meant to be browsed by tapping tabs, not
+    // auto-advanced through - a guest reading one dish list shouldn't get
+    // yanked to the next tab mid-read.
+    if (!paused.value && layoutMode.value !== 'menu') next()
   }, 7000)
 }
 
@@ -462,5 +426,39 @@ watch(
   .slide-prev-enter-from, .slide-prev-leave-to {
     transform: none;
   }
+}
+
+/* Menu-style layout's category tabs and simple cross-fade between them -
+   no slide/scale, since tapping a tab should feel like flipping a menu
+   page, not swiping a carousel. */
+.menu-tab {
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: color-mix(in srgb, var(--theme-ink) 55%, transparent);
+  background: color-mix(in srgb, var(--theme-ink) 6%, transparent);
+  border: 1px solid color-mix(in srgb, var(--theme-ink) 12%, transparent);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.menu-tab-active {
+  color: var(--theme-on-accent, #1f1400);
+  background: var(--theme-accent, #d4a017);
+  border-color: transparent;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.25s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fade-enter-active, .fade-leave-active { transition: none; }
 }
 </style>

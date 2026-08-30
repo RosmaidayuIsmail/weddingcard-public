@@ -14,9 +14,7 @@
         <p class="text-sm text-white/60 leading-relaxed">
           The moment a couple clicks "Generate Wedding Card" for the very first time, their brand-new wedding is pre-filled with exactly these values - the intro story, button text, whether falling petals start on, which petal shape, text boldness, ornament style, and the starter Day Flow timeline. From that instant on, it's fully theirs: they can change or delete any of it, and future edits here won't touch it. This is the one section that shapes the very first impression a new couple gets.
         </p>
-        <UButton icon="i-heroicons-eye" variant="soft" color="neutral" size="sm" class="mt-3" @click="showLive = true">View Live</UButton>
       </div>
-      <AdminLivePreview v-model:open="showLive" mode="design" :overrides="livePreviewOverrides" />
 
       <div class="form-card space-y-5">
         <div>
@@ -133,9 +131,8 @@
 
   const ornamentOptions = computed(() => ornamentStyleCatalog)
 
-  const showLive = ref(false)
   // Shows this form's own unsaved edits, not just the last-saved defaults -
-  // so "View Live" reflects whatever is currently on screen, saved or not.
+  // so the live preview reflects whatever is currently on screen, saved or not.
   const livePreviewOverrides = computed(() => ({
     story: form.value.story,
     enablePetals: form.value.enablePetals,

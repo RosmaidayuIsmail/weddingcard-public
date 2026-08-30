@@ -1,4 +1,5 @@
 <template>
+  <AdminSidePreview mode="guests" :guest-list-form="form">
   <div class="space-y-6 animate-fade-up">
     <UAlert icon="i-heroicons-users" color="info" variant="soft" title="Global Guest List controls" description="Labels and which optional columns are shown on every user's Guest List page. A couple's actual guest data is never touched by anything here." />
 
@@ -7,9 +8,7 @@
       <p class="text-sm text-white/60 leading-relaxed">
         This is the couple's own Guest List page in their dashboard (<code class="text-gold-300 bg-white/5 px-1 rounded">/dashboard/guests</code>) - a private management tool, guests never see it. The page title/description and tier labels appear exactly as typed here. The two column switches only hide or show a column in that table - the underlying "special seating"/"dietary" answers a couple's guests submit through RSVP are always collected either way.
       </p>
-      <UButton icon="i-heroicons-eye" variant="soft" color="neutral" size="sm" class="mt-3" @click="showLive = true">View Live</UButton>
     </div>
-    <AdminLivePreview v-model:open="showLive" mode="guests" />
 
     <div class="form-card space-y-4">
       <h2 class="font-display text-lg">Page labels</h2>
@@ -36,6 +35,7 @@
 
     <UButton color="primary" icon="i-heroicons-check" size="lg" :loading="saving" @click="save">Save Guest List controls</UButton>
   </div>
+  </AdminSidePreview>
 </template>
 
 <script setup lang="ts">
@@ -48,7 +48,6 @@ const form = ref<GuestListSettings>(structuredClone(toRaw(guestListSettings.valu
 watch(guestListSettings, (v) => { form.value = structuredClone(toRaw(v)) }, { once: true })
 
 const saving = ref(false)
-const showLive = ref(false)
 async function save() {
   saving.value = true
   try {

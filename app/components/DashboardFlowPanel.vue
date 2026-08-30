@@ -72,6 +72,65 @@
             </div>
           </div>
 
+          <!-- Details Page Style: 'classic' (today's auto-advancing
+               slideshow) vs 'menu' (tabbed, restaurant-menu-style browsing
+               layout) for the guest-facing /w/[slug]/details page. Only
+               shows the styles Platform Admin has enabled - see
+               enabledDetailsLayoutStyles in useThemes.ts. -->
+          <div v-if="enabledDetailsLayoutStyles.length > 1" class="form-panel animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <h2 class="text-base font-semibold text-white mb-1 flex items-center gap-2">
+              <UIcon name="i-heroicons-swatch" style="color: #e3b04a;" class="w-5 h-5" />
+              Details Page Style
+            </h2>
+            <p class="text-xs text-gray-400 mb-4">Choose how your guests browse the Details page - Event Flow, Menu, and every other section below.</p>
+            <div class="grid sm:grid-cols-2 gap-3">
+              <button
+                v-for="style in enabledDetailsLayoutStyles"
+                :key="style.value"
+                type="button"
+                class="layout-style-card"
+                :class="{ 'layout-style-card-active': layoutStyle === style.value }"
+                @click="layoutStyle = style.value as 'classic' | 'menu'"
+              >
+                <UIcon :name="style.icon" class="w-5 h-5" />
+                <span class="text-sm font-medium">{{ style.label }}</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Wedding Menu: reception food items, shown as their own
+               tappable section on the Details page once at least one dish
+               is added - inspired by a restaurant menu page. -->
+          <div class="form-panel animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <h2 class="text-base font-semibold text-white mb-4 border-b border-gray-700 pb-3 flex items-center gap-2">
+              <UIcon name="i-heroicons-book-open" style="color: #e3b04a;" class="w-5 h-5" />
+              Wedding Menu
+            </h2>
+            <p class="text-xs text-gray-400 mb-4">Add your reception food/dishes, grouped by category (e.g. Appetizer, Main Course, Dessert). Appears as its own section on your Details page once you add at least one item.</p>
+
+            <div class="grid sm:grid-cols-3 gap-3 mb-4">
+              <UInput v-model="menuDraft.category" placeholder="Category (e.g. Main Course)" size="lg" icon="i-heroicons-tag" :ui="{ icon: { base: 'text-gold-400' } }" />
+              <UInput v-model="menuDraft.name" placeholder="Dish name" size="lg" class="sm:col-span-2" />
+            </div>
+            <UInput v-model="menuDraft.description" placeholder="Optional short description" size="lg" class="w-full mb-4" />
+            <UButton color="primary" icon="i-heroicons-plus" size="md" class="font-semibold shadow-md" @click="addMenuItem">
+              Add Dish
+            </UButton>
+
+            <div v-if="menuItems.length" class="mt-5 space-y-2">
+              <div v-for="(item, index) in menuItems" :key="item.id" class="flow-row group">
+                <div class="flex-1 w-full space-y-2">
+                  <div class="flex items-center gap-2">
+                    <UInput v-model="item.category" size="xs" class="w-40 shrink-0 opacity-80" />
+                    <UInput v-model="item.name" size="sm" class="flex-1 font-medium" />
+                  </div>
+                  <UInput v-model="item.description" size="xs" placeholder="Description..." class="w-full opacity-80" />
+                </div>
+                <UButton size="sm" variant="ghost" color="error" icon="i-heroicons-trash" class="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-2" @click="menuItems.splice(index, 1)" />
+              </div>
+            </div>
+          </div>
+
           <!-- Add an Item Panel -->
           <div class="form-panel animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100">
             <h2 class="text-base font-semibold text-white mb-4 border-b border-gray-700 pb-3 flex items-center gap-2">
@@ -172,20 +231,42 @@
 </template>
 
 <script setup lang="ts">
-import type { FlowItem } from '~/composables/useWeddingTypes'
+import type { FlowItem, MenuItem } from '~/composables/useWeddingTypes'
 
 // This is the real Wedding Day Flow editor, shared by /dashboard/flow and
 // the /admin/wedding/[id]/flow admin page. overrideWeddingId is only ever
 // set by the admin page; couples hitting their own dashboard never pass
 // it, so useMyWedding() falls back to its normal own-wedding lookup.
 const props = defineProps<{ overrideWeddingId?: string | null }>()
-const { wedding, loading, saving, updateFlow } = useMyWedding(toRef(props, 'overrideWeddingId'))
-const { themeStyleVars, allDayFlowPresets, dayFlowSettings } = useThemes()
+const { wedding, loading, saving, updateFlow, updateMenu, updateContent } = useMyWedding(toRef(props, 'overrideWeddingId'))
+const { themeStyleVars, allDayFlowPresets, dayFlowSettings, enabledDetailsLayoutStyles } = useThemes()
 const toast = useToast()
 
 const items = ref<FlowItem[]>([])
 const draft = reactive({ time: '', title: '', description: '' })
 const savedAt = ref<number | null>(null)
+
+// --- Wedding Menu (reception food) ---
+const menuItems = ref<MenuItem[]>([])
+const menuDraft = reactive({ category: '', name: '', description: '' })
+function addMenuItem() {
+  if (!menuDraft.name.trim()) {
+    toast.add({ title: 'Please add a dish name', color: 'warning' })
+    return
+  }
+  menuItems.value.push({
+    id: `${Date.now()}`,
+    category: menuDraft.category.trim() || 'Menu',
+    name: menuDraft.name.trim(),
+    description: menuDraft.description.trim()
+  })
+  menuDraft.category = ''
+  menuDraft.name = ''
+  menuDraft.description = ''
+}
+
+// --- Details Page Style ---
+const layoutStyle = ref<'classic' | 'menu'>('classic')
 
 // Computed styles to pass to the Live Preview so it matches the chosen theme perfectly
 const styleVars = computed(() => {
@@ -219,6 +300,8 @@ watch(
     if (!value || initialized) return
     initialized = true
     items.value = [...value.flow]
+    menuItems.value = [...(value.menu || [])]
+    layoutStyle.value = value.content.detailsLayoutStyle === 'menu' ? 'menu' : 'classic'
   },
   { immediate: true }
 )
@@ -263,7 +346,11 @@ function move(index: number, direction: -1 | 1) {
 }
 
 async function save() {
-  await updateFlow(items.value)
+  await Promise.all([
+    updateFlow(items.value),
+    updateMenu(menuItems.value),
+    updateContent({ detailsLayoutStyle: layoutStyle.value })
+  ])
   savedAt.value = Date.now()
   toast.add({ title: 'Wedding day flow saved', color: 'success' })
   setTimeout(() => { savedAt.value = null }, 3000)
@@ -337,6 +424,27 @@ useSeoMeta({ title: 'Day Flow — WeddingCard' })
   overflow-y: auto;
   overflow-x: hidden;
   background: #111;
+}
+
+.layout-style-card {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.85rem 1rem;
+  border-radius: 0.9rem;
+  background: #1F2937;
+  border: 1px solid #374151;
+  color: rgba(255, 255, 255, 0.6);
+  transition: all 0.2s ease;
+}
+.layout-style-card:hover {
+  border-color: rgba(212, 160, 23, 0.3);
+  color: white;
+}
+.layout-style-card-active {
+  border-color: #d4a017;
+  background: rgba(212, 160, 23, 0.1);
+  color: #f3ddaa;
 }
 
 /* List Transition */

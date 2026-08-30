@@ -42,6 +42,24 @@ rules_version = '2';
 //                                         across every wedding at once via a
 //                                         collectionGroup('physicalOrders')
 //                                         query, which this same rule covers.
+//   driveConnections/{weddingId}       - a couple's own Google Drive OAuth
+//                                         connection (refresh/access tokens,
+//                                         which app folder we upload their
+//                                         CSV/PDF exports into). Contains
+//                                         sensitive tokens, so it is NEVER
+//                                         readable/writable via the client
+//                                         SDK - only the Firebase Admin SDK,
+//                                         from the /api/drive/* server
+//                                         routes, ever touches this
+//                                         collection. See server/utils/
+//                                         google-drive.ts.
+//   driveOAuthStates/{state}           - short-lived (~15 min), single-use
+//                                         tokens used to carry a weddingId
+//                                         through the Google OAuth redirect
+//                                         (which arrives as an unauthenticated
+//                                         browser GET, so there's no Firebase
+//                                         ID token available to identify the
+//                                         wedding otherwise). Admin SDK only.
 //
 // The guests/wishes split exists specifically so the full guest list (phone
 // numbers, dietary needs, guest counts) never has to be publicly readable -
@@ -149,6 +167,15 @@ service cloud.firestore {
         allow update: if isSuperAdmin();
         allow delete: if false;
       }
+    }
+
+    // Google Drive OAuth tokens and short-lived OAuth state - Admin SDK only,
+    // never exposed to any client. See the data model note above.
+    match /driveConnections/{weddingId} {
+      allow read, write: if false;
+    }
+    match /driveOAuthStates/{state} {
+      allow read, write: if false;
     }
   }
 }

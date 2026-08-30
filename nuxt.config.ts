@@ -60,6 +60,29 @@ export default defineNuxtConfig({
     papagoClientId: process.env.PAPAGO_CLIENT_ID || '',
     papagoClientSecret: process.env.PAPAGO_CLIENT_SECRET || '',
 
+    // Google Cloud OAuth Client (Web application type) for the per-couple
+    // "Connect Google Drive" feature on the Guest List page. Create one at
+    // https://console.cloud.google.com/apis/credentials, enable the Google
+    // Drive API for that project, and add googleRedirectUri below as an
+    // authorized redirect URI on the OAuth Client. See server/utils/google-drive.ts.
+    googleClientId: process.env.NUXT_GOOGLE_CLIENT_ID || '',
+    googleClientSecret: process.env.NUXT_GOOGLE_CLIENT_SECRET || '',
+    // Must exactly match an "Authorized redirect URI" on the Google OAuth
+    // Client, e.g. https://yourdomain.com/api/drive/callback
+    googleRedirectUri: process.env.NUXT_GOOGLE_REDIRECT_URI || '',
+
+    // Resend (https://resend.com) API key + a "from" address on a domain
+    // verified in that Resend account - used for the countdown-end guest
+    // list export email. See server/utils/resend-email.ts.
+    resendApiKey: process.env.NUXT_RESEND_API_KEY || '',
+    resendFromEmail: process.env.NUXT_RESEND_FROM_EMAIL || '',
+
+    // Shared secret an external scheduler (Vercel Cron / Google Cloud
+    // Scheduler / cron-job.org) must send as the `x-cron-secret` header to
+    // trigger /api/cron/send-post-wedding-exports. Pick any long random
+    // string - it never needs to be shared with anyone but that scheduler.
+    cronSecret: process.env.NUXT_CRON_SECRET || '',
+
     public: {
       siteUrl: process.env.NUXT_PUBLIC_SITE_URL || '',
       firebaseApiKey: process.env.NUXT_PUBLIC_FIREBASE_API_KEY || '',

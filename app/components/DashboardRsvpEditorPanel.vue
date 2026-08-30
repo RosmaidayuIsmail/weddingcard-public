@@ -700,7 +700,7 @@ useSeoMeta({ title: 'RSVP Editor — WeddingCard' })
   border-radius: 10px;
 }
 
-/* Live Preview: 4-page toggle (mirrors AdminLivePreview.vue's .preview-tab
+/* Live Preview: 4-page toggle (mirrors the Design Studio's own .preview-tab
    Cover/Details switch) plus the mini step-indicator, option cards, and nav
    buttons used inside the phone mockup - scaled-down equivalents of the
    real classes in app/pages/w/[slug]/rsvp.vue. */

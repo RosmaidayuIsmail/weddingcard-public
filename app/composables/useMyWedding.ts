@@ -10,7 +10,7 @@ import {
   where,
   type Unsubscribe
 } from 'firebase/firestore'
-import { createDefaultContent, type FlowItem, type VipScene, type WeddingContent, type WeddingDoc } from './useWeddingTypes'
+import { createDefaultContent, type FlowItem, type MenuItem, type VipScene, type WeddingContent, type WeddingDoc } from './useWeddingTypes'
 
 export function slugify(input: string) {
   return input
@@ -210,6 +210,19 @@ export function useMyWedding(overrideId?: Ref<string | null | undefined>) {
     }
   }
 
+  // Mirrors updateFlow() exactly - the Wedding Menu items live in their own
+  // top-level array (like `flow`) rather than inside `content`, so they can
+  // be saved independently from the rest of the Design Studio form.
+  async function updateMenu(menu: MenuItem[]) {
+    if (!db || !wedding.value) return
+    saving.value = true
+    try {
+      await updateDoc(doc(db, 'weddings', wedding.value.id), { menu, updatedAt: serverTimestamp() })
+    } finally {
+      saving.value = false
+    }
+  }
+
   async function updateVip(enabled: boolean, scenes: VipScene[]) {
     if (!db || !wedding.value) return
     saving.value = true
@@ -260,6 +273,7 @@ export function useMyWedding(overrideId?: Ref<string | null | undefined>) {
     updateSlug,
     updateTheme,
     updateFlow,
+    updateMenu,
     updateVip,
     updateVipBackground,
     setPublished

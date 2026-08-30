@@ -54,6 +54,22 @@ export interface WeddingContent {
   calendarButtonLabel: string
   /** Heading above the day-of schedule (FlowTimeline) shown on the Details page. */
   eventFlowHeading: string
+  /**
+   * Which visual template the whole /w/[slug]/details page renders with.
+   * 'classic' (default) is today's one-card-at-a-time auto-advancing
+   * slideshow, unchanged. 'menu' is a tabbed/browsable layout - inspired by
+   * a restaurant menu page - where every slide (including the Wedding Menu
+   * below, when it has items) is listed as a tappable category up front and
+   * guests jump straight to what they want instead of waiting through an
+   * auto-advancing carousel. Admin controls which of these a couple is
+   * allowed to pick from (see detailsLayoutStyleCatalog in useThemes.ts);
+   * old weddings with no value saved yet fall back to 'classic' so nothing
+   * changes for anyone who hasn't opted in. */
+  detailsLayoutStyle: 'classic' | 'menu'
+  /** Heading shown above the Wedding Menu slide, e.g. "Our Wedding Menu". */
+  menuHeading: string
+  /** Short optional line under the Wedding Menu heading, e.g. "A taste of what's on the table". */
+  menuSubtitle: string
   hashtag: string
   enableGift: boolean
   enablePetals: boolean
@@ -298,6 +314,21 @@ export interface FlowItem {
 }
 
 /**
+ * One dish/course on the couple's own Wedding Menu slide (see MenuList.vue /
+ * the 'menu' slide in app/pages/w/[slug]/details.vue) - inspired by a
+ * restaurant menu page, grouped by `category` (e.g. "Appetizer", "Main
+ * Course", "Dessert") so guests can browse the reception food the same way
+ * they would a restaurant's own menu.
+ */
+export interface MenuItem {
+  id: string
+  category: string
+  name: string
+  description?: string
+  imageUrl?: string
+}
+
+/**
  * A single admin-authored "scene" shown in the VIP Cinematic invitation's
  * automatic camera fly-through (see VipCinematicInvite.vue / VipScenesPanel.vue).
  * These are the narrative middle scenes (couple story, family, custom notes,
@@ -336,6 +367,10 @@ export interface WeddingDoc {
   status: WeddingStatus
   content: WeddingContent
   flow: FlowItem[]
+  /** The couple's own Wedding Menu (reception food) items - see MenuItem.
+   *  Optional/absent on older weddings; the 'menu' details slide only
+   *  appears once at least one item exists. */
+  menu?: MenuItem[]
   /**
    * Whether the separate VIP Cinematic guest page (/w/[slug]/vip) is turned
    * on. Only ever meaningful for a wedding owned by a VIP-tier account
@@ -353,6 +388,14 @@ export interface WeddingDoc {
    * gradient when unset.
    */
   vipBackgroundImageUrl?: string
+  /**
+   * Set once the post-wedding Guest List export (CSV + PDF) has been
+   * emailed to this account's own email address by the countdown-end cron
+   * job (see server/api/cron/send-post-wedding-exports.post.ts). Prevents
+   * sending the same wedding's export more than once. Written only by that
+   * server route via the Admin SDK - never set from the client.
+   */
+  postWeddingExportSent?: boolean
 }
 
 export interface GuestDoc {
@@ -360,6 +403,10 @@ export interface GuestDoc {
   name: string
   tier: 'vip' | 'general'
   phone: string
+  /** Optional - only needed for guests who should receive their exported
+   *  file/QR by email (see useGoogleDrive.ts and the countdown-end email
+   *  job). Blank for guests who are only ever reached over WhatsApp. */
+  email?: string
   attending: 'Yes' | 'No' | ''
   guestCount: number
   specialSeating: boolean
@@ -401,6 +448,9 @@ export function createDefaultContent(brideName = '', groomName = ''): WeddingCon
     childOfLabel: 'Child of',
     calendarButtonLabel: 'Add to Calendar',
     eventFlowHeading: 'Event Flow',
+    detailsLayoutStyle: 'classic',
+    menuHeading: 'Our Wedding Menu',
+    menuSubtitle: '',
     hashtag: '',
     enableGift: false,
     enablePetals: true,

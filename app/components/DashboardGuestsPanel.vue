@@ -47,7 +47,7 @@
           <UIcon name="i-heroicons-user-plus" class="w-5 h-5 text-gold-300" />
           <h3 class="font-semibold">Add a Guest Manually</h3>
         </div>
-        <div class="grid sm:grid-cols-[1fr_1fr_auto_auto] gap-4">
+        <div class="grid sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_auto_auto] gap-4">
           <UInput v-model="newGuest.name" placeholder="Guest Name" size="lg">
             <template #leading>
               <UIcon name="i-heroicons-user" class="text-gray-500 dark:text-gray-400" />
@@ -58,8 +58,35 @@
               <UIcon name="i-heroicons-phone" class="text-gray-500 dark:text-gray-400" />
             </template>
           </UInput>
+          <UInput v-model="newGuest.email" placeholder="Email (Optional)" size="lg" type="email">
+            <template #leading>
+              <UIcon name="i-heroicons-envelope" class="text-gray-500 dark:text-gray-400" />
+            </template>
+          </UInput>
           <USelect v-model="newGuest.tier" :items="[{ label: guestListSettings.generalLabel, value: 'general' }, { label: guestListSettings.vipLabel, value: 'vip' }]" size="lg" class="w-full sm:w-32" />
           <UButton color="primary" icon="i-heroicons-plus" size="lg" class="w-full sm:w-auto font-semibold px-6 shadow-md hover:-translate-y-0.5 transition-transform" :loading="adding" @click="handleAdd">Add</UButton>
+        </div>
+      </div>
+
+      <!-- Google Drive backup -->
+      <div class="form-panel animate-fade-up delay-1">
+        <div class="flex flex-wrap items-center gap-3">
+          <UIcon name="i-heroicons-cloud-arrow-up" class="w-5 h-5 text-gold-300 shrink-0" />
+          <div class="min-w-[220px]">
+            <h3 class="font-semibold text-white/90">Google Drive backup</h3>
+            <p class="text-xs text-white/50 mt-0.5">
+              <template v-if="driveConnected">
+                Connected as <span class="text-white/80">{{ driveEmail }}</span> - exports are saved to your own Drive.
+              </template>
+              <template v-else>Connect your own Google Drive to automatically save CSV/PDF exports there.</template>
+            </p>
+          </div>
+          <div class="ml-auto flex flex-wrap gap-2">
+            <UButton v-if="driveFolderLink" :to="driveFolderLink" target="_blank" external size="sm" color="neutral" variant="ghost" icon="i-heroicons-arrow-top-right-on-square" class="rounded-full px-4">Open folder</UButton>
+            <UButton v-if="driveConnected" size="sm" color="primary" variant="soft" icon="i-heroicons-cloud-arrow-up" class="rounded-full px-4" :loading="driveExporting" @click="exportToDrive">Save to Drive</UButton>
+            <UButton v-if="driveConnected" size="sm" color="error" variant="ghost" class="rounded-full px-4" @click="disconnectDrive">Disconnect</UButton>
+            <UButton v-else size="sm" color="neutral" variant="soft" icon="i-heroicons-link" class="rounded-full px-4" :loading="driveConnecting" @click="connectDrive">Connect Google Drive</UButton>
+          </div>
         </div>
       </div>
 
@@ -201,6 +228,9 @@
               <UInput v-model="editForm.phone" size="lg" class="w-full" />
             </UFormField>
           </div>
+          <UFormField label="Email (optional)">
+            <UInput v-model="editForm.email" type="email" size="lg" class="w-full" />
+          </UFormField>
           <UFormField label="Tier">
             <USelect v-model="editForm.tier" :items="[{ label: guestListSettings.generalLabel, value: 'general' }, { label: guestListSettings.vipLabel, value: 'vip' }]" class="w-full" />
           </UFormField>
@@ -240,8 +270,8 @@
     <UModal v-model:open="importOpen" title="Import guests from CSV">
       <template #body>
         <div class="space-y-4">
-          <p class="text-sm text-white/60">Paste one guest per line as <code class="text-gold-300 bg-white/5 px-1 rounded">Name, Phone, tier</code>. Phone and tier are optional (tier defaults to General; use <code class="text-gold-300 bg-white/5 px-1 rounded">vip</code> for VIP).</p>
-          <UTextarea v-model="importText" :rows="8" class="w-full font-mono text-sm" placeholder="Aisyah binti Ali, 0123456789, vip&#10;Mut bin Abu, 0198765432" />
+          <p class="text-sm text-white/60">Paste one guest per line as <code class="text-gold-300 bg-white/5 px-1 rounded">Name, Phone, tier, Email</code>. Phone, tier and email are all optional (tier defaults to General; use <code class="text-gold-300 bg-white/5 px-1 rounded">vip</code> for VIP).</p>
+          <UTextarea v-model="importText" :rows="8" class="w-full font-mono text-sm" placeholder="Aisyah binti Ali, 0123456789, vip, aisyah@email.com&#10;Mut bin Abu, 0198765432" />
           <p class="text-xs text-white/40">{{ parsedImportRows.length }} guest(s) detected.</p>
         </div>
       </template>
@@ -303,7 +333,7 @@ async function copyGuestLink(guest: GuestDoc) {
   }
 }
 
-const newGuest = reactive({ name: '', phone: '', tier: 'general' as 'vip' | 'general' })
+const newGuest = reactive({ name: '', phone: '', email: '', tier: 'general' as 'vip' | 'general' })
 const adding = ref(false)
 
 async function handleAdd() {
@@ -313,11 +343,47 @@ async function handleAdd() {
     await addGuest({ ...newGuest })
     newGuest.name = ''
     newGuest.phone = ''
+    newGuest.email = ''
     newGuest.tier = 'general'
   } finally {
     adding.value = false
   }
 }
+
+// --- Google Drive backup (see useGoogleDrive.ts) ---
+const {
+  connected: driveConnected,
+  driveEmail,
+  folderLink: driveFolderLink,
+  connecting: driveConnecting,
+  exporting: driveExporting,
+  refreshStatus: refreshDriveStatus,
+  connect: connectDrive,
+  disconnect: disconnectDrive,
+  exportToDrive
+} = useGoogleDrive(() => wedding.value?.id)
+
+watch(() => wedding.value?.id, (id) => { if (id) refreshDriveStatus() }, { immediate: true })
+
+// After Google redirects back from the OAuth consent screen (see
+// server/api/drive/callback.get.ts), show what happened and clean the
+// ?drive= query param off the URL so a page refresh doesn't re-show it.
+onMounted(() => {
+  const route = useRoute()
+  const status = route.query.drive as string | undefined
+  if (!status) return
+  const messages: Record<string, { title: string; color: 'success' | 'error' | 'neutral' }> = {
+    connected: { title: 'Google Drive connected', color: 'success' },
+    error: { title: 'Could not connect Google Drive', color: 'error' },
+    cancelled: { title: 'Google Drive connection cancelled', color: 'neutral' },
+    expired: { title: 'That connection attempt expired - please try again', color: 'error' }
+  }
+  const info = messages[status]
+  if (info) toast.add({ title: info.title, color: info.color })
+  refreshDriveStatus()
+  const router = useRouter()
+  router.replace({ query: { ...route.query, drive: undefined } })
+})
 
 const tierFilters = computed(() => [
   { label: 'All Guests', value: 'all' as const },
@@ -393,8 +459,8 @@ const parsedImportRows = computed(() => {
     .map((line) => line.trim())
     .filter(Boolean)
     .map((line) => {
-      const [name = '', phone = '', tier = ''] = line.split(',').map((s) => s.trim())
-      return { name, phone, tier: tier.toLowerCase() === 'vip' ? ('vip' as const) : ('general' as const) }
+      const [name = '', phone = '', tier = '', email = ''] = line.split(',').map((s) => s.trim())
+      return { name, phone, email, tier: tier.toLowerCase() === 'vip' ? ('vip' as const) : ('general' as const) }
     })
     .filter((r) => r.name)
 })

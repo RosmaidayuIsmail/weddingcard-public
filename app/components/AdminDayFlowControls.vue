@@ -1,4 +1,5 @@
 <template>
+  <AdminSidePreview mode="dayflow" :day-flow-form="labelsForm">
   <div class="space-y-6 animate-fade-up">
     <UAlert icon="i-heroicons-clock" color="info" variant="soft" title="Global Day Flow controls" description="Quick Start presets appear as one-click template buttons on every user's Day Flow page. Page labels change what every user sees at the top of that page. A user's own timeline is never touched by anything here." />
 
@@ -7,15 +8,35 @@
       <p class="text-sm text-white/60 leading-relaxed">
         This is the couple's own Wedding Day Flow page in their dashboard (<code class="text-gold-300 bg-white/5 px-1 rounded">/dashboard/flow</code>) - a private planning tool, guests never see it. The page title/description are exactly what's shown at the top. Each Quick Start preset is a one-click "fill my timeline with this" button - a couple can still edit, reorder, or delete every item afterward.
       </p>
-      <UButton icon="i-heroicons-eye" variant="soft" color="neutral" size="sm" class="mt-3" @click="showLive = true">View Live</UButton>
     </div>
-    <AdminLivePreview v-model:open="showLive" mode="dayflow" />
 
     <div class="form-card space-y-4">
       <h2 class="font-display text-lg">Page labels</h2>
       <UFormField label="Page title"><UInput v-model="labelsForm.pageTitle" class="w-full" /></UFormField>
       <UFormField label="Page description"><UInput v-model="labelsForm.pageDescription" class="w-full" /></UFormField>
       <UButton color="primary" :loading="savingLabels" @click="saveLabels">Save page labels</UButton>
+    </div>
+
+    <!-- Details Page Layout: which of the two /w/[slug]/details templates
+         (Classic Slideshow vs the newer Menu-style tabbed layout) a couple
+         is allowed to pick from on this same Day Flow page. Same
+         "toggle, don't author" pattern as Opening Styles / Design Options
+         in Platform Admin > Themes & Catalog - both templates are real
+         markup in details.vue, not data. -->
+    <div class="form-card space-y-3">
+      <h2 class="font-display text-lg">Details Page Layout</h2>
+      <p class="text-xs text-white/40">Controls which layout styles appear in the "Details Page Style" picker a couple sees on their own Day Flow page. Turning one off doesn't change a couple who's already using it.</p>
+      <div class="space-y-2">
+        <div v-for="style in detailsLayoutStyleCatalog" :key="style.value" class="catalog-row justify-between">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="p-2 rounded-lg shrink-0" :class="isLayoutStyleEnabled(style.value) ? 'bg-gold-400/10' : 'bg-white/5'">
+              <UIcon :name="style.icon" class="w-4 h-4" :style="{ color: isLayoutStyleEnabled(style.value) ? '#e3b04a' : 'rgba(255,255,255,0.35)' }" />
+            </div>
+            <span class="font-medium truncate" :class="isLayoutStyleEnabled(style.value) ? 'text-white' : 'text-white/40'">{{ style.label }}</span>
+          </div>
+          <USwitch :model-value="isLayoutStyleEnabled(style.value)" :loading="togglingLayoutStyle === style.value" @update:model-value="(v: boolean) => toggleLayoutStyle(style.value, v)" />
+        </div>
+      </div>
     </div>
 
     <div v-if="customPresets.length" class="space-y-2">
@@ -72,6 +93,7 @@
       </div>
     </div>
   </div>
+  </AdminSidePreview>
 </template>
 
 <script setup lang="ts">
@@ -80,8 +102,23 @@ import { defaultDayFlowSettings, type DayFlowSettings, type FlowPreset } from '~
 const toast = useToast()
 const {
   builtInDayFlowPresets, allDayFlowPresets, addDayFlowPreset, removeDayFlowPreset,
-  dayFlowSettings, saveDayFlowSettings, saveDayFlowPresetOverride, resetDayFlowPresetOverride
+  dayFlowSettings, saveDayFlowSettings, saveDayFlowPresetOverride, resetDayFlowPresetOverride,
+  detailsLayoutStyleCatalog, disabledDetailsLayoutStyles, setDetailsLayoutStyleEnabled
 } = useThemes()
+
+const isLayoutStyleEnabled = (value: string) => !disabledDetailsLayoutStyles.value.includes(value)
+const togglingLayoutStyle = ref('')
+async function toggleLayoutStyle(value: string, enabled: boolean) {
+  togglingLayoutStyle.value = value
+  try {
+    await setDetailsLayoutStyleEnabled(value, enabled)
+  } catch (error) {
+    console.error(error)
+    toast.add({ title: 'Could not update layout style', color: 'error' })
+  } finally {
+    togglingLayoutStyle.value = ''
+  }
+}
 
 const customPresets = computed(() => allDayFlowPresets.value.filter((p) => !builtInDayFlowPresets.some((b) => b.id === p.id)))
 const builtInEffective = computed(() => allDayFlowPresets.value.filter((p) => builtInDayFlowPresets.some((b) => b.id === p.id)))
@@ -92,7 +129,6 @@ const editingId = ref('')
 const editingBuiltInId = ref('')
 const saving = ref(false)
 const removing = ref('')
-const showLive = ref(false)
 const canSave = computed(() => form.value.label.trim().length > 0 && form.value.items.length > 0)
 
 function slugify(value: string) { return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') }
