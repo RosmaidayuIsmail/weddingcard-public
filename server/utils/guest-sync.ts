@@ -65,11 +65,26 @@ export async function syncGuestListToDrive(
   const slug = String(wedding.slug || weddingId)
   const coupleTitle = [content?.brideName, content?.groomName].filter(Boolean).join(' & ') || slug
 
-  const [csv, pdfBytes, xlsxBuffer] = await Promise.all([
-    Promise.resolve(buildGuestCSV(guests)),
-    buildGuestPDF(guests, `${coupleTitle} - Guest List`),
-    buildGuestXLSX(guests, `${coupleTitle} - Guest List`)
-  ])
+  // Generating the three files is wrapped on its own - a bug or crash in
+  // any one file builder (e.g. the PDF/XLSX generators) must never bubble
+  // up as an unhandled exception out of this function. This is called from
+  // an unauthenticated route (server/api/drive/sync.post.ts, fired after
+  // every RSVP) as well as the manual "Sync now" button
+  // (server/api/drive/export.post.ts) - a thrown error here previously
+  // propagated straight out of both, uncaught.
+  let csv: string
+  let pdfBytes: Uint8Array
+  let xlsxBuffer: Buffer
+  try {
+    ;[csv, pdfBytes, xlsxBuffer] = await Promise.all([
+      Promise.resolve(buildGuestCSV(guests)),
+      buildGuestPDF(guests, `${coupleTitle} - Guest List`),
+      buildGuestXLSX(guests, `${coupleTitle} - Guest List`)
+    ])
+  } catch (error) {
+    console.error(`Drive sync (wedding ${weddingId}) - could not build export files`, error)
+    return { weddingSynced: false, adminSynced: false }
+  }
 
   let weddingSynced = false
   let weddingLinks: DriveLinks | undefined
