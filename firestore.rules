@@ -149,7 +149,15 @@ service cloud.firestore {
       match /wishes/{wishId} {
         allow read: if true; // powers the public live Wishes Wall
         allow create: if true;
-        allow update, delete: if false;
+        allow update: if false;
+        // The couple can delete a wish - specifically so removing a guest
+        // in the dashboard (useGuests.ts's removeGuest()) can also remove
+        // that guest's wish from the public Wishes Wall. Guests submitted
+        // after the rsvp.vue fix that gives a guest and their wish the
+        // same document id are matched exactly; older wishes (created
+        // before that fix, with an unrelated random id) aren't reachable
+        // this way and need a one-off manual cleanup.
+        allow delete: if isOwner(get(/databases/$(database)/documents/weddings/$(weddingId)).data) || isSuperAdmin();
       }
 
       match /billingRequests/{requestId} {

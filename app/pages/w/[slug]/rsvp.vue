@@ -262,7 +262,7 @@
 <script setup lang="ts">
 import confetti from 'canvas-confetti'
 import { z } from 'zod'
-import { addDoc, collection } from 'firebase/firestore'
+import { collection, doc, setDoc } from 'firebase/firestore'
 
 const route = useRoute()
 const slug = route.params.slug as string
@@ -464,7 +464,16 @@ async function submitForm() {
       // but still fall through to the normal success UI below so the
       // "thank you" screen looks identical in the recorded video.
     } else {
-      await addDoc(collection(db, 'weddings', wedding.value.id, 'guests'), {
+      // Same doc id for the guest and their wish (guestRef.id, reused
+      // below as the wishes/{id} doc id) instead of two independent
+      // addDoc()-generated ids - this is what lets removeGuest() in
+      // useGuests.ts cascade-delete a guest's wish when the couple deletes
+      // that guest from the dashboard. Previously the two were unlinked:
+      // deleting a guest left their wish behind forever on the public
+      // Wishes Wall with no way to find and remove it short of matching on
+      // name text by hand.
+      const guestRef = doc(collection(db, 'weddings', wedding.value.id, 'guests'))
+      await setDoc(guestRef, {
         name: state.name.trim(),
         tier: 'general',
         phone: '',
@@ -477,7 +486,7 @@ async function submitForm() {
       })
 
       if (state.doa.trim()) {
-        await addDoc(collection(db, 'weddings', wedding.value.id, 'wishes'), {
+        await setDoc(doc(db, 'weddings', wedding.value.id, 'wishes', guestRef.id), {
           name: state.name.trim(),
           doa: state.doa.trim(),
           submittedAt

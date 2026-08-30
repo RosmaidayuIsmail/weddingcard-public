@@ -34,7 +34,6 @@ export function useGuests(weddingIdSource: string | Ref<string | undefined> | ((
             name: String(data.name ?? ''),
             tier: (data.tier === 'vip' ? 'vip' : 'general') as 'vip' | 'general',
             phone: String(data.phone ?? ''),
-            email: data.email ? String(data.email) : undefined,
             attending: (data.attending as 'Yes' | 'No' | '') ?? '',
             guestCount: Number(data.guestCount ?? 0),
             specialSeating: Boolean(data.specialSeating),
@@ -70,13 +69,12 @@ export function useGuests(weddingIdSource: string | Ref<string | undefined> | ((
     guests.value.filter((g) => g.attending === 'Yes').reduce((sum, g) => sum + (g.guestCount || 0), 0)
   )
 
-  async function addGuest(input: { name: string; phone: string; email?: string; tier: 'vip' | 'general' }) {
+  async function addGuest(input: { name: string; phone: string; tier: 'vip' | 'general' }) {
     const weddingId = currentWeddingId.value
     if (!db || !weddingId) return
     await addDoc(collection(db, 'weddings', weddingId, 'guests'), {
       name: input.name.trim(),
       phone: input.phone.trim(),
-      email: (input.email || '').trim(),
       tier: input.tier,
       attending: '',
       guestCount: 0,
@@ -91,7 +89,7 @@ export function useGuests(weddingIdSource: string | Ref<string | undefined> | ((
   }
 
   // CSV import: one write batch so a large list lands quickly.
-  async function addGuestsBulk(rows: { name: string; phone: string; email?: string; tier: 'vip' | 'general' }[]) {
+  async function addGuestsBulk(rows: { name: string; phone: string; tier: 'vip' | 'general' }[]) {
     const weddingId = currentWeddingId.value
     if (!db || !weddingId || rows.length === 0) return 0
     const { writeBatch, doc: fdoc } = await import('firebase/firestore')
@@ -100,7 +98,6 @@ export function useGuests(weddingIdSource: string | Ref<string | undefined> | ((
       batch.set(fdoc(collection(db, 'weddings', weddingId, 'guests')), {
         name: row.name.trim(),
         phone: row.phone.trim(),
-        email: (row.email || '').trim(),
         tier: row.tier,
         attending: '',
         guestCount: 0,
@@ -137,6 +134,13 @@ export function useGuests(weddingIdSource: string | Ref<string | undefined> | ((
     const weddingId = currentWeddingId.value
     if (!db || !weddingId) return
     await deleteDoc(doc(db, 'weddings', weddingId, 'guests', guestId))
+    // Best-effort: a guest and their wish share the same document id (see
+    // rsvp.vue's submitForm()), so this also clears them off the public
+    // Wishes Wall instead of leaving a deleted guest's wish behind forever.
+    // A guest with no wish, or one submitted before this id-linking existed,
+    // simply has nothing at that path - deleteDoc() on a path with no
+    // document is not an error, so this is safe to always attempt.
+    deleteDoc(doc(db, 'weddings', weddingId, 'wishes', guestId)).catch(() => {})
     toast.add({ title: 'Guest removed', color: 'neutral' })
   }
 
@@ -164,12 +168,11 @@ export function useGuests(weddingIdSource: string | Ref<string | undefined> | ((
   }
 
   function exportCSV(filename = 'guests.csv') {
-    const header = ['Name', 'Tier', 'Phone', 'Email', 'Attending', 'Guests', 'Special Seating', 'Dietary Needs', 'Blessings', 'Submitted At']
+    const header = ['Name', 'Tier', 'Phone', 'Attending', 'Guests', 'Special Seating', 'Dietary Needs', 'Blessings', 'Submitted At']
     const rows = guests.value.map((g) => [
       g.name,
       g.tier,
       g.phone,
-      g.email || '',
       g.attending || 'No response yet',
       String(g.guestCount),
       g.specialSeating ? 'Yes' : 'No',
