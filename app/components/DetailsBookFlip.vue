@@ -44,7 +44,6 @@
 
         <div v-for="page in pages" :key="page.key" class="book-page book-content-page" :class="cardStyleClass" :style="{ borderColor: 'var(--theme-accent-soft)', '--card-text': cardTextColor }">
           <div class="book-page-inner">
-            <h3 class="book-page-title" :style="{ color: 'var(--theme-accent)' }">{{ page.label }}</h3>
             <DetailsSlideContent
               :slide-key="page.key"
               :content="content"
@@ -214,16 +213,6 @@ onKeyStroke('ArrowLeft', () => flipPrev())
 .book-page-inner {
   overflow-y: auto;
   justify-content: flex-start;
-}
-
-.book-page-title {
-  font-family: var(--theme-heading-font);
-  font-weight: 600;
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  margin-bottom: 1.25rem;
-  opacity: 0.85;
 }
 
 .cover-hint {
