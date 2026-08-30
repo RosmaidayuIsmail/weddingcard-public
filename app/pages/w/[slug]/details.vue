@@ -157,8 +157,22 @@ const cardStyleResolved = computed(() => {
   return resolveCardStyle(wedding.value?.themeId, wedding.value?.content.cardStyle)
 })
 
+// Resolved to a literal color (styleVars.value['--theme-ink'], e.g.
+// '#5b3a29') rather than left as the CSS reference 'var(--theme-ink)'. The
+// Classic Slideshow card can get away with the CSS reference because it
+// never leaves this page's own DOM subtree, but DetailsBookFlip hands this
+// same value to the page-flip library, which physically moves
+// (loadFromHTML reparents, not clones) each .book-page element into its
+// own wrapper - see DetailsBookFlip.vue's onMounted comment. Once moved,
+// 'var(--theme-ink)' can no longer see the --theme-ink custom property
+// declared on this page's outer themed <div> (line 13's :style="styleVars"),
+// so it silently falls through .book-page-theme's own fallback chain
+// (color: var(--card-text, var(--theme-ink, #fff))) all the way to the
+// literal #fff - invisible white text on this wedding's light cream
+// background. A literal color has no such dependency: it's baked into this
+// element's own inline style, so it survives being moved anywhere.
 const cardTextColorResolved = computed(() =>
-  wedding.value?.content.cardTextColor || (cardStyleResolved.value === 'dark' ? '#ffffff' : 'var(--theme-ink)')
+  wedding.value?.content.cardTextColor || (cardStyleResolved.value === 'dark' ? '#ffffff' : (styleVars.value['--theme-ink'] as string) || '#2a2a2a')
 )
 
 const monogramDisplayText = computed(() => {

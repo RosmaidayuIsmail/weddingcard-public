@@ -86,8 +86,18 @@ export function useGoogleDrive(weddingIdSource: () => string | undefined) {
     } catch (error: unknown) {
       console.error(error)
       const message = (error as { data?: { statusMessage?: string } })?.data?.statusMessage || ''
+      // Show the real Drive/Google error text (e.g. "invalid_grant", a
+      // deleted-folder 404) when the server sent one - previously every
+      // failure looked identical ("Could not sync"), which made an
+      // already-connected-but-silently-broken connection indistinguishable
+      // from one that was never connected at all.
       toast.add({
-        title: message.includes('not connected') ? 'Connect Google Drive first' : 'Could not sync to Google Drive',
+        title: message.includes('not connected')
+          ? 'Connect Google Drive first'
+          : message.includes('sync failed')
+            ? 'Google Drive sync failed'
+            : 'Could not sync to Google Drive',
+        description: message.includes('sync failed') ? message : undefined,
         color: 'error'
       })
       return null

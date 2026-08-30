@@ -13,6 +13,14 @@ export interface SyncResult {
   weddingSynced: boolean
   adminSynced: boolean
   weddingLinks?: DriveLinks
+  // The real Google/Drive error text when weddingSynced is false because a
+  // connected wedding's sync actually failed (expired/revoked token,
+  // deleted folder, etc.) rather than Drive simply not being connected -
+  // see server/api/drive/export.post.ts, which surfaces this in the
+  // "Sync now" button's error toast instead of a generic message, since a
+  // silently-swallowed cause here is what made this so hard to diagnose
+  // without direct access to Vercel's runtime logs.
+  weddingError?: string
 }
 
 /**
@@ -88,9 +96,22 @@ export async function syncGuestListToDrive(
 
   let weddingSynced = false
   let weddingLinks: DriveLinks | undefined
+  let weddingError: string | undefined
   try {
     const { accessToken, connection } = await getValidAccessToken(weddingId)
-    const folderId = connection.folderId || (await ensureAppFolder(accessToken, `WeddingCard Exports - ${slug}`)).folderId
+    let folderId = connection.folderId
+    let folderLink = connection.folderLink || ''
+    if (!folderId) {
+      // Self-heal: a connection doc that somehow never got a folderId
+      // persisted (e.g. an older version of the connect flow, or a partial
+      // write) would otherwise re-search-or-create a folder by name on
+      // every single sync and never remember it - save it now so this only
+      // ever happens once.
+      const ensured = await ensureAppFolder(accessToken, `WeddingCard Exports - ${slug}`)
+      folderId = ensured.folderId
+      folderLink = ensured.folderLink
+      await driveConnectionRef(weddingId).update({ folderId, folderLink, updatedAt: new Date().toISOString() })
+    }
     const [csvResult, pdfResult, xlsxResult] = await Promise.all([
       upsertFileInFolder(accessToken, folderId, 'guests.csv', 'text/csv', csv),
       upsertFileInFolder(accessToken, folderId, 'guests.pdf', 'application/pdf', pdfBytes),
@@ -101,12 +122,13 @@ export async function syncGuestListToDrive(
       csvLink: csvResult.webViewLink,
       pdfLink: pdfResult.webViewLink,
       xlsxLink: xlsxResult.webViewLink,
-      folderLink: connection.folderLink || ''
+      folderLink
     }
   } catch (error) {
     // Not connected yet, or a transient Drive error - never let this half
     // block the other half or the caller's own success path.
     console.error(`Drive sync (wedding ${weddingId}) skipped/failed`, error)
+    weddingError = error instanceof Error ? error.message : String(error)
   }
 
   let adminSynced = false
@@ -114,7 +136,12 @@ export async function syncGuestListToDrive(
     const adminConnection = await getDriveConnection(ADMIN_DRIVE_CONNECTION_ID)
     if (adminConnection?.connected) {
       const { accessToken } = await getValidAccessToken(ADMIN_DRIVE_CONNECTION_ID)
-      const rootFolderId = adminConnection.folderId || (await ensureAppFolder(accessToken, RSVP_LISTS_FOLDER_NAME)).folderId
+      let rootFolderId = adminConnection.folderId
+      if (!rootFolderId) {
+        const ensured = await ensureAppFolder(accessToken, RSVP_LISTS_FOLDER_NAME)
+        rootFolderId = ensured.folderId
+        await driveConnectionRef(ADMIN_DRIVE_CONNECTION_ID).update({ folderId: ensured.folderId, folderLink: ensured.folderLink, updatedAt: new Date().toISOString() })
+      }
       const subfolderName = `${coupleTitle} (${slug})`
       const { folderId: subfolderId } = await ensureSubfolder(accessToken, rootFolderId, subfolderName)
       await Promise.all([
@@ -128,5 +155,5 @@ export async function syncGuestListToDrive(
     console.error(`Drive sync (admin RSVP Lists, wedding ${weddingId}) skipped/failed`, error)
   }
 
-  return { weddingSynced, adminSynced, weddingLinks }
+  return { weddingSynced, adminSynced, weddingLinks, weddingError }
 }

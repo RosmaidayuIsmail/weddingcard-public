@@ -30,7 +30,18 @@ export default defineEventHandler(async (event) => {
   // that only applies to the automatic RSVP-triggered sync.
   const result = await syncGuestListToDrive(weddingId)
   if (!result.weddingSynced || !result.weddingLinks) {
-    throw createError({ statusCode: 409, statusMessage: 'Google Drive is not connected for this wedding yet.' })
+    // Surface the real Drive/Google error when there was one (expired or
+    // revoked token, a folder that got deleted, etc.) instead of always
+    // claiming "not connected" - that generic message was actively
+    // misleading when the connection *looked* fine in the UI but every
+    // sync was silently failing underneath, with no way to tell why short
+    // of Vercel's own runtime logs.
+    throw createError({
+      statusCode: 409,
+      statusMessage: result.weddingError
+        ? `Google Drive sync failed: ${result.weddingError}`
+        : 'Google Drive is not connected for this wedding yet.'
+    })
   }
 
   return {
