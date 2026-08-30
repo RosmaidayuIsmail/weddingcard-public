@@ -103,45 +103,22 @@
       </div>
       </template>
 
-      <!-- Menu-style layout: every section listed as a tappable category up
-           front (like a restaurant menu page's own category tabs -
-           referenced from menate.com.my) instead of an auto-advancing
-           carousel, so a guest can jump straight to what they want. -->
+      <!-- Book-flip layout: a real animated page-turn book (like
+           menate.com.my/our-menu/) instead of tab-click switching - a
+           closed cover you tap, then a genuine page-turn/slide animation
+           between sections. See DetailsBookFlip.vue. -->
       <template v-else>
-        <div class="flex flex-wrap gap-2 mb-5 px-1" role="tablist">
-          <button
-            v-for="(key, index) in slideKeys"
-            :key="key"
-            type="button"
-            role="tab"
-            :aria-selected="currentSlide === index"
-            class="menu-tab"
-            :class="{ 'menu-tab-active': currentSlide === index }"
-            @click="goTo(index)"
-          >
-            {{ slideLabel(key) }}
-          </button>
-        </div>
-
-        <div
-          class="relative backdrop-blur-xl border rounded-[2rem] shadow-2xl p-8 sm:p-10 min-h-[460px] flex flex-col justify-center"
-          :class="cardStyleResolved === 'dark' ? 'classic-inner-card' : (cardStyleResolved === 'glass' ? 'classic-inner-card-glass' : 'classic-inner-card-theme')"
-          :style="{ borderColor: cardStyleResolved === 'glass' ? 'transparent' : 'var(--theme-accent-soft)', '--card-text': cardTextColorResolved }"
-        >
-          <Transition name="fade" mode="out-in">
-            <div :key="currentSlide" class="space-y-6 text-center w-full">
-              <DetailsSlideContent
-                :slide-key="currentKey"
-                :content="wedding.content"
-                :flow="wedding.flow"
-                :menu="wedding.menu || []"
-                :qr-code-url="qrCodeUrl"
-                :monogram-display-text="monogramDisplayText"
-                :monogram-font-family="monogramFontFamily"
-              />
-            </div>
-          </Transition>
-        </div>
+        <DetailsBookFlip
+          :pages="bookPages"
+          :content="wedding.content"
+          :flow="wedding.flow"
+          :menu="wedding.menu || []"
+          :qr-code-url="qrCodeUrl"
+          :monogram-display-text="monogramDisplayText"
+          :monogram-font-family="monogramFontFamily"
+          :card-style-resolved="cardStyleResolved"
+          :card-text-color="cardTextColorResolved"
+        />
       </template>
     </div>
   </div>
@@ -254,6 +231,10 @@ function slideLabel(key: string): string {
   }
 }
 
+// Flattened { key, label } list handed to DetailsBookFlip - one book page
+// per section, in the same order the classic slideshow uses.
+const bookPages = computed(() => slideKeys.value.map(key => ({ key, label: slideLabel(key) })))
+
 const currentSlide = ref(0)
 const currentKey = computed(() => slideKeys.value[currentSlide.value] ?? 'story')
 const direction = ref<'slide-next' | 'slide-prev'>('slide-next')
@@ -331,8 +312,10 @@ watch(isSwiping, (value) => {
   paused.value = value
 })
 
-onKeyStroke('ArrowRight', () => manualNext())
-onKeyStroke('ArrowLeft', () => manualPrev())
+// Book-flip layout owns its own ArrowRight/ArrowLeft handling (it flips
+// pages, not slides) - these only drive the classic slideshow.
+onKeyStroke('ArrowRight', () => { if (layoutMode.value !== 'menu') manualNext() })
+onKeyStroke('ArrowLeft', () => { if (layoutMode.value !== 'menu') manualPrev() })
 
 watch(
   wedding,
@@ -426,39 +409,5 @@ watch(
   .slide-prev-enter-from, .slide-prev-leave-to {
     transform: none;
   }
-}
-
-/* Menu-style layout's category tabs and simple cross-fade between them -
-   no slide/scale, since tapping a tab should feel like flipping a menu
-   page, not swiping a carousel. */
-.menu-tab {
-  padding: 0.5rem 1rem;
-  border-radius: 999px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: color-mix(in srgb, var(--theme-ink) 55%, transparent);
-  background: color-mix(in srgb, var(--theme-ink) 6%, transparent);
-  border: 1px solid color-mix(in srgb, var(--theme-ink) 12%, transparent);
-  transition: all 0.2s ease;
-  white-space: nowrap;
-}
-
-.menu-tab-active {
-  color: var(--theme-on-accent, #1f1400);
-  background: var(--theme-accent, #d4a017);
-  border-color: transparent;
-}
-
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.25s ease;
-}
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .fade-enter-active, .fade-leave-active { transition: none; }
 }
 </style>
