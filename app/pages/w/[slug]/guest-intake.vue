@@ -23,7 +23,7 @@
     </div>
   </div>
 
-  <section v-else class="min-h-screen theme-surface text-white flex items-center justify-center px-4 py-12" :style="styleVars">
+  <section v-else class="min-h-screen theme-surface text-white flex items-center justify-center px-4 py-12" :style="{ ...styleVars, ...inputUiVars }">
     <UContainer class="max-w-xl w-full relative z-10">
       <div class="text-center space-y-3 mb-8">
         <p class="text-xs uppercase tracking-widest font-medium" :style="{ color: 'var(--theme-accent)' }">
@@ -191,6 +191,29 @@ const styleVars = computed(() =>
     wedding.value?.content.textWeight
   )
 )
+
+// Nuxt UI's own form fields (UInput below, in both the add-guest form and
+// each guest row's inline editor) don't read the wedding's theme colors at
+// all - they read Nuxt UI's own semantic tokens (--ui-bg, --ui-border*,
+// --ui-text-highlighted/dimmed, --ui-primary), which are fixed globally in
+// app.config.ts (a dark "ink" background, gold primary), so every field
+// rendered the same fixed dark pill regardless of the wedding's actual
+// theme - this is exactly what rsvp.vue's cardUiVars does for the RSVP
+// form's inputs, applied here at the <section> level (rather than just one
+// card) so it reaches both the add-guest form AND the guest-list row
+// editors below it.
+const inputUiVars = computed(() => ({
+  '--ui-bg': 'color-mix(in srgb, var(--theme-ink) 6%, transparent)',
+  '--ui-bg-elevated': 'color-mix(in srgb, var(--theme-ink) 10%, transparent)',
+  '--ui-bg-accented': 'color-mix(in srgb, var(--theme-ink) 14%, transparent)',
+  '--ui-border': 'color-mix(in srgb, var(--theme-ink) 20%, transparent)',
+  '--ui-border-accented': 'color-mix(in srgb, var(--theme-ink) 35%, transparent)',
+  '--ui-border-muted': 'color-mix(in srgb, var(--theme-ink) 12%, transparent)',
+  '--ui-text-highlighted': 'var(--theme-ink)',
+  '--ui-text-dimmed': 'color-mix(in srgb, var(--theme-ink) 45%, transparent)',
+  '--ui-text': 'color-mix(in srgb, var(--theme-ink) 80%, transparent)',
+  '--ui-primary': 'var(--theme-accent)'
+}))
 
 useHead({
   link: computed(() => {
