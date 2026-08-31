@@ -245,8 +245,8 @@ export function useAuth() {
 
   async function sendVerificationEmail(user = currentUser.value) {
     if (!auth || !user) throw new Error('No signed-in user')
-    const siteUrl = useRuntimeConfig().public.siteUrl || window.location.origin
-    await sendEmailVerification(user, { url: `${siteUrl.replace(/\/$/, '')}/verify-email` })
+    const siteUrl = useSiteUrl()
+    await sendEmailVerification(user, { url: `${siteUrl.value}/verify-email` })
   }
 
   async function refreshEmailVerification() {

@@ -44,7 +44,7 @@ export default defineEventHandler(async (event) => {
   }
   const amountCents = Math.round(priceRM * 100)
 
-  const siteUrl = ((useRuntimeConfig().public.siteUrl as string) || '').replace(/\/$/, '')
+  const siteUrl = resolveSiteUrl(event)
   if (!siteUrl) {
     throw createError({ statusCode: 500, statusMessage: 'NUXT_PUBLIC_SITE_URL is not configured.' })
   }

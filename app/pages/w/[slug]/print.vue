@@ -77,7 +77,7 @@ const slug = route.params.slug as string
 
 const { wedding, loading, notFound } = useWeddingBySlug(slug)
 const { themeStyleVars } = useThemes()
-const config = useRuntimeConfig()
+const siteUrl = useSiteUrl()
 
 // Injects the theme styles and perfectly matches the Custom Google Font
 const styleVars = computed(() =>
@@ -121,8 +121,7 @@ const monogramFontFamily = computed(() => {
 })
 
 const qrCodeUrl = computed(() => {
-  const base = config.public.siteUrl || (import.meta.client ? window.location.origin : '')
-  const url = `${base}/w/${slug}/rsvp`
+  const url = `${siteUrl.value}/w/${slug}/rsvp`
   return `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(url)}&size=300x300&margin=0`
 })
 

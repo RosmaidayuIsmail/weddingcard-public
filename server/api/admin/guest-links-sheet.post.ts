@@ -40,7 +40,7 @@ export default defineEventHandler(async (event) => {
   const content = (wedding?.content || {}) as Record<string, unknown>
   const slug = String(wedding?.slug || weddingId)
   const coupleTitle = [content.brideName, content.groomName].filter(Boolean).join(' & ') || slug
-  const siteUrl = String(useRuntimeConfig().public.siteUrl || '')
+  const siteUrl = resolveSiteUrl(event)
 
   const guestsSnap = await db.collection(`weddings/${weddingId}/guests`).get()
   const rows = guestsSnap.docs.map((docSnap) => {

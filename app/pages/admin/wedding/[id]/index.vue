@@ -188,8 +188,8 @@
   const { totalInvited, totalAttending, totalNotAttending, totalGuestCount } = useGuests(() => wedding.value?.id)
   const { db } = useFirebase()
   const toast = useToast()
-  const config = useRuntimeConfig()
-  
+  const siteUrl = useSiteUrl()
+
   const editingNames = ref(false)
   const editBrideName = ref('')
   const editGroomName = ref('')
@@ -217,11 +217,10 @@
   
   const publicUrl = computed(() => {
     if (!wedding.value) return ''
-    const base = config.public.siteUrl || (import.meta.client ? window.location.origin : '')
-    return `${base}/w/${wedding.value.slug}`
+    return `${siteUrl.value}/w/${wedding.value.slug}`
   })
-  
-  const siteUrlPrefix = computed(() => config.public.siteUrl || (import.meta.client ? window.location.origin : ''))
+
+  const siteUrlPrefix = siteUrl
   
   const editingSlug = ref(false)
   const editSlugValue = ref('')

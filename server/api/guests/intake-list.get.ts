@@ -31,7 +31,7 @@ export default defineEventHandler(async (event) => {
   const wedding = weddingSnap.data() as Record<string, unknown>
   const content = (wedding.content || {}) as Record<string, unknown>
   const slug = String(wedding.slug || weddingId)
-  const siteUrl = String(useRuntimeConfig().public.siteUrl || '')
+  const siteUrl = resolveSiteUrl(event)
 
   const guestsSnap = await db.collection(`weddings/${weddingId}/guests`).orderBy('submittedAt', 'desc').get()
   const guests = guestsSnap.docs.map((docSnap) => {

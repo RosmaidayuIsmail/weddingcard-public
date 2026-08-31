@@ -239,7 +239,7 @@ const { wedding, loading, createWedding, isSlugAvailable, setPublished, updateCo
 const { dashboardSettings } = useThemes()
 const { guests, totalInvited, totalResponded, totalAttending, totalNotAttending, totalGuestCount } = useGuests(() => wedding.value?.id)
 const toast = useToast()
-const config = useRuntimeConfig()
+const siteUrl = useSiteUrl()
 
 // --- Setup checklist: a quick "what's left" nudge computed straight from
 // the wedding's own data, so it never drifts out of sync with what's
@@ -349,11 +349,10 @@ async function handleCreate() {
 
 const publicUrl = computed(() => {
   if (!wedding.value) return ''
-  const base = config.public.siteUrl || (import.meta.client ? window.location.origin : '')
-  return `${base}/w/${wedding.value.slug}`
+  return `${siteUrl.value}/w/${wedding.value.slug}`
 })
 
-const siteUrlPrefix = computed(() => config.public.siteUrl || (import.meta.client ? window.location.origin : ''))
+const siteUrlPrefix = siteUrl
 
 const editingSlug = ref(false)
 const editSlugValue = ref('')

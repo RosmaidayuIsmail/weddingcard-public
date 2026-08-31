@@ -17,7 +17,7 @@ export default defineEventHandler(async (event) => {
   const query = getQuery(event)
   const code = String(query.code || '')
   const state = String(query.state || '')
-  const siteUrl = ((useRuntimeConfig().public.siteUrl as string) || '').replace(/\/$/, '')
+  const siteUrl = resolveSiteUrl(event)
 
   const db = getAdminDb()
   const stateRef = state ? db.doc(`driveOAuthStates/${state}`) : null

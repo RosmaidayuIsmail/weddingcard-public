@@ -365,8 +365,7 @@ const {
 const { guestListSettings } = useThemes()
 const toast = useToast()
 const { serverFetch } = useServerFetch()
-const config = useRuntimeConfig()
-const siteUrl = computed(() => config.public.siteUrl || (import.meta.client ? window.location.origin : ''))
+const siteUrl = useSiteUrl()
 
 const copiedId = ref<string | null>(null)
 
