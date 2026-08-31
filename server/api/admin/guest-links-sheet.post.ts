@@ -41,28 +41,13 @@ export default defineEventHandler(async (event) => {
   const slug = String(wedding?.slug || weddingId)
   const coupleTitle = [content.brideName, content.groomName].filter(Boolean).join(' & ') || slug
   const siteUrl = String(useRuntimeConfig().public.siteUrl || '')
-  const template = String(content.shareMessage || "Dear {guestName}, you're invited to {brideName} & {groomName}'s wedding! {date}. RSVP here: {link}")
 
   const guestsSnap = await db.collection(`weddings/${weddingId}/guests`).get()
   const rows = guestsSnap.docs.map((docSnap) => {
     const g = docSnap.data() as Record<string, unknown>
     const name = String(g.name || '')
     const rawPhone = String(g.phone || '')
-    const digitsOnly = rawPhone.replace(/[^0-9]/g, '')
-    // Same shape as useGuests.ts's personalizedLink()/whatsappLink() on the
-    // client (kept in sync deliberately) - gid is this guest's own doc id,
-    // so submitting via this link updates this exact guest instead of
-    // creating a duplicate (see server/api/guests/rsvp.post.ts).
-    const inviteUrl = `${siteUrl}/w/${slug}?to=${encodeURIComponent(name)}&gid=${encodeURIComponent(docSnap.id)}`
-    const message = template
-      .replace(/\{guestName\}/g, name)
-      .replace(/\{brideName\}/g, String(content.brideName || ''))
-      .replace(/\{groomName\}/g, String(content.groomName || ''))
-      .replace(/\{date\}/g, String(content.dateLabel || ''))
-      .replace(/\{link\}/g, inviteUrl)
-      .replace(/\s{2,}/g, ' ')
-      .trim()
-    const whatsappUrl = digitsOnly ? `https://wa.me/${digitsOnly}?text=${encodeURIComponent(message)}` : `https://wa.me/?text=${encodeURIComponent(message)}`
+    const { inviteUrl, whatsappUrl } = buildGuestLinks(siteUrl, slug, content, docSnap.id, name, rawPhone)
     const attending = g.attending === 'Yes' ? 'Attending' : g.attending === 'No' ? 'Declined' : 'No response yet'
     return [name, g.tier === 'vip' ? 'VIP' : 'General', rawPhone, attending, inviteUrl, whatsappUrl]
   })
