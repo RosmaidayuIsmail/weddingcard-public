@@ -143,7 +143,21 @@ service cloud.firestore {
       match /guests/{guestId} {
         allow create: if true; // public RSVP submission
         allow read: if isOwner(get(/databases/$(database)/documents/weddings/$(weddingId)).data) || isSuperAdmin();
-        allow update, delete: if isOwner(get(/databases/$(database)/documents/weddings/$(weddingId)).data);
+        // The owner (or superadmin) can change anything. A guest can also
+        // update THEIR OWN doc with no auth at all, through the
+        // personalized link the couple shared with them (useGuests.ts's
+        // personalizedLink() embeds the guest's own id as ?gid=, and
+        // rsvp.vue's submitForm() writes straight to that doc id when
+        // present) - this is what lets an already-invited guest's RSVP
+        // update their existing record instead of creating a duplicate
+        // guest. Restricted to hasOnly(...) so a shared link can only ever
+        // record that guest's own name/RSVP answer, never grant them a
+        // VIP tier, a phone number, or a table assignment.
+        allow update: if isOwner(get(/databases/$(database)/documents/weddings/$(weddingId)).data) || (
+          request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['name', 'attending', 'guestCount', 'specialSeating', 'dietary', 'doa', 'submittedAt'])
+        );
+        allow delete: if isOwner(get(/databases/$(database)/documents/weddings/$(weddingId)).data);
       }
 
       match /wishes/{wishId} {

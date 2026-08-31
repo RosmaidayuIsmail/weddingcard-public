@@ -262,7 +262,6 @@
 <script setup lang="ts">
 import confetti from 'canvas-confetti'
 import { z } from 'zod'
-import { collection, doc, setDoc } from 'firebase/firestore'
 
 const route = useRoute()
 const slug = route.params.slug as string
@@ -321,6 +320,13 @@ const cardUiVars = computed(() => ({
 // one - see the bug report this fixes.
 const isVip = computed(() => !!wedding.value?.vipEnabled)
 const isPreviewRecording = computed(() => route.query.preview === '1')
+// Present only on a link generated after the "two guests" duplicate-guest
+// fix (see useGuests.ts's personalizedLink()) - identifies the existing
+// guest doc this submission belongs to, so submitForm() below can update
+// it in place instead of creating a second guest. Older links shared
+// before this fix carry no gid and fall back to the original create-new
+// behavior.
+const guestId = computed(() => (typeof route.query.gid === 'string' && route.query.gid ? route.query.gid : ''))
 const backHref = computed(() => {
   const params = new URLSearchParams()
   if (typeof route.query.to === 'string' && route.query.to) params.set('to', route.query.to)
@@ -456,42 +462,43 @@ async function submitForm() {
 
   submitting.value = true
   try {
-    const submittedAt = new Date().toISOString()
-
     if (isPreviewRecording.value) {
       // Marketing dry-run (see admin/wedding/[id]/record.vue) - skip every
       // real write so recording a demo can never plant a fake guest/wish,
       // but still fall through to the normal success UI below so the
       // "thank you" screen looks identical in the recorded video.
     } else {
-      // Same doc id for the guest and their wish (guestRef.id, reused
-      // below as the wishes/{id} doc id) instead of two independent
-      // addDoc()-generated ids - this is what lets removeGuest() in
-      // useGuests.ts cascade-delete a guest's wish when the couple deletes
-      // that guest from the dashboard. Previously the two were unlinked:
-      // deleting a guest left their wish behind forever on the public
-      // Wishes Wall with no way to find and remove it short of matching on
-      // name text by hand.
-      const guestRef = doc(collection(db, 'weddings', wedding.value.id, 'guests'))
-      await setDoc(guestRef, {
-        name: state.name.trim(),
-        tier: 'general',
-        phone: '',
-        attending: state.attending,
-        guestCount: state.attending === 'Yes' ? state.guestCount : 0,
-        specialSeating: state.attending === 'Yes' ? state.specialSeating : false,
-        dietary: state.attending === 'Yes' ? state.dietary.trim() : '',
-        doa: state.doa.trim(),
-        submittedAt
-      })
-
-      if (state.doa.trim()) {
-        await setDoc(doc(db, 'weddings', wedding.value.id, 'wishes', guestRef.id), {
+      // Routed through a server endpoint (server/api/guests/rsvp.post.ts)
+      // instead of writing straight to Firestore from here, because this
+      // page can't read the guest list to check "does this guest already
+      // exist?" (guests/{guestId}: allow read: if isOwner(...) - see
+      // firestore.rules) - which is exactly what's needed to fix an
+      // OLDER personalized link that only carries ?to=name with no
+      // ?gid=: the server side uses the Admin SDK to look the guest up by
+      // exact name and update that existing record instead of creating a
+      // duplicate (the "two Jay" bug - manually adding a guest, then
+      // opening their WhatsApp link and submitting, used to always create
+      // a second, separate guest+wish pair). A newer link's ?gid= (see
+      // useGuests.ts's personalizedLink()) skips the name lookup and
+      // updates that exact guest doc directly.
+      await $fetch('/api/guests/rsvp', {
+        method: 'POST',
+        body: {
+          weddingId: wedding.value.id,
+          gid: guestId.value || undefined,
           name: state.name.trim(),
-          doa: state.doa.trim(),
-          submittedAt
-        })
-      }
+          attending: state.attending,
+          // specialSeating starts out `null` (unanswered) until step 2 is
+          // reached, and validateStep() never requires an answer at all
+          // when attending is 'No' - coerced to a plain boolean here since
+          // the server's schema (server/api/guests/rsvp.post.ts) expects
+          // one, not null.
+          guestCount: state.attending === 'Yes' ? state.guestCount : 0,
+          specialSeating: state.attending === 'Yes' ? !!state.specialSeating : false,
+          dietary: state.attending === 'Yes' ? state.dietary.trim() : '',
+          doa: state.doa.trim()
+        }
+      })
 
       // Fire-and-forget: push the fresh guest list into any connected Google
       // Drive folders (this couple's own, plus the admin's shared "RSVP

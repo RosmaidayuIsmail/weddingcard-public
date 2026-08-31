@@ -145,7 +145,16 @@ export function useGuests(weddingIdSource: string | Ref<string | undefined> | ((
   }
 
   function personalizedLink(guest: GuestDoc, siteUrl: string, slug: string) {
-    return `${siteUrl}/w/${slug}?to=${encodeURIComponent(guest.name)}`
+    // gid = this guest's own document id, so rsvp.vue's submitForm() can
+    // update THIS guest's existing record when they submit, instead of
+    // creating a brand-new guest doc alongside the one already added here
+    // - previously the link only carried the guest's name, so any guest
+    // who was manually added and then RSVP'd through their own shared link
+    // ended up duplicated everywhere (dashboard guest list, and every
+    // Drive-synced CSV/PDF/XLSX export). Links already shared before this
+    // fix only carry ?to=name with no gid and will keep creating a new
+    // guest on submit - only newly generated/shared links get the fix.
+    return `${siteUrl}/w/${slug}?to=${encodeURIComponent(guest.name)}&gid=${encodeURIComponent(guest.id)}`
   }
 
   function whatsappLink(
