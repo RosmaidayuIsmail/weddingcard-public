@@ -214,5 +214,17 @@ service cloud.firestore {
     match /driveOAuthStates/{state} {
       allow read, write: if false;
     }
+
+    // Per-wedding secret token gating the public "guest intake" page
+    // (app/pages/w/[slug]/guest-intake.vue) - lets a couple add their own
+    // VIP/General guests without a login, using a link only they were
+    // given. Admin SDK only, same as driveConnections above: this must
+    // NEVER be readable via the client SDK, because weddings/{weddingId}
+    // itself IS publicly readable once a wedding is published (see the
+    // read rule above) - a token stored on the wedding doc would leak to
+    // every visitor of the invitation page. See server/utils/guest-intake.ts.
+    match /guestIntakeTokens/{weddingId} {
+      allow read, write: if false;
+    }
   }
 }

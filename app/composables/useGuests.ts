@@ -176,6 +176,39 @@ export function useGuests(weddingIdSource: string | Ref<string | undefined> | ((
     return phone ? `https://wa.me/${phone}?text=${encodeURIComponent(message)}` : `https://wa.me/?text=${encodeURIComponent(message)}`
   }
 
+  // Same columns as exportCSV() below, plus each guest's own personalized
+  // invite link and a ready-to-tap WhatsApp send link - meant to be handed
+  // straight to the couple so THEY can send invites out themselves,
+  // without ever opening this dashboard (see the "Guest Links" panel in
+  // DashboardGuestsPanel.vue). Kept as a separate function rather than
+  // extending exportCSV() so the plain operational backup export never
+  // changes shape.
+  function exportGuestLinksCSV(
+    siteUrl: string,
+    slug: string,
+    content?: { shareMessage?: string; brideName?: string; groomName?: string; dateLabel?: string },
+    filename = 'guest-links.csv'
+  ) {
+    const header = ['Name', 'Tier', 'Phone', 'RSVP Status', 'Personalized Invite Link', 'WhatsApp Send Link']
+    const rows = guests.value.map((g) => [
+      g.name,
+      g.tier,
+      g.phone,
+      g.attending || 'No response yet',
+      personalizedLink(g, siteUrl, slug),
+      whatsappLink(g, siteUrl, slug, content)
+    ])
+    const escapeCell = (cell: string) => `"${cell.replace(/"/g, '""')}"`
+    const csv = [header, ...rows].map((row) => row.map(escapeCell).join(',')).join('\r\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = filename
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
   function exportCSV(filename = 'guests.csv') {
     const header = ['Name', 'Tier', 'Phone', 'Attending', 'Guests', 'Special Seating', 'Dietary Needs', 'Blessings', 'Submitted At']
     const rows = guests.value.map((g) => [
@@ -215,6 +248,7 @@ export function useGuests(weddingIdSource: string | Ref<string | undefined> | ((
     removeGuest,
     whatsappLink,
     personalizedLink,
-    exportCSV
+    exportCSV,
+    exportGuestLinksCSV
   }
 }

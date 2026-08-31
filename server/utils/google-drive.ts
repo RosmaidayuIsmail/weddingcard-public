@@ -284,6 +284,85 @@ export async function upsertFileInFolder(
 }
 
 /**
+ * Like upsertFileInFolder(), but produces a real, editable Google Sheet
+ * instead of a flat .csv file - used for the "Guest Links" handoff sheet
+ * (server/api/admin/guest-links-sheet.post.ts) that gets shared back to the
+ * couple, as opposed to guests.csv/.pdf/.xlsx which are just export
+ * snapshots for the seller's own backup.
+ *
+ * The trick is entirely in the metadata: uploading CSV content with the
+ * file's target mimeType set to Google's native Sheets type makes Drive
+ * IMPORT/convert it into a real spreadsheet during the upload itself - no
+ * extra OAuth scope needed beyond the drive.file scope already granted
+ * (see buildGoogleAuthUrl above), since this is still just "create/update a
+ * file this app itself created." Untested against the live Drive API from
+ * this environment - if the couple-facing Sheet doesn't come out editable,
+ * this is the first place to check.
+ */
+export async function upsertGoogleSheetInFolder(
+  accessToken: string,
+  folderId: string,
+  filename: string,
+  csvContent: string
+): Promise<{ fileId: string; webViewLink: string }> {
+  const q = encodeURIComponent(`name = '${filename.replace(/'/g, "\\'")}' and '${folderId}' in parents and trashed = false`)
+  const searchRes = await fetch(`${DRIVE_FILES_URL}?q=${q}&fields=files(id,webViewLink)&spaces=drive`, {
+    headers: { Authorization: `Bearer ${accessToken}` }
+  })
+
+  let existingFileId = ''
+  if (searchRes.ok) {
+    const data = await searchRes.json() as { files?: Array<{ id: string; webViewLink?: string }> }
+    if (data.files && data.files.length > 0) existingFileId = data.files[0]!.id
+  }
+
+  if (existingFileId) {
+    // Media update on a file that's already a native Google Sheet - Drive
+    // re-imports the CSV into the existing sheet's content in place (same
+    // fileId, same shareable link), rather than replacing it with a flat
+    // .csv attachment.
+    const res = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${existingFileId}?uploadType=media&fields=id,webViewLink`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'text/csv' },
+      body: Buffer.from(csvContent, 'utf8')
+    })
+    if (!res.ok) {
+      throw createError({ statusCode: 502, statusMessage: `Could not update the Guest Links Google Sheet: ${await res.text()}` })
+    }
+    const data = await res.json() as { id: string; webViewLink?: string }
+    return { fileId: data.id, webViewLink: data.webViewLink || `https://docs.google.com/spreadsheets/d/${data.id}/edit` }
+  }
+
+  // Create: multipart upload whose metadata.mimeType is the target Google
+  // Sheets type while the content part itself stays text/csv - unlike
+  // uploadFileToFolder() above, metadata and content mimeType are
+  // deliberately different here, which is what makes Drive convert on
+  // create instead of just storing a plain .csv file.
+  const boundary = `wcsheet-${Date.now()}`
+  const metadata = JSON.stringify({ name: filename, parents: [folderId], mimeType: 'application/vnd.google-apps.spreadsheet' })
+  const multipartBody =
+    `--${boundary}\r\n` +
+    `Content-Type: application/json; charset=UTF-8\r\n\r\n${metadata}\r\n` +
+    `--${boundary}\r\n` +
+    `Content-Type: text/csv\r\n\r\n${csvContent}\r\n` +
+    `--${boundary}--`
+
+  const res = await fetch(`${DRIVE_UPLOAD_URL}?uploadType=multipart&fields=id,webViewLink`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': `multipart/related; boundary=${boundary}`
+    },
+    body: Buffer.from(multipartBody, 'binary')
+  })
+  if (!res.ok) {
+    throw createError({ statusCode: 502, statusMessage: `Could not create the Guest Links Google Sheet: ${await res.text()}` })
+  }
+  const data = await res.json() as { id: string; webViewLink?: string }
+  return { fileId: data.id, webViewLink: data.webViewLink || `https://docs.google.com/spreadsheets/d/${data.id}/edit` }
+}
+
+/**
  * Finds (or creates) a subfolder by name inside a given parent folder - used
  * to give each wedding its own "{Bride} & {Groom} (slug)" subfolder inside
  * the admin's single top-level "RSVP Lists" folder.

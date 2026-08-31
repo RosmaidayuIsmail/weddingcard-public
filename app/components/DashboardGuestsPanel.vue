@@ -68,6 +68,49 @@
         </div>
       </div>
 
+      <!-- Guest List Intake Link - lets the couple add their own VIP/General
+           guests (name + optional phone) themselves, through a link they
+           can open with no login and no access to anything else in this
+           dashboard. See app/pages/w/[slug]/guest-intake.vue and
+           server/utils/guest-intake.ts. -->
+      <div class="form-panel animate-fade-up delay-1">
+        <div class="flex items-center gap-2 mb-2 text-white/90">
+          <UIcon name="i-heroicons-link" class="w-5 h-5 text-gold-300" />
+          <h3 class="font-semibold">Guest List Intake Link</h3>
+        </div>
+        <p class="text-xs text-white/50 mb-4">
+          Send this link to the couple so they can add their own VIP/General guests (name + optional phone) - it opens a simple page with no access to anything else here.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-2">
+          <UInput :model-value="intakeLink" readonly size="lg" class="flex-1 font-mono text-xs" placeholder="Generating link..." />
+          <div class="flex gap-2">
+            <UButton
+              size="lg"
+              color="primary"
+              variant="soft"
+              :icon="intakeCopied ? 'i-heroicons-check' : 'i-heroicons-clipboard'"
+              :disabled="!intakeLink"
+              :loading="intakeLoading"
+              class="rounded-full px-4"
+              @click="copyIntakeLink"
+            >
+              Copy
+            </UButton>
+            <UButton
+              size="lg"
+              color="neutral"
+              variant="ghost"
+              icon="i-heroicons-arrow-path"
+              :loading="intakeLoading"
+              class="rounded-full px-4"
+              @click="regenerateIntakeLink"
+            >
+              New link
+            </UButton>
+          </div>
+        </div>
+      </div>
+
       <!-- Google Drive backup -->
       <div class="form-panel animate-fade-up delay-1">
         <div class="flex flex-wrap items-center gap-3">
@@ -110,6 +153,12 @@
             <UButton size="sm" color="neutral" variant="soft" icon="i-heroicons-printer" class="rounded-full px-4 hover:bg-white/10 border-white/10" @click="printList">Print / PDF</UButton>
             <UButton size="sm" color="primary" variant="soft" icon="i-heroicons-arrow-down-tray" class="rounded-full px-4" @click="exportCSV()">Export CSV</UButton>
             <UButton size="sm" color="primary" variant="soft" icon="i-heroicons-table-cells" class="rounded-full px-4" :loading="exportingExcel" @click="exportExcel">Export Excel</UButton>
+            <!-- Both include each guest's personalized invite link + a
+                 ready-to-tap WhatsApp send link, meant to be handed to the
+                 couple so THEY can send invites themselves - unlike the two
+                 buttons above, which are plain guest-data backups. -->
+            <UButton size="sm" color="success" variant="soft" icon="i-heroicons-link" class="rounded-full px-4" @click="exportGuestLinks">Guest Links CSV</UButton>
+            <UButton size="sm" color="success" variant="soft" icon="i-heroicons-table-cells" class="rounded-full px-4" :loading="generatingSheet" @click="generateGuestLinksSheet">Guest Links Sheet</UButton>
           </div>
         </div>
         <UInput v-model="searchQuery" placeholder="Search guests by name or phone..." icon="i-heroicons-magnifying-glass" size="lg" class="w-full sm:max-w-sm" />
@@ -309,7 +358,8 @@ const {
   updateGuest,
   whatsappLink,
   personalizedLink,
-  exportCSV
+  exportCSV,
+  exportGuestLinksCSV
 } = useGuests(() => wedding.value?.id)
 
 const { guestListSettings } = useThemes()
@@ -349,6 +399,92 @@ async function handleAdd() {
     newGuest.tier = 'general'
   } finally {
     adding.value = false
+  }
+}
+
+// --- Guest List Intake Link (server/utils/guest-intake.ts, the public
+// app/pages/w/[slug]/guest-intake.vue page) ---
+const intakeLink = ref('')
+const intakeLoading = ref(false)
+const intakeCopied = ref(false)
+
+function buildIntakeLink(token: string) {
+  if (!wedding.value) return ''
+  return `${siteUrl.value}/w/${wedding.value.slug}/guest-intake?key=${token}`
+}
+
+async function loadIntakeLink() {
+  if (!wedding.value) return
+  intakeLoading.value = true
+  try {
+    const { token } = await serverFetch<{ token: string }>(`/api/admin/guest-intake/${wedding.value.id}`)
+    intakeLink.value = buildIntakeLink(token)
+  } catch (error) {
+    console.error(error)
+  } finally {
+    intakeLoading.value = false
+  }
+}
+
+async function regenerateIntakeLink() {
+  if (!wedding.value) return
+  if (!confirm('This breaks the old guest-intake link if it was already shared - anyone still using it won’t be able to add guests anymore. Generate a new one?')) return
+  intakeLoading.value = true
+  try {
+    const { token } = await serverFetch<{ token: string }>(`/api/admin/guest-intake/${wedding.value.id}`, { method: 'POST' })
+    intakeLink.value = buildIntakeLink(token)
+    toast.add({ title: 'New guest-intake link generated', color: 'success' })
+  } catch (error) {
+    console.error(error)
+    toast.add({ title: 'Could not generate a new link', color: 'error' })
+  } finally {
+    intakeLoading.value = false
+  }
+}
+
+async function copyIntakeLink() {
+  if (!intakeLink.value) return
+  try {
+    await navigator.clipboard.writeText(intakeLink.value)
+    intakeCopied.value = true
+    toast.add({ title: 'Link copied', description: 'Share it with the couple - they can add guests with no login.', color: 'success' })
+    setTimeout(() => { intakeCopied.value = false }, 2000)
+  } catch {
+    toast.add({ title: 'Could not copy link', color: 'error' })
+  }
+}
+
+watch(() => wedding.value?.id, (id) => { if (id) loadIntakeLink() }, { immediate: true })
+
+// --- Guest Links CSV (client-side, adds personalized/WhatsApp link columns
+// to the plain exportCSV() above - see useGuests.ts) ---
+function exportGuestLinks() {
+  if (!wedding.value) return
+  exportGuestLinksCSV(siteUrl.value, wedding.value.slug, wedding.value.content)
+}
+
+// --- Guest Links Google Sheet (server/api/admin/guest-links-sheet.post.ts)
+// - same data as exportGuestLinks() above, but landed as a live Google
+// Sheet in the admin's own connected Drive so the resulting link can be
+// handed straight to the couple instead of a file. ---
+const generatingSheet = ref(false)
+async function generateGuestLinksSheet() {
+  if (!wedding.value) return
+  generatingSheet.value = true
+  try {
+    const { sheetLink } = await serverFetch<{ sheetLink: string }>('/api/admin/guest-links-sheet', {
+      method: 'POST',
+      body: { weddingId: wedding.value.id }
+    })
+    await navigator.clipboard.writeText(sheetLink).catch(() => {})
+    toast.add({ title: 'Guest Links Sheet ready', description: 'Link copied to your clipboard - paste it wherever you send it to the couple.', color: 'success' })
+    window.open(sheetLink, '_blank')
+  } catch (error) {
+    console.error(error)
+    const statusMessage = (error as { data?: { statusMessage?: string } })?.data?.statusMessage
+    toast.add({ title: 'Could not generate the Sheet', description: statusMessage, color: 'error' })
+  } finally {
+    generatingSheet.value = false
   }
 }
 
