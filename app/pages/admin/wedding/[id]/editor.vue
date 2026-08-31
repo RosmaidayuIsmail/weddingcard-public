@@ -89,7 +89,7 @@
                 </div>
               </div>
   
-              <!-- Horizontal vs Vertical Names Toggle -->
+              <!-- Horizontal vs Vertical vs Diagonal Names Toggle -->
               <UFormField label="Names Layout Alignment">
                 <div class="flex bg-gray-900 border border-gray-700 rounded-lg p-1 w-full mb-4">
                   <button 
@@ -107,6 +107,14 @@
                     :class="form.namesLayout === 'vertical' ? 'bg-gray-700 text-gold-300 shadow-sm' : 'text-gray-400 hover:text-white'"
                   >
                     Stacked
+                  </button>
+                  <button 
+                    type="button" 
+                    @click="form.namesLayout = 'diagonal'" 
+                    class="flex-1 py-2 text-[11px] sm:text-xs font-medium rounded-md transition-all duration-300"
+                    :class="form.namesLayout === 'diagonal' ? 'bg-gray-700 text-gold-300 shadow-sm' : 'text-gray-400 hover:text-white'"
+                  >
+                    Diagonal
                   </button>
                 </div>
               </UFormField>
