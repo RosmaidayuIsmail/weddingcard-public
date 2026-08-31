@@ -134,3 +134,20 @@ defineProps<{
   monogramFontFamily: string
 }>()
 </script>
+
+<style scoped>
+/* UButton's color="neutral"/"primary" is a fixed Nuxt UI color, not the
+   couple's own theme. This component has no parent page in common - it's
+   rendered from app/pages/w/[slug]/details.vue - and Vue's scoped CSS
+   doesn't reach into a child component's own template, so the .accent-btn
+   override defined in that parent page's <style scoped> never applied to
+   the "Google Maps" button here. Defining it locally fixes that for every
+   page that renders this component, not just one. */
+.accent-btn {
+  background-color: var(--theme-accent, #d4a017) !important;
+  color: var(--theme-on-accent, #1f1400) !important;
+}
+.accent-btn:hover {
+  filter: brightness(1.08);
+}
+</style>
