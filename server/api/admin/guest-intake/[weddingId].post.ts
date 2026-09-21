@@ -11,11 +11,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Missing weddingId.' })
   }
 
-  const weddingSnap = await getAdminDb().doc(`weddings/${weddingId}`).get()
-  const wedding = weddingSnap.data() as Record<string, unknown> | undefined
-  if (!weddingSnap.exists || wedding?.ownerUid !== uid) {
-    throw createError({ statusCode: 403, statusMessage: 'You can only manage your own wedding.' })
-  }
+  await requireWeddingAccess(uid, weddingId, 'You can only manage your own wedding.')
 
   const token = await rotateIntakeToken(weddingId)
   return { token }

@@ -10,12 +10,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Missing weddingId.' })
   }
 
-  const db = getAdminDb()
-  const weddingSnap = await db.doc(`weddings/${weddingId}`).get()
-  const wedding = weddingSnap.data() as Record<string, unknown> | undefined
-  if (!weddingSnap.exists || wedding?.ownerUid !== uid) {
-    throw createError({ statusCode: 403, statusMessage: 'You can only check your own wedding.' })
-  }
+  await requireWeddingAccess(uid, weddingId, 'You can only check your own wedding.')
 
   const connection = await getDriveConnection(weddingId)
   return {

@@ -38,3 +38,31 @@ export async function requireSuperAdmin(event: H3Event): Promise<{ uid: string }
   }
   return { uid }
 }
+
+/**
+ * Loads a wedding and confirms the caller may act on it: either the couple
+ * who owns it, or a superadmin (who manages every couple's wedding from
+ * /admin/wedding/[id]/...). Checking ownerUid alone returned 403 for the
+ * superadmin on any wedding that belongs to a couple's own account, which
+ * broke the Guest List page's intake link, exports and Drive status there.
+ * Returns the wedding's data so callers don't need to re-read it.
+ */
+export async function requireWeddingAccess(
+  uid: string,
+  weddingId: string,
+  forbiddenMessage: string
+): Promise<Record<string, unknown>> {
+  const db = getAdminDb()
+  const weddingSnap = await db.doc(`weddings/${weddingId}`).get()
+  const wedding = weddingSnap.data() as Record<string, unknown> | undefined
+  if (!weddingSnap.exists || !wedding) {
+    throw createError({ statusCode: 403, statusMessage: forbiddenMessage })
+  }
+  if (wedding.ownerUid === uid) return wedding
+
+  const role = ((await db.doc(`users/${uid}`).get()).data() as { role?: string } | undefined)?.role
+  if (role !== 'superadmin') {
+    throw createError({ statusCode: 403, statusMessage: forbiddenMessage })
+  }
+  return wedding
+}

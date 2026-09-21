@@ -18,11 +18,7 @@ export default defineEventHandler(async (event) => {
   const { weddingId } = parsed.data
 
   const db = getAdminDb()
-  const weddingSnap = await db.doc(`weddings/${weddingId}`).get()
-  const wedding = weddingSnap.data() as Record<string, unknown> | undefined
-  if (!weddingSnap.exists || wedding?.ownerUid !== uid) {
-    throw createError({ statusCode: 403, statusMessage: 'You can only export your own wedding.' })
-  }
+  const wedding = await requireWeddingAccess(uid, weddingId, 'You can only export your own wedding.')
 
   const guestsSnap = await db.collection(`weddings/${weddingId}/guests`).get()
   const guests = guestsSnap.docs.map((d) => d.data() as ExportableGuest)

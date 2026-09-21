@@ -19,12 +19,7 @@ export default defineEventHandler(async (event) => {
   }
   const { weddingId } = parsed.data
 
-  const db = getAdminDb()
-  const weddingSnap = await db.doc(`weddings/${weddingId}`).get()
-  const wedding = weddingSnap.data() as Record<string, unknown> | undefined
-  if (!weddingSnap.exists || wedding?.ownerUid !== uid) {
-    throw createError({ statusCode: 403, statusMessage: 'You can only export your own wedding.' })
-  }
+  await requireWeddingAccess(uid, weddingId, 'You can only export your own wedding.')
 
   // Manual clicks never respect the "stop after the wedding date" cutoff -
   // that only applies to the automatic RSVP-triggered sync.
