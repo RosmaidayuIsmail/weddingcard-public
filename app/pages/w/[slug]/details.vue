@@ -215,9 +215,15 @@ useHead({
   })
 })
 
+// One slide per section of the story text ('story:0', 'story:1', ...) - a
+// long doa/poem split with --- lines gets several slides instead of one card
+// overflowing; a plain story is still exactly one slide. See useStoryPages.ts.
+const storyPageCount = computed(() => splitStoryPages(wedding.value?.content.story).length)
+
 const slideKeys = computed(() => {
-  if (!wedding.value) return ['story']
-  const keys = ['story', 'couple']
+  if (!wedding.value) return ['story:0']
+  const keys = Array.from({ length: storyPageCount.value }, (_, i) => `story:${i}`)
+  keys.push('couple')
   if (wedding.value.content.brideFullName || wedding.value.content.groomFullName) keys.push('family')
   keys.push('event')
   if (wedding.value.content.mapUrl) keys.push('location')
@@ -241,6 +247,10 @@ const layoutMode = computed(() => (wedding.value?.content.detailsLayoutStyle ===
 // with the heading shown once you tap it.
 function slideLabel(key: string): string {
   const content = wedding.value?.content
+  if (key.startsWith('story:')) {
+    const n = Number(key.split(':')[1]) || 0
+    return n === 0 ? 'Our Story' : `Our Story ${n + 1}`
+  }
   switch (key) {
     case 'story': return 'Our Story'
     case 'couple': return content?.coupleDividerLabel || 'Bride & Groom'
@@ -259,7 +269,7 @@ function slideLabel(key: string): string {
 const bookPages = computed(() => slideKeys.value.map(key => ({ key, label: slideLabel(key) })))
 
 const currentSlide = ref(0)
-const currentKey = computed(() => slideKeys.value[currentSlide.value] ?? 'story')
+const currentKey = computed(() => slideKeys.value[currentSlide.value] ?? 'story:0')
 const direction = ref<'slide-next' | 'slide-prev'>('slide-next')
 const paused = ref(false)
 const cardRef = ref<HTMLElement | null>(null)

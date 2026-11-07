@@ -255,15 +255,35 @@
 
             <UFormField label="Your Story / Opening Message">
               <template #help>
-                <span class="text-xs text-white/40">A short, heartfelt welcome message for your guests.</span>
+                <span class="text-xs text-white/40 block leading-relaxed">
+                  A short, heartfelt welcome message for your guests. Long text? Put <code class="text-gold-200">---</code> on its own line to start a new
+                  section &mdash; each section becomes its own slide on the inner card. Optional: <code class="text-gold-200">*italic*</code>,
+                  <code class="text-gold-200">**bold**</code>, <code class="text-gold-200"># Names</code> for a highlighted line,
+                  and <code class="text-gold-200">~</code> on its own line for a divider.
+                </span>
               </template>
-              <UTextarea v-model="form.story" :rows="4" class="w-full resize-none custom-scrollbar" />
+              <UTextarea v-model="form.story" :rows="12" class="w-full resize-none custom-scrollbar" />
             </UFormField>
 
             <div class="p-4 rounded-xl bg-[#111827] border border-gray-700 mt-4">
               <p class="text-sm font-semibold text-white mb-1">Inner Card Icon</p>
               <p class="text-xs text-white/50 mb-3">A separate icon just for this page (shown above your story) — independent from the Cover page's icon above, so you can use Bismillah on one and rings or a heart on the other, for example.</p>
               <USelect v-model="form.detailsTopIcon" :items="topIconOptions" size="lg" class="w-full mb-2 shadow-inner" />
+              <div v-if="form.detailsTopIcon === 'custom'" class="p-3 rounded-lg bg-black/20 border border-gray-700 space-y-2 mb-3">
+                <p class="text-xs text-white/50">Upload an icon just for this page &mdash; for example a different Bismillah from the Cover page's. Leave it empty to reuse the Cover page's upload.</p>
+                <div class="flex items-center gap-3">
+                  <div v-if="form.detailsCustomIconUrl" class="w-14 h-14 rounded-lg overflow-hidden border border-gray-700 bg-black/30 shrink-0 flex items-center justify-center">
+                    <img :src="form.detailsCustomIconUrl" alt="Inner card icon" class="max-w-full max-h-full object-contain">
+                  </div>
+                  <input ref="detailsIconInput" type="file" accept="image/*" class="hidden" @change="handleDetailsIconSelect">
+                  <div class="flex flex-wrap gap-2">
+                    <UButton size="sm" variant="soft" color="neutral" icon="i-heroicons-arrow-up-tray" :loading="detailsIconUploading" :disabled="!cloudinaryConfigured" @click="detailsIconInput?.click()">
+                      {{ form.detailsCustomIconUrl ? 'Change icon' : 'Upload icon' }}
+                    </UButton>
+                    <UButton v-if="form.detailsCustomIconUrl" size="sm" variant="ghost" color="error" icon="i-heroicons-trash" @click="form.detailsCustomIconUrl = ''" />
+                  </div>
+                </div>
+              </div>
               <div v-if="form.detailsTopIcon && form.detailsTopIcon !== 'none'" class="flex items-center gap-3">
                 <span class="text-xs text-white/50 shrink-0">Size</span>
                 <input v-model.number="form.detailsIconSize" type="range" min="50" max="200" step="5" class="flex-1 accent-[#e3b04a]">
@@ -1021,6 +1041,8 @@ const showBank2 = ref(false)
 
 const iconInput = ref<HTMLInputElement | null>(null)
 const iconUploading = ref(false)
+const detailsIconInput = ref<HTMLInputElement | null>(null)
+const detailsIconUploading = ref(false)
 
 const bridePhotoInput = ref<HTMLInputElement | null>(null)
 const bridePhotoUploading = ref(false)
@@ -1289,6 +1311,7 @@ watch(
     if (form.iconSubtitle === undefined) form.iconSubtitle = ''
     if (form.detailsTopIcon === undefined) form.detailsTopIcon = 'none'
     if (form.detailsIconSize === undefined) form.detailsIconSize = 100
+    if (form.detailsCustomIconUrl === undefined) form.detailsCustomIconUrl = ''
     if (!form.namesLayout) form.namesLayout = 'horizontal'
 
     if (!form.bank) form.bank = { name: '', accountName: '', accountNumber: '', qrCodeUrl: '' }
@@ -1394,6 +1417,22 @@ async function handleIconSelect(event: Event) {
     iconUploading.value = false
   }
   if (iconInput.value) iconInput.value.value = ''
+}
+
+async function handleDetailsIconSelect(event: Event) {
+  const file = (event.target as HTMLInputElement).files?.[0]
+  if (!file || !wedding.value) return
+  detailsIconUploading.value = true
+  try {
+    const url = await uploadImage(file, `weddings/${wedding.value.id}/details-icon`)
+    form.detailsCustomIconUrl = url
+    toast.add({ title: 'Inner card icon uploaded — remember to save', color: 'success' })
+  } catch (error) {
+    toast.add({ title: 'Upload failed', color: 'error' })
+  } finally {
+    detailsIconUploading.value = false
+  }
+  if (detailsIconInput.value) detailsIconInput.value.value = ''
 }
 
 async function handleBridePhotoSelect(event: Event) {

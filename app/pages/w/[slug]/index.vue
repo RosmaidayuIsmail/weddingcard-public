@@ -115,6 +115,10 @@
           class="absolute w-full max-w-md text-center px-4 flex flex-col items-center transition-all duration-700 animate-in fade-in zoom-in delay-500"
           :style="{ left: `${wedding.content.venueX ?? 50}%`, top: `${wedding.content.venueY ?? 78}%`, transform: 'translate(-50%, -50%)' }"
         >
+          <!-- Venue name above the address, same order as the Details card. -->
+          <p v-if="wedding.content.venueName" class="text-sm sm:text-base font-semibold mb-1 text-[color-mix(in_srgb,var(--theme-ink)_90%,transparent)]" :class="{ 'overlay-text-shadow': !wedding.content.openingRemoveOverlay }">
+            {{ wedding.content.venueName }}
+          </p>
           <p v-if="wedding.content.venueAddress" class="text-xs sm:text-sm text-[color-mix(in_srgb,var(--theme-ink)_80%,transparent)] italic" :class="{ 'overlay-text-shadow': !wedding.content.openingRemoveOverlay }" :style="{ fontWeight: 'var(--theme-text-weight)' }">
             {{ wedding.content.venueAddress }}
           </p>

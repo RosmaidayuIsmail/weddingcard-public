@@ -3,8 +3,10 @@
        details.vue so both layout styles (the classic auto-advancing
        slideshow and the newer tabbed Menu-style layout) can render the exact
        same markup for a given slideKey instead of maintaining two copies. -->
-  <template v-if="slideKey === 'story'">
-    <div v-if="content.detailsTopIcon && content.detailsTopIcon !== 'none'" class="flex justify-center mb-4 w-full px-2">
+  <template v-if="isStory">
+    <!-- The Inner Card icon belongs to the first story section only - later
+         sections ('story:1', 'story:2', ...) are just continuation text. -->
+    <div v-if="storyIndex === 0 && content.detailsTopIcon && content.detailsTopIcon !== 'none'" class="flex justify-center mb-4 w-full px-2">
       <p
         v-if="content.detailsTopIcon === 'bismillah'"
         class="leading-relaxed"
@@ -17,9 +19,12 @@
       >بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</p>
       <UIcon v-else-if="content.detailsTopIcon === 'rings'" name="i-heroicons-lifebuoy" :style="{ color: 'var(--theme-accent)', width: `${2.5 * ((content.detailsIconSize ?? 100) / 100)}rem`, height: `${2.5 * ((content.detailsIconSize ?? 100) / 100)}rem` }" />
       <UIcon v-else-if="content.detailsTopIcon === 'heart'" name="i-heroicons-heart" :style="{ color: 'var(--theme-accent)', width: `${2.5 * ((content.detailsIconSize ?? 100) / 100)}rem`, height: `${2.5 * ((content.detailsIconSize ?? 100) / 100)}rem` }" />
-      <img v-else-if="content.detailsTopIcon === 'custom' && content.customIconUrl" :src="content.customIconUrl" alt="" class="object-contain drop-shadow" :style="{ width: `${7 * ((content.detailsIconSize ?? 100) / 100)}rem`, height: 'auto', maxWidth: '85%', maxHeight: `${7 * ((content.detailsIconSize ?? 100) / 100)}rem` }">
+      <img v-else-if="content.detailsTopIcon === 'custom' && (content.detailsCustomIconUrl || content.customIconUrl)" :src="content.detailsCustomIconUrl || content.customIconUrl" alt="" class="object-contain drop-shadow" :style="{ width: `${7 * ((content.detailsIconSize ?? 100) / 100)}rem`, height: 'auto', maxWidth: '85%', maxHeight: `${7 * ((content.detailsIconSize ?? 100) / 100)}rem` }">
     </div>
-    <p v-if="!content.hideSystemText" class="text-[color-mix(in_srgb,var(--card-text)_90%,transparent)] text-lg leading-relaxed whitespace-pre-line" :style="{ fontWeight: 'var(--theme-text-weight)' }">{{ content.story }}</p>
+    <template v-if="!content.hideSystemText">
+      <StoryPageContent v-if="storyRich" :page="storyPageText" />
+      <p v-else class="text-[color-mix(in_srgb,var(--card-text)_90%,transparent)] text-lg leading-relaxed whitespace-pre-line" :style="{ fontWeight: 'var(--theme-text-weight)' }">{{ content.story }}</p>
+    </template>
   </template>
 
   <template v-else-if="slideKey === 'couple'">
@@ -124,7 +129,7 @@
 <script setup lang="ts">
 import type { FlowItem, MenuItem, WeddingContent } from '~/composables/useWeddingTypes'
 
-defineProps<{
+const props = defineProps<{
   slideKey: string
   content: WeddingContent
   flow: FlowItem[]
@@ -133,6 +138,14 @@ defineProps<{
   monogramDisplayText: string
   monogramFontFamily: string
 }>()
+
+// Story slides are keyed 'story:0', 'story:1', ... - one per section of the
+// couple's story text (see useStoryPages.ts). A bare 'story' still means the
+// first section, for any caller that predates multi-section stories.
+const isStory = computed(() => props.slideKey === 'story' || props.slideKey.startsWith('story:'))
+const storyIndex = computed(() => (props.slideKey.startsWith('story:') ? Number(props.slideKey.split(':')[1]) || 0 : 0))
+const storyRich = computed(() => storyIsRich(props.content.story))
+const storyPageText = computed(() => splitStoryPages(props.content.story)[storyIndex.value] ?? '')
 </script>
 
 <style scoped>

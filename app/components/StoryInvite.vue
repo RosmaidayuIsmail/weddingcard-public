@@ -105,6 +105,7 @@
           class="absolute w-full max-w-md text-center px-4 flex flex-col items-center transition-all duration-700 animate-in fade-in zoom-in delay-500"
           :style="{ left: `${wedding.content.venueX ?? 50}%`, top: `${wedding.content.venueY ?? 78}%`, transform: 'translate(-50%, -50%)' }"
         >
+          <p v-if="wedding.content.venueName" class="text-sm sm:text-base font-semibold text-white/90 drop-shadow-md mb-1">{{ wedding.content.venueName }}</p>
           <p v-if="wedding.content.venueAddress" class="text-xs sm:text-sm text-white/80 italic drop-shadow-md" :style="{ fontWeight: 'var(--theme-text-weight)' }">{{ wedding.content.venueAddress }}</p>
         </div>
       </div>
@@ -144,9 +145,11 @@
         </div>
       </ScrollReveal>
 
-      <!-- SCENE: Greeting/story message -->
-      <ScrollReveal v-if="!wedding.content.hideSystemText && wedding.content.story" class="text-center">
-        <div v-if="wedding.content.detailsTopIcon && wedding.content.detailsTopIcon !== 'none'" class="flex justify-center mb-4 w-full px-2">
+      <!-- SCENE: Greeting/story message - one scene per section when the story
+           text is split with --- lines (see useStoryPages.ts). -->
+      <template v-if="!wedding.content.hideSystemText && wedding.content.story">
+      <ScrollReveal v-for="(storyPage, storyIdx) in storyPages" :key="`story-${storyIdx}`" class="text-center">
+        <div v-if="storyIdx === 0 && wedding.content.detailsTopIcon && wedding.content.detailsTopIcon !== 'none'" class="flex justify-center mb-4 w-full px-2">
           <p
             v-if="wedding.content.detailsTopIcon === 'bismillah'"
             class="leading-relaxed"
@@ -159,10 +162,12 @@
           >بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</p>
           <UIcon v-else-if="wedding.content.detailsTopIcon === 'rings'" name="i-heroicons-lifebuoy" :style="{ color: 'var(--theme-accent)', width: `${2.5 * ((wedding.content.detailsIconSize ?? 100) / 100)}rem`, height: `${2.5 * ((wedding.content.detailsIconSize ?? 100) / 100)}rem` }" />
           <UIcon v-else-if="wedding.content.detailsTopIcon === 'heart'" name="i-heroicons-heart" :style="{ color: 'var(--theme-accent)', width: `${2.5 * ((wedding.content.detailsIconSize ?? 100) / 100)}rem`, height: `${2.5 * ((wedding.content.detailsIconSize ?? 100) / 100)}rem` }" />
-          <img v-else-if="wedding.content.detailsTopIcon === 'custom' && wedding.content.customIconUrl" :src="wedding.content.customIconUrl" alt="" class="object-contain drop-shadow" :style="{ width: `${7 * ((wedding.content.detailsIconSize ?? 100) / 100)}rem`, height: 'auto', maxWidth: '85%', maxHeight: `${7 * ((wedding.content.detailsIconSize ?? 100) / 100)}rem` }">
+          <img v-else-if="wedding.content.detailsTopIcon === 'custom' && (wedding.content.detailsCustomIconUrl || wedding.content.customIconUrl)" :src="wedding.content.detailsCustomIconUrl || wedding.content.customIconUrl" alt="" class="object-contain drop-shadow" :style="{ width: `${7 * ((wedding.content.detailsIconSize ?? 100) / 100)}rem`, height: 'auto', maxWidth: '85%', maxHeight: `${7 * ((wedding.content.detailsIconSize ?? 100) / 100)}rem` }">
         </div>
-        <p class="text-white/90 text-lg leading-relaxed whitespace-pre-line" :style="{ fontWeight: 'var(--theme-text-weight)' }">{{ wedding.content.story }}</p>
+        <StoryPageContent v-if="storyRich" :page="storyPage" style="--card-text: #ffffff" />
+        <p v-else class="text-white/90 text-lg leading-relaxed whitespace-pre-line" :style="{ fontWeight: 'var(--theme-text-weight)' }">{{ wedding.content.story }}</p>
       </ScrollReveal>
+      </template>
 
       <!-- SCENE: Family / parents, only when that data has been filled in -->
       <ScrollReveal v-if="!wedding.content.hideSystemText && (wedding.content.brideFullName || wedding.content.groomFullName)" class="text-center">
@@ -297,6 +302,10 @@ const styleVars = computed(() =>
     props.wedding.content.textWeight
   )
 )
+
+// See useStoryPages.ts - story text split into sections with --- lines.
+const storyPages = computed(() => splitStoryPages(props.wedding.content.story))
+const storyRich = computed(() => storyIsRich(props.wedding.content.story))
 
 const optimizedCoverPhotoUrl = computed(() => optimizedImageUrl(props.wedding.content.coverPhotoUrl, 1600))
 const coverPhotoLoaded = ref(false)

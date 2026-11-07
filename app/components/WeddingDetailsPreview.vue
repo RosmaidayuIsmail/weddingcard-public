@@ -26,8 +26,8 @@
            <div :key="currentSlide" class="space-y-3 text-center w-full px-1 py-2">
               
               <!-- Story -->
-              <template v-if="currentKey === 'story'">
-                <div v-if="content.detailsTopIcon && content.detailsTopIcon !== 'none'" class="flex justify-center mb-4 w-full px-2">
+              <template v-if="currentKey.startsWith('story:')">
+                <div v-if="currentKey === 'story:0' && content.detailsTopIcon && content.detailsTopIcon !== 'none'" class="flex justify-center mb-4 w-full px-2">
                   <p
                     v-if="content.detailsTopIcon === 'bismillah'"
                     class="leading-relaxed"
@@ -40,9 +40,12 @@
                   >بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</p>
                   <UIcon v-else-if="content.detailsTopIcon === 'rings'" name="i-heroicons-lifebuoy" :style="{ color: 'var(--theme-accent)', width: `${1.5 * ((content.detailsIconSize ?? 100) / 100)}rem`, height: `${1.5 * ((content.detailsIconSize ?? 100) / 100)}rem` }" />
                   <UIcon v-else-if="content.detailsTopIcon === 'heart'" name="i-heroicons-heart" :style="{ color: 'var(--theme-accent)', width: `${1.5 * ((content.detailsIconSize ?? 100) / 100)}rem`, height: `${1.5 * ((content.detailsIconSize ?? 100) / 100)}rem` }" />
-                  <img v-else-if="content.detailsTopIcon === 'custom' && content.customIconUrl" :src="content.customIconUrl" alt="" class="object-contain drop-shadow" :style="{ width: `${3 * ((content.detailsIconSize ?? 100) / 100)}rem`, height: `${3 * ((content.detailsIconSize ?? 100) / 100)}rem` }">
+                  <img v-else-if="content.detailsTopIcon === 'custom' && (content.detailsCustomIconUrl || content.customIconUrl)" :src="content.detailsCustomIconUrl || content.customIconUrl" alt="" class="object-contain drop-shadow" :style="{ width: `${3 * ((content.detailsIconSize ?? 100) / 100)}rem`, height: `${3 * ((content.detailsIconSize ?? 100) / 100)}rem` }">
                 </div>
-                <p v-if="!content.hideSystemText" class="text-[color-mix(in_srgb,var(--card-text)_90%,transparent)] text-sm leading-relaxed whitespace-pre-line font-light">{{ content.story || 'Welcome message...' }}</p>
+                <template v-if="!content.hideSystemText">
+                  <StoryPageContent v-if="storyRich" :page="storyPages[Number(currentKey.split(':')[1]) || 0] ?? ''" compact />
+                  <p v-else class="text-[color-mix(in_srgb,var(--card-text)_90%,transparent)] text-sm leading-relaxed whitespace-pre-line font-light">{{ content.story || 'Welcome message...' }}</p>
+                </template>
               </template>
 
               <!-- Couple -->
@@ -179,8 +182,12 @@ const qrCodeUrl = computed(
   () => `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(props.content.mapUrl ?? '')}&size=200x200`
 )
 
+const storyPages = computed(() => splitStoryPages(props.content.story))
+const storyRich = computed(() => storyIsRich(props.content.story))
+
 const slideKeys = computed(() => {
-  const keys = ['story', 'couple']
+  const keys = storyPages.value.map((_, i) => `story:${i}`)
+  keys.push('couple')
   if (props.content.brideFullName || props.content.groomFullName) keys.push('family')
   keys.push('event')
   if (props.content.mapUrl) keys.push('location')
@@ -195,7 +202,7 @@ const slideKeys = computed(() => {
 })
 
 const currentSlide = ref(0)
-const currentKey = computed(() => slideKeys.value[currentSlide.value] ?? 'story')
+const currentKey = computed(() => slideKeys.value[currentSlide.value] ?? 'story:0')
 const direction = ref<'slide-next' | 'slide-prev'>('slide-next')
 
 function next() {
